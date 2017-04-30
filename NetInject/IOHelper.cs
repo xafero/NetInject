@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
@@ -18,6 +19,12 @@ namespace NetInject
         {
             var opt = SearchOption.AllDirectories;
             return Directory.EnumerateFiles(root, "*.*", opt);
+        }
+
+        internal static void EnsureWritable(string file)
+        {
+            var info = new FileInfo(file);
+            info.IsReadOnly = false;
         }
     }
 }

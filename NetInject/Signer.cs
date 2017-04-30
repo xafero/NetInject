@@ -31,8 +31,12 @@ namespace NetInject
                 if (ext != ".dll" && ext != ".exe")
                 {
                     if (File.Exists(outFile))
+                    {
+                        EnsureWritable(outFile);
                         File.Delete(outFile);
+                    }
                     File.Copy(input, outFile);
+                    EnsureWritable(outFile);
                     continue;
                 }
                 var ass = AssemblyDefinition.ReadAssembly(input, rparam);

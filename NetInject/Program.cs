@@ -1,15 +1,29 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using log4net;
+using log4net.Config;
+using System.Configuration;
+using CommandLine;
 
 namespace NetInject
 {
     class Program
     {
-        static void Main(string[] args)
+        static readonly ILog log = LogManager.GetLogger(typeof(Program).Namespace);
+
+        static int Main(string[] args)
         {
+            BasicConfigurator.Configure();
+            var cfg = ConfigurationManager.AppSettings;
+            var cmp = StringComparison.InvariantCultureIgnoreCase;
+            int res;
+            using (var parser = Parser.Default)
+            {
+                res = parser.ParseArguments<UnsignOptions, PatchOptions>(args).MapResult(
+                      (UnsignOptions opts) => Signer.Unsign(opts),
+                      (PatchOptions opts) => Patcher.Modify(opts),
+                      errs => 1);
+            }
+            return res;
         }
     }
 }

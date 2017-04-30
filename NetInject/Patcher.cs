@@ -3,6 +3,7 @@ using Mono.Cecil;
 using Mono.Cecil.Cil;
 using Mono.Collections.Generic;
 using System;
+using System.IO;
 using System.Linq;
 
 using static NetInject.IOHelper;
@@ -21,23 +22,24 @@ namespace NetInject
             resolv.AddSearchDirectory(opts.WorkDir);
             var rparam = new ReaderParameters { AssemblyResolver = resolv };
             var wparam = new WriterParameters();
-            foreach (var file in files)
+            var patches = opts.Patches.Select(p =>
             {
-                var ass = AssemblyDefinition.ReadAssembly(file, rparam);
-                log.Info($" - '{ass.FullName}'");
-                var patches = opts.Patches.Select(p =>
+                var pts = p.Split(new[] { '=' }, 2);
+                var val = pts.Last();
+                pts = pts.First().Split(new[] { ':' }, 2);
+                var type = pts.First();
+                var meth = pts.Last();
+                log.InfoFormat(" ({0}) {1} should return '{2}'...", type, meth, val);
+                return Tuple.Create(type, meth, val);
+            }).ToArray();
+            foreach (var file in files)
+                using (var stream = new MemoryStream(File.ReadAllBytes(file)))
                 {
-                    var pts = p.Split(new[] { '=' }, 2);
-                    var val = pts.Last();
-                    pts = pts.First().Split(new[] { ':' }, 2);
-                    var type = pts.First();
-                    var meth = pts.Last();
-                    log.InfoFormat(" ({0}) {1} should return '{2}'...", type, meth, val);
-                    return Tuple.Create(type, meth, val);
-                });
-                PatchCalls(ass, patches.ToArray());
-                ass.Write(wparam);
-            }
+                    var ass = AssemblyDefinition.ReadAssembly(stream, rparam);
+                    log.Info($" - '{ass.FullName}'");
+                    PatchCalls(ass, patches);
+                    ass.Write(wparam);
+                }
             return 0;
         }
 

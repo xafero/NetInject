@@ -38,7 +38,7 @@ namespace NetInject
                     var ass = AssemblyDefinition.ReadAssembly(stream, rparam);
                     log.Info($" - '{ass.FullName}'");
                     PatchCalls(ass, patches);
-                    ass.Write(wparam);
+                    ass.Write(file, wparam);
                 }
             return 0;
         }

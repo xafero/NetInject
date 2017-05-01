@@ -2,6 +2,7 @@
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 using NetInject.API;
+using NetInject.Basic;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -41,13 +42,8 @@ namespace NetInject
                     PatchCalls(ass, patches);
                     ass.Write(file, wparam);
                 }
-            var api = typeof(IInvocationHandler).Assembly;
-            var apiName = Path.GetFileName(api.Location);
-            var apiLib = Path.Combine(opts.WorkDir, apiName);
-            if (File.Exists(apiLib))
-                File.Delete(apiLib);
-            File.Copy(api.Location, apiLib);
-            log.InfoFormat("Added '{0}'!", api);
+            log.InfoFormat("Added '{0}'!", CopyTypeRef<IInvocationHandler>(opts.WorkDir));
+            log.InfoFormat("Added '{0}'!", CopyTypeRef<InteractiveHandler>(opts.WorkDir));
             return 0;
         }
 
@@ -79,6 +75,8 @@ namespace NetInject
                 if (fewer.Length < 1)
                     continue;
                 var fref = new FieldReference(patcherFieldName, pRef, type);
+                var mod = type.Module;
+                var founds = new HashSet<Type>();
                 var patched = 0;
                 foreach (var meth in type.Methods)
                     if (meth.Body != null)
@@ -86,7 +84,8 @@ namespace NetInject
                         var matches = fewer.Where(f => f.Item2.WildcardMatch(meth.Name)).ToArray();
                         if (matches.Length < 1)
                             continue;
-                        var mod = type.Module;
+                        foreach (var found in matches.Select(m => Type.GetType(m.Item3, true, true)))
+                            founds.Add(found);
                         var il = meth.Body.Instructions;
                         var i = 0;
                         if (!meth.IsStatic)
@@ -132,6 +131,17 @@ namespace NetInject
                     field.Attributes = patcherFieldAttr;
                     field.FieldType = pRef;
                 }
+                var attributes = MethodAttributes.Private | MethodAttributes.HideBySig
+                    | MethodAttributes.SpecialName | MethodAttributes.RTSpecialName
+                    | MethodAttributes.Static;
+                var method = new MethodDefinition(".cctor", attributes, mod.TypeSystem.Void);
+                var sil = method.Body.Instructions;
+                sil.Insert(0, Instruction.Create(OpCodes.Nop));
+                var foundCstr = mod.ImportReference(founds.Single().GetConstructors().First());
+                sil.Insert(1, Instruction.Create(OpCodes.Newobj, foundCstr));
+                sil.Insert(2, Instruction.Create(OpCodes.Stsfld, fref));
+                sil.Insert(3, Instruction.Create(OpCodes.Ret));
+                type.Methods.Add(method);
             }
         }
     }

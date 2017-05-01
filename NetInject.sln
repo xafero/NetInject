@@ -7,6 +7,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NetInject", "NetInject\NetI
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NetInject.API", "NetInject.API\NetInject.API.csproj", "{519AFFCF-4C69-4E1E-A2E4-A0E4C4D9ED34}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NetInject.Basic", "NetInject.Basic\NetInject.Basic.csproj", "{FD8DBA49-7F01-437B-B7EC-5B308AD999B5}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,6 +23,10 @@ Global
 		{519AFFCF-4C69-4E1E-A2E4-A0E4C4D9ED34}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{519AFFCF-4C69-4E1E-A2E4-A0E4C4D9ED34}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{519AFFCF-4C69-4E1E-A2E4-A0E4C4D9ED34}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FD8DBA49-7F01-437B-B7EC-5B308AD999B5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FD8DBA49-7F01-437B-B7EC-5B308AD999B5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FD8DBA49-7F01-437B-B7EC-5B308AD999B5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FD8DBA49-7F01-437B-B7EC-5B308AD999B5}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

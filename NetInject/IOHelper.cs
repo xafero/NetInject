@@ -1,6 +1,8 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 
 namespace NetInject
 {
@@ -24,6 +26,17 @@ namespace NetInject
         {
             var info = new FileInfo(file);
             info.IsReadOnly = false;
+        }
+
+        internal static Assembly CopyTypeRef<T>(string workDir)
+        {
+            var ass = typeof(T).Assembly;
+            var assName = Path.GetFileName(ass.Location);
+            var assLib = Path.Combine(workDir, assName);
+            if (File.Exists(assLib))
+                File.Delete(assLib);
+            File.Copy(ass.Location, assLib);
+            return ass;
         }
     }
 }

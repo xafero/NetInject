@@ -13,6 +13,6 @@
         /// <param name="args">given arguments</param>
         /// <returns>recalculated result</returns>
         /// <exception cref="System.NotImplementedException">if not interesting</exception>
-        object Invoke(object real, string method, object[] args);
+        T Invoke<T>(object real, string method, object[] args);
     }
 }

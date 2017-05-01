@@ -8,7 +8,9 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using WildcardMatch;
+
 using static NetInject.IOHelper;
+using MethodInfo = System.Reflection.MethodInfo;
 
 namespace NetInject
 {
@@ -109,9 +111,9 @@ namespace NetInject
                             il.Insert(i++, Instruction.Create(OpCodes.Ldarg, parm));
                             il.Insert(i++, Instruction.Create(OpCodes.Stelem_Ref));
                         }
-                        il.Insert(i++, Instruction.Create(OpCodes.Callvirt, invoke));
-                        if (!meth.ReturnType.Name.Equals("void", cmp))
-                            il.Insert(i++, Instruction.Create(OpCodes.Castclass, meth.ReturnType));
+                        var myInvoke = new GenericInstanceMethod(invoke);
+                        myInvoke.GenericArguments.Add(meth.ReturnType);
+                        il.Insert(i++, Instruction.Create(OpCodes.Callvirt, myInvoke));
                         il.Insert(i++, Instruction.Create(OpCodes.Ret));
                         patched++;
                     }

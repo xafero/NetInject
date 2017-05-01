@@ -1,6 +1,4 @@
-﻿using System.Reflection;
-
-namespace NetInject.API
+﻿namespace NetInject.API
 {
     /// <summary>
     /// The entry point to patch methods
@@ -15,6 +13,6 @@ namespace NetInject.API
         /// <param name="args">given arguments</param>
         /// <returns>recalculated result</returns>
         /// <exception cref="System.NotImplementedException">if not interesting</exception>
-        object Invoke(object real, MethodInfo method, params object[] args);
+        object Invoke(object real, string method, object[] args);
     }
 }

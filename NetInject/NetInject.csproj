@@ -88,6 +88,10 @@
       <Project>{FD8DBA49-7F01-437B-B7EC-5B308AD999B5}</Project>
       <Name>NetInject.Basic</Name>
     </ProjectReference>
+    <ProjectReference Include="..\NetInject.Code\NetInject.Code.csproj">
+      <Project>{E647279F-C98C-4D0A-A178-3A6CBAE17C57}</Project>
+      <Name>NetInject.Code</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

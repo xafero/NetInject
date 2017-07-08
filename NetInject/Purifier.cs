@@ -13,6 +13,8 @@ namespace NetInject
 {
     class Purifier
     {
+        const string prefix = "dll_";
+
         static readonly ILog log = LogManager.GetLogger(typeof(Patcher));
 
         internal static int Clean(PurifyOptions opts)
@@ -55,9 +57,11 @@ namespace NetInject
                         pinvoke.Usings.Add("System.Runtime.InteropServices");
                         pinvoke.Usings.Add("System.Runtime.InteropServices.ComTypes");
                         pinvoke.Namespace = implName;
-                        pinvoke.Name = "OrigPlatform";
+                        pinvoke.Name = "Win32Platform";
                         pinvoke.Base = apiName + ".IPlatform";
-                        pinvoke.Methods = methods;
+                        foreach (var meth in methods.SelectMany(ImplementInterface))
+                            pinvoke.Methods.Add(meth);
+                        pinvoke.Methods.Add(CreateSwitchMethod());
                         pinvoke.WriteUsings();
                         pinvoke.WriteNamespace();
                     }
@@ -71,6 +75,30 @@ namespace NetInject
             // log.InfoFormat("Added '{0}'!", CopyTypeRef<InteractiveHandler>(opts.WorkDir));
 
             return 0;
+        }
+
+        static CSharpMethod CreateSwitchMethod()
+        {
+            var meth = new CSharpMethod("CreateInstance");
+            meth.ReturnType = "Api.IPlatform";
+            meth.Modifiers.Clear();
+            meth.Modifiers.Add("public");
+            meth.Modifiers.Add("static");
+            meth.Body = "System.Environment.OSVersion.Platform == PlatformID.Win32NT ? new Win32Platform() : null";
+            return meth;
+        }
+
+        static IEnumerable<CSharpMethod> ImplementInterface(CSharpMethod externMeth)
+        {
+            var meth = new CSharpMethod(externMeth);
+            meth.Name = $"{prefix}{externMeth.Name}";
+            yield return meth;
+            meth = new CSharpMethod(externMeth.Name);
+            meth.Modifiers.Clear();
+            meth.Modifiers.Add("public");
+            meth.Body = $"{prefix}{externMeth.Name}()";
+            meth.ReturnType = externMeth.ReturnType;
+            yield return meth;
         }
 
         static IEnumerable<CSharpMethod> CollectPInvokes(AssemblyDefinition ass)
@@ -96,8 +124,7 @@ namespace NetInject
                         attr.Properties["CharSet"] = pinv.ToCharset();
                         attr.Properties["SetLastError"] = pinv.SupportsLastError;
                         var entryPoint = pinv.EntryPoint;
-                        if (entryPoint != name)
-                            attr.Properties["EntryPoint"] = $"\"{entryPoint}\"";
+                        attr.Properties["EntryPoint"] = $"\"{entryPoint}\"";
                         gen.Attributes.Add(attr);
                         methodSigs.Add(key);
                         if (Type.GetType(meth.ReturnType.FullName) == null)

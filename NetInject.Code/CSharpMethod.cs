@@ -53,15 +53,16 @@ namespace NetInject.Code
 
         static void WriteBody(TextWriter writer, string body)
         {
-            if (!body.Contains(Environment.NewLine))
+            if (!body.EndsWith(";", StringComparison.InvariantCulture))
             {
                 writer.WriteLine($" => {body};");
                 return;
             }
+            const string indent = "\t\t";
             writer.WriteLine();
-            writer.WriteLine("{");
-            writer.WriteLine(body.Trim());
-            writer.WriteLine("}");
+            writer.WriteLine($"{indent}{{");
+            writer.WriteLine($"{indent}\t{body.Trim()}");
+            writer.WriteLine($"{indent}}}");
         }
 
         public override string ToString() => ToString(UnitKind.Class);

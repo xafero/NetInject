@@ -43,12 +43,14 @@ namespace NetInject
                     {
                         pinvoke.Usings.Add("System");
                         pinvoke.Usings.Add("System.Runtime.InteropServices.ComTypes");
-                        pinvoke.Namespace = apiName;
-                        pinvoke.Kind = UnitKind.Interface;
-                        pinvoke.Name = "IPlatform";
-                        pinvoke.Methods = methods;
+                        var nsp = new CSharpNamespace(apiName);
+                        pinvoke.Namespaces.Add(nsp);
+                        var cla = new CSharpClass("IPlatform") { Kind = UnitKind.Interface };
+                        foreach (var meth in methods)
+                            cla.Methods.Add(meth);
+                        nsp.Classes.Add(cla);
                         pinvoke.WriteUsings();
-                        pinvoke.WriteNamespace();
+                        pinvoke.WriteNamespaces();
                     }
                     log.Info($"   --> '{apiCS}'");
                     using (var pinvoke = new CSharpWriter(File.Create(implCS)))
@@ -56,14 +58,28 @@ namespace NetInject
                         pinvoke.Usings.Add("System");
                         pinvoke.Usings.Add("System.Runtime.InteropServices");
                         pinvoke.Usings.Add("System.Runtime.InteropServices.ComTypes");
-                        pinvoke.Namespace = implName;
-                        pinvoke.Name = "Win32Platform";
-                        pinvoke.Base = apiName + ".IPlatform";
+                        var nsp = new CSharpNamespace(implName);
+                        pinvoke.Namespaces.Add(nsp);
+                        var cla = new CSharpClass("Win32Platform");
+                        cla.Modifiers.Clear();
+                        cla.Modifiers.Add("internal");
+                        cla.Bases.Add(apiName + ".IPlatform");
+                        nsp.Classes.Add(cla);
+                        foreach (var meth in methods.SelectMany(DelegateInterface))
+                            cla.Methods.Add(meth);
+                        cla = new CSharpClass("MonoPlatform");
+                        cla.Modifiers.Clear();
+                        cla.Modifiers.Add("internal");
+                        cla.Bases.Add(apiName + ".IPlatform");
+                        nsp.Classes.Add(cla);
                         foreach (var meth in methods.SelectMany(ImplementInterface))
-                            pinvoke.Methods.Add(meth);
-                        pinvoke.Methods.Add(CreateSwitchMethod());
+                            cla.Methods.Add(meth);
+                        cla = new CSharpClass("Platforms");
+                        cla.Modifiers.Add("static");
+                        cla.Methods.Add(CreateSwitchMethod());
+                        nsp.Classes.Add(cla);
                         pinvoke.WriteUsings();
-                        pinvoke.WriteNamespace();
+                        pinvoke.WriteNamespaces();
                     }
                     log.Info($"   --> '{implCS}'");
 
@@ -79,16 +95,26 @@ namespace NetInject
 
         static CSharpMethod CreateSwitchMethod()
         {
-            var meth = new CSharpMethod("CreateInstance");
+            var meth = new CSharpMethod("GetInstance");
             meth.ReturnType = "Api.IPlatform";
             meth.Modifiers.Clear();
             meth.Modifiers.Add("public");
             meth.Modifiers.Add("static");
-            meth.Body = "System.Environment.OSVersion.Platform == PlatformID.Win32NT ? new Win32Platform() : null";
+            meth.Body = "if (Environment.OSVersion.Platform != PlatformID.Win32NT) return new Win32Platform(); return new MonoPlatform();";
             return meth;
         }
 
         static IEnumerable<CSharpMethod> ImplementInterface(CSharpMethod externMeth)
+        {
+            var meth = new CSharpMethod(externMeth.Name);
+            meth.Modifiers.Clear();
+            meth.Modifiers.Add("public");
+            meth.Body = $"throw new NotImplementedException(\"Sorry!\");";
+            meth.ReturnType = externMeth.ReturnType;
+            yield return meth;
+        }
+
+        static IEnumerable<CSharpMethod> DelegateInterface(CSharpMethod externMeth)
         {
             var meth = new CSharpMethod(externMeth);
             meth.Name = $"{prefix}{externMeth.Name}";

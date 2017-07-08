@@ -10,7 +10,6 @@ using System.Linq;
 using WildcardMatch;
 
 using static NetInject.IOHelper;
-using MethodInfo = System.Reflection.MethodInfo;
 
 namespace NetInject
 {

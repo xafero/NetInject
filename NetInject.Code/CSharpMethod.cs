@@ -1,6 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
+
+using static NetInject.Code.CodeConvert;
 
 namespace NetInject.Code
 {
@@ -28,7 +29,7 @@ namespace NetInject.Code
                 var mods = "public static extern";
                 if (kind == UnitKind.Interface)
                     mods = string.Empty;
-                writer.WriteLine($"{indent}{mods} {ReturnType} {Name}();");
+                writer.WriteLine($"{indent}{mods} {Simplify(ReturnType)} {Name}();");
                 return writer.ToString();
             }
         }

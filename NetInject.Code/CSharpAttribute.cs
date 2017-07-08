@@ -1,6 +1,8 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 
+using static NetInject.Code.CodeConvert;
+
 namespace NetInject.Code
 {
     public class CSharpAttribute
@@ -17,8 +19,8 @@ namespace NetInject.Code
 
         public override string ToString()
         {
-            var items = (new[] { Value }).Concat(Properties.Where(p => p.Value != null).Select(p => $"{p.Key} = {p.Value}"));
-            return $"[{Name}({string.Join(", ", items.Where(s => !string.IsNullOrWhiteSpace(s)))}]";
+            var items = (new[] { Value }).Concat(Properties.Where(p => p.Value != null).Select(p => $"{p.Key} = {ToStr(p.Value)}"));
+            return $"[{Name}({string.Join(", ", items.Where(s => !string.IsNullOrWhiteSpace(s)))})]";
         }
     }
 }

@@ -33,6 +33,7 @@
     <Reference Include="System" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="CodeConvert.cs" />
     <Compile Include="CSharpAttribute.cs" />
     <Compile Include="CSharpMethod.cs" />
     <Compile Include="CSharpWriter.cs" />

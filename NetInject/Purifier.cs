@@ -39,8 +39,8 @@ namespace NetInject
                     var implCS = Path.Combine(halDir, implName + ".cs");
                     using (var pinvoke = new CSharpWriter(File.Create(apiCS)))
                     {
-                        pinvoke.Usings.Add("System.Runtime.InteropServices");
                         pinvoke.Usings.Add("System");
+                        pinvoke.Usings.Add("System.Runtime.InteropServices.ComTypes");
                         pinvoke.Namespace = apiName;
                         pinvoke.Kind = UnitKind.Interface;
                         pinvoke.Name = "IPlatform";
@@ -51,8 +51,9 @@ namespace NetInject
                     log.Info($"   --> '{apiCS}'");
                     using (var pinvoke = new CSharpWriter(File.Create(implCS)))
                     {
-                        pinvoke.Usings.Add("System.Runtime.InteropServices");
                         pinvoke.Usings.Add("System");
+                        pinvoke.Usings.Add("System.Runtime.InteropServices");
+                        pinvoke.Usings.Add("System.Runtime.InteropServices.ComTypes");
                         pinvoke.Namespace = implName;
                         pinvoke.Name = "OrigPlatform";
                         pinvoke.Base = apiName + ".IPlatform";
@@ -89,7 +90,7 @@ namespace NetInject
                         if (methodSigs.Contains(key))
                             continue;
                         var gen = new CSharpMethod(name);
-                        gen.ReturnType = meth.ReturnType.Name.Replace("Void", "void");
+                        gen.ReturnType = meth.ReturnType.Name;
                         var attr = new CSharpAttribute(typeof(DllImportAttribute).Name);
                         attr.Value = $"\"{pinv.Module}\"";
                         attr.Properties["CharSet"] = pinv.ToCharset();
@@ -99,6 +100,8 @@ namespace NetInject
                             attr.Properties["EntryPoint"] = $"\"{entryPoint}\"";
                         gen.Attributes.Add(attr);
                         methodSigs.Add(key);
+                        if (Type.GetType(meth.ReturnType.FullName) == null)
+                            continue;
                         yield return gen;
                     }
         }

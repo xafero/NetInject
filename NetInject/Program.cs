@@ -1,5 +1,4 @@
-﻿using System;
-using log4net;
+﻿using log4net;
 using log4net.Config;
 using System.Configuration;
 using CommandLine;
@@ -14,13 +13,13 @@ namespace NetInject
         {
             BasicConfigurator.Configure();
             var cfg = ConfigurationManager.AppSettings;
-            const StringComparison cmp = StringComparison.InvariantCultureIgnoreCase;
             int res;
             using (var parser = Parser.Default)
             {
-                res = parser.ParseArguments<UnsignOptions, PatchOptions>(args).MapResult(
+                res = parser.ParseArguments<UnsignOptions, PatchOptions, PurifyOptions>(args).MapResult(
                       (UnsignOptions opts) => Signer.Unsign(opts),
                       (PatchOptions opts) => Patcher.Modify(opts),
+                      (PurifyOptions opts) => Purifier.Clean(opts),
                       errs => 1);
             }
             return res;

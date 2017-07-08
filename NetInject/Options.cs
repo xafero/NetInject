@@ -25,4 +25,11 @@ namespace NetInject
         [Value(2, MetaName = "patches", HelpText = "type:method=value")]
         public IEnumerable<string> Patches { get; set; }
     }
+
+    [Verb("purify", HelpText = "Clean platform-dependent assemblies.")]
+    class PurifyOptions
+    {
+        [Value(0, MetaName = "work", HelpText = "Directory to work in")]
+        public string WorkDir { get; set; }
+    }
 }

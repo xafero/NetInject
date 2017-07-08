@@ -14,7 +14,7 @@ namespace NetInject
         {
             BasicConfigurator.Configure();
             var cfg = ConfigurationManager.AppSettings;
-            var cmp = StringComparison.InvariantCultureIgnoreCase;
+            const StringComparison cmp = StringComparison.InvariantCultureIgnoreCase;
             int res;
             using (var parser = Parser.Default)
             {

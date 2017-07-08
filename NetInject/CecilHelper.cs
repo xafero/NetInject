@@ -1,6 +1,7 @@
 ﻿using Mono.Cecil;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.InteropServices;
 
 namespace NetInject
 {
@@ -14,5 +15,9 @@ namespace NetInject
 
         public static IEnumerable<TypeDefinition> GetAllTypes(this TypeDefinition type)
             => (new[] { type }).Concat(type.NestedTypes.SelectMany(t => t.GetAllTypes()));
+
+        public static CharSet? ToCharset(this PInvokeInfo pinv)
+           => pinv.IsCharSetAnsi ? CharSet.Ansi : pinv.IsCharSetAuto ? CharSet.Auto :
+            pinv.IsCharSetUnicode ? CharSet.Unicode : default(CharSet?);
     }
 }

@@ -31,5 +31,8 @@ namespace NetInject
     {
         [Value(0, MetaName = "work", HelpText = "Directory to work in")]
         public string WorkDir { get; set; }
+
+        [Value(1, MetaName = "code", HelpText = "Code generation directory")]
+        public string CodeDir { get; set; }
     }
 }

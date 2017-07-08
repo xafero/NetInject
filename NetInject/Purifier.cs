@@ -23,34 +23,45 @@ namespace NetInject
             resolv.AddSearchDirectory(opts.WorkDir);
             var rparam = new ReaderParameters { AssemblyResolver = resolv };
             var wparam = new WriterParameters();
-            var halDir = Path.Combine("hal");
+            var halDir = Path.Combine(opts.CodeDir);
             halDir = Directory.CreateDirectory(halDir).FullName;
             foreach (var file in files)
                 using (var stream = new MemoryStream(File.ReadAllBytes(file)))
                 {
                     var ass = AssemblyDefinition.ReadAssembly(stream, rparam);
                     log.Info($" - '{ass.FullName}'");
-                    var name = ass.Name.Name + ".HAL";
-                    string halCs;
-                    using (var mem = new MemoryStream())
-                    using (var pinvoke = new CSharpWriter(mem))
+                    var methods = CollectPInvokes(ass).ToList();
+                    if (!methods.Any())
+                        continue;
+                    var apiName = ass.Name.Name + ".OS.Api";
+                    var apiCS = Path.Combine(halDir, apiName + ".cs");
+                    var implName = ass.Name.Name + ".OS.Impl";
+                    var implCS = Path.Combine(halDir, implName + ".cs");
+                    using (var pinvoke = new CSharpWriter(File.Create(apiCS)))
                     {
                         pinvoke.Usings.Add("System.Runtime.InteropServices");
                         pinvoke.Usings.Add("System");
-                        pinvoke.Namespace = "NetInject.API";
-                        pinvoke.Name = name;
-                        CollectPInvokes(ass, pinvoke);
-                        if (!pinvoke.Methods.Any())
-                            continue;
+                        pinvoke.Namespace = apiName;
+                        pinvoke.Kind = UnitKind.Interface;
+                        pinvoke.Name = "IPlatform";
+                        pinvoke.Methods = methods;
                         pinvoke.WriteUsings();
                         pinvoke.WriteNamespace();
-                        using (var output = File.Create(halCs = Path.Combine(halDir, name + ".cs")))
-                        {
-                            mem.Position = 0L;
-                            mem.CopyTo(output);
-                        }
                     }
-                    log.Info($"   --> '{halCs}'");
+                    log.Info($"   --> '{apiCS}'");
+                    using (var pinvoke = new CSharpWriter(File.Create(implCS)))
+                    {
+                        pinvoke.Usings.Add("System.Runtime.InteropServices");
+                        pinvoke.Usings.Add("System");
+                        pinvoke.Namespace = implName;
+                        pinvoke.Name = "OrigPlatform";
+                        pinvoke.Base = apiName + ".IPlatform";
+                        pinvoke.Methods = methods;
+                        pinvoke.WriteUsings();
+                        pinvoke.WriteNamespace();
+                    }
+                    log.Info($"   --> '{implCS}'");
+
                     // PurifyCalls(ass);
                     // ass.Write(file, wparam);
                 }
@@ -61,7 +72,7 @@ namespace NetInject
             return 0;
         }
 
-        static void CollectPInvokes(AssemblyDefinition ass, CSharpWriter code)
+        static IEnumerable<CSharpMethod> CollectPInvokes(AssemblyDefinition ass)
         {
             var methodSigs = new List<string>();
             foreach (var type in ass.GetAllTypes())
@@ -81,19 +92,15 @@ namespace NetInject
                         gen.ReturnType = meth.ReturnType.Name.Replace("Void", "void");
                         var attr = new CSharpAttribute(typeof(DllImportAttribute).Name);
                         attr.Value = $"\"{pinv.Module}\"";
-                        attr.Properties["CharSet"] = ToCharset(pinv);
+                        attr.Properties["CharSet"] = pinv.ToCharset();
                         attr.Properties["SetLastError"] = pinv.SupportsLastError;
                         var entryPoint = pinv.EntryPoint;
                         if (entryPoint != name)
                             attr.Properties["EntryPoint"] = $"\"{entryPoint}\"";
                         gen.Attributes.Add(attr);
-                        code.Methods.Add(gen);
                         methodSigs.Add(key);
+                        yield return gen;
                     }
         }
-
-        static CharSet? ToCharset(PInvokeInfo pinv)
-           => pinv.IsCharSetAnsi ? CharSet.Ansi : pinv.IsCharSetAuto ? CharSet.Auto :
-            pinv.IsCharSetUnicode ? CharSet.Unicode : default(CharSet?);
     }
 }

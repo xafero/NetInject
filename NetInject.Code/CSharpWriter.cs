@@ -14,6 +14,8 @@ namespace NetInject.Code
         public string Namespace { get; set; }
         public string Name { get; set; }
         public IList<CSharpMethod> Methods { get; set; }
+        public string Base { get; set; }
+        public UnitKind Kind { get; set; }
 
         public CSharpWriter(Stream stream)
         {
@@ -40,7 +42,8 @@ namespace NetInject.Code
 
         public void WriteClass(string indent = "\t")
         {
-            writer.WriteLine($"{indent}class {Name} {{");
+            var bases = Base == null ? string.Empty : $": {Base} ";
+            writer.WriteLine($"{indent}public {Kind.ToString().ToLowerInvariant()} {Name} {bases}{{");
             WriteMethods();
             writer.WriteLine($"{indent}}}");
         }
@@ -48,7 +51,7 @@ namespace NetInject.Code
         public void WriteMethods()
         {
             foreach (var meth in Methods)
-                writer.WriteLine(meth);
+                writer.WriteLine(meth.ToString(Kind));
         }
 
         public void Dispose()

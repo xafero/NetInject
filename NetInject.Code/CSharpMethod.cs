@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 
 namespace NetInject.Code
@@ -16,16 +17,22 @@ namespace NetInject.Code
             Attributes = new List<CSharpAttribute>();
         }
 
-        public override string ToString()
+        public string ToString(UnitKind kind)
         {
             const string indent = "\t\t";
             using (var writer = new StringWriter())
             {
-                foreach (var attr in Attributes)
-                    writer.WriteLine($"{indent}{attr}");
-                writer.WriteLine($"{indent}public static extern {ReturnType} {Name}();");
+                if (kind != UnitKind.Interface)
+                    foreach (var attr in Attributes)
+                        writer.WriteLine($"{indent}{attr}");
+                var mods = "public static extern";
+                if (kind == UnitKind.Interface)
+                    mods = string.Empty;
+                writer.WriteLine($"{indent}{mods} {ReturnType} {Name}();");
                 return writer.ToString();
             }
         }
+
+        public override string ToString() => ToString(UnitKind.Class);
     }
 }

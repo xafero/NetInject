@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Runtime.InteropServices;
 
 using static NetInject.IOHelper;
+using Mono.Cecil.Cil;
 
 namespace NetInject
 {
@@ -46,7 +47,7 @@ namespace NetInject
                         var nsp = new CSharpNamespace(apiName);
                         pinvoke.Namespaces.Add(nsp);
                         var cla = new CSharpClass("IPlatform") { Kind = UnitKind.Interface };
-                        foreach (var meth in methods)
+                        foreach (var meth in methods.Select(m => m.Item1))
                             cla.Methods.Add(meth);
                         nsp.Classes.Add(cla);
                         pinvoke.WriteUsings();
@@ -65,39 +66,61 @@ namespace NetInject
                         cla.Modifiers.Add("internal");
                         cla.Bases.Add(apiName + ".IPlatform");
                         nsp.Classes.Add(cla);
-                        foreach (var meth in methods.SelectMany(DelegateInterface))
+                        foreach (var meth in methods.Select(m => m.Item1).SelectMany(DelegateInterface))
                             cla.Methods.Add(meth);
                         cla = new CSharpClass("MonoPlatform");
                         cla.Modifiers.Clear();
                         cla.Modifiers.Add("internal");
                         cla.Bases.Add(apiName + ".IPlatform");
                         nsp.Classes.Add(cla);
-                        foreach (var meth in methods.SelectMany(ImplementInterface))
+                        foreach (var meth in methods.Select(m => m.Item1).SelectMany(ImplementInterface))
                             cla.Methods.Add(meth);
                         cla = new CSharpClass("Platforms");
                         cla.Modifiers.Clear();
-                        cla.Modifiers.Add("internal");
+                        cla.Modifiers.Add("public");
                         cla.Modifiers.Add("static");
                         cla.Methods.Add(CreateSwitchMethod());
-                        nsp.Classes.Add(cla);
-                        cla = new CSharpClass("Smuggler");
-                        cla.Modifiers.Add("static");
-                        foreach (var meth in methods.SelectMany(WrapInterface))
-                            cla.Methods.Add(meth);
                         nsp.Classes.Add(cla);
                         pinvoke.WriteUsings();
                         pinvoke.WriteNamespaces();
                     }
                     log.Info($"   --> '{implCS}'");
-
-                    // PurifyCalls(ass);
-                    // ass.Write(file, wparam);
+                    PurifyCalls(methods.Select(m => m.Item2));
+                    ass.Write(file, wparam);
                 }
 
             // log.InfoFormat("Added '{0}'!", CopyTypeRef<IInvocationHandler>(opts.WorkDir));
             // log.InfoFormat("Added '{0}'!", CopyTypeRef<InteractiveHandler>(opts.WorkDir));
 
             return 0;
+        }
+
+        static void PurifyCalls(IEnumerable<MethodDefinition> meths)
+        {
+            foreach (var meth in meths)
+            {
+                meth.Attributes &= ~MethodAttributes.PInvokeImpl;
+                meth.IsPreserveSig = false;
+                var body = meth.Body ?? (meth.Body = new MethodBody(meth));
+                var proc = body.GetILProcessor();
+                body.Instructions.Add(proc.Create(OpCodes.Nop));
+                body.Instructions.Add(proc.Create(OpCodes.Ldstr, "Hello!"));
+                var redirected = meth.Module.ImportReference(typeof(Console).GetMethod("WriteLine", new[] { typeof(string) }));
+                body.Instructions.Add(proc.Create(OpCodes.Call, redirected));
+                body.Instructions.Add(proc.Create(OpCodes.Nop));
+                body.Instructions.Add(proc.Create(OpCodes.Ldc_I4_0));
+                body.Instructions.Add(proc.Create(OpCodes.Ret));
+            }
+
+            /*
+                var meth = new CSharpMethod(externMeth.Name);
+                meth.Modifiers.Clear();
+                meth.Modifiers.Add("public");
+                meth.Modifiers.Add("static");
+                meth.Body = $"Platforms.GetInstance().{externMeth.Name}()";
+                meth.ReturnType = externMeth.ReturnType;
+                yield return meth;
+                */
         }
 
         static CSharpMethod CreateSwitchMethod()
@@ -109,17 +132,6 @@ namespace NetInject
             meth.Modifiers.Add("static");
             meth.Body = "if (Environment.OSVersion.Platform != PlatformID.Win32NT) return new Win32Platform(); return new MonoPlatform();";
             return meth;
-        }
-
-        static IEnumerable<CSharpMethod> WrapInterface(CSharpMethod externMeth)
-        {
-            var meth = new CSharpMethod(externMeth.Name);
-            meth.Modifiers.Clear();
-            meth.Modifiers.Add("public");
-            meth.Modifiers.Add("static");
-            meth.Body = $"Platforms.GetInstance().{externMeth.Name}()";
-            meth.ReturnType = externMeth.ReturnType;
-            yield return meth;
         }
 
         static IEnumerable<CSharpMethod> ImplementInterface(CSharpMethod externMeth)
@@ -145,7 +157,7 @@ namespace NetInject
             yield return meth;
         }
 
-        static IEnumerable<CSharpMethod> CollectPInvokes(AssemblyDefinition ass)
+        static IEnumerable<Tuple<CSharpMethod, MethodDefinition>> CollectPInvokes(AssemblyDefinition ass)
         {
             var methodSigs = new List<string>();
             foreach (var type in ass.GetAllTypes())
@@ -173,7 +185,7 @@ namespace NetInject
                         methodSigs.Add(key);
                         if (Type.GetType(meth.ReturnType.FullName) == null)
                             continue;
-                        yield return gen;
+                        yield return Tuple.Create(gen, meth);
                     }
         }
     }

@@ -75,8 +75,15 @@ namespace NetInject
                         foreach (var meth in methods.SelectMany(ImplementInterface))
                             cla.Methods.Add(meth);
                         cla = new CSharpClass("Platforms");
+                        cla.Modifiers.Clear();
+                        cla.Modifiers.Add("internal");
                         cla.Modifiers.Add("static");
                         cla.Methods.Add(CreateSwitchMethod());
+                        nsp.Classes.Add(cla);
+                        cla = new CSharpClass("Smuggler");
+                        cla.Modifiers.Add("static");
+                        foreach (var meth in methods.SelectMany(WrapInterface))
+                            cla.Methods.Add(meth);
                         nsp.Classes.Add(cla);
                         pinvoke.WriteUsings();
                         pinvoke.WriteNamespaces();
@@ -102,6 +109,17 @@ namespace NetInject
             meth.Modifiers.Add("static");
             meth.Body = "if (Environment.OSVersion.Platform != PlatformID.Win32NT) return new Win32Platform(); return new MonoPlatform();";
             return meth;
+        }
+
+        static IEnumerable<CSharpMethod> WrapInterface(CSharpMethod externMeth)
+        {
+            var meth = new CSharpMethod(externMeth.Name);
+            meth.Modifiers.Clear();
+            meth.Modifiers.Add("public");
+            meth.Modifiers.Add("static");
+            meth.Body = $"Platforms.GetInstance().{externMeth.Name}()";
+            meth.ReturnType = externMeth.ReturnType;
+            yield return meth;
         }
 
         static IEnumerable<CSharpMethod> ImplementInterface(CSharpMethod externMeth)

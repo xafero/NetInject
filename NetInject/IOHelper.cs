@@ -30,6 +30,11 @@ namespace NetInject
         internal static Assembly CopyTypeRef<T>(string workDir)
         {
             var ass = typeof(T).Assembly;
+            return CopyTypeRef(ass, workDir);
+        }
+
+        internal static Assembly CopyTypeRef(Assembly ass, string workDir)
+        {
             var assName = Path.GetFileName(ass.Location);
             var assLib = Path.Combine(workDir, assName);
             if (File.Exists(assLib))

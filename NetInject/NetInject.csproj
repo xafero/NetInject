@@ -67,6 +67,7 @@
   <ItemGroup>
     <Compile Include="AssHelper.cs" />
     <Compile Include="CecilHelper.cs" />
+    <Compile Include="Compiler.cs" />
     <Compile Include="IOHelper.cs" />
     <Compile Include="Options.cs" />
     <Compile Include="Patcher.cs" />

@@ -1,6 +1,7 @@
 ﻿using Mono.Cecil;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Runtime.InteropServices;
 
 namespace NetInject
@@ -19,5 +20,8 @@ namespace NetInject
         public static CharSet? ToCharset(this PInvokeInfo pinv)
            => pinv.IsCharSetAnsi ? CharSet.Ansi : pinv.IsCharSetAuto ? CharSet.Auto :
             pinv.IsCharSetUnicode ? CharSet.Unicode : default(CharSet?);
+
+        public static AssemblyNameReference ToRef(this Assembly ass)
+            => new AssemblyNameReference(ass.GetName().Name, ass.GetName().Version);
     }
 }

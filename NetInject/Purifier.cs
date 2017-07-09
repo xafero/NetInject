@@ -20,7 +20,7 @@ namespace NetInject
 
         internal static int Clean(PurifyOptions opts)
         {
-            var files = GetAssemblyFiles(opts.WorkDir).ToArray();
+            var files = GetAssemblyFiles(opts.WorkDir).Where(f => !f.Contains(".OS.")).ToArray();
             log.Info($"Found {files.Length} files!");
             var resolv = new DefaultAssemblyResolver();
             resolv.AddSearchDirectory(opts.WorkDir);
@@ -53,7 +53,11 @@ namespace NetInject
                         pinvoke.WriteUsings();
                         pinvoke.WriteNamespaces();
                     }
-                    log.Info($"   --> '{apiCS}'");
+                    string f;
+                    var apiCSAss = Compiler.CreateAssembly(apiName, new[] { apiCS });
+                    File.Copy(apiCSAss.Location, f = Path.Combine(halDir, apiName + ".dll"), true);
+                    log.Info($"   --> '{Path.GetFileName(apiCS)}' ({Path.GetFileName(f)})");
+                    ass.MainModule.AssemblyReferences.Add(apiCSAss.ToRef());
                     using (var pinvoke = new CSharpWriter(File.Create(implCS)))
                     {
                         pinvoke.Usings.Add("System");
@@ -84,14 +88,17 @@ namespace NetInject
                         pinvoke.WriteUsings();
                         pinvoke.WriteNamespaces();
                     }
-                    log.Info($"   --> '{implCS}'");
-                    PurifyCalls(methods.Select(m => m.Item2));
+                    var implCSAss = Compiler.CreateAssembly(implName, new[] { implCS }, new[] { f });
+                    File.Copy(implCSAss.Location, f = Path.Combine(halDir, implName + ".dll"), true);
+                    log.Info($"   --> '{Path.GetFileName(implCS)}' ({Path.GetFileName(f)})");
+                    ass.MainModule.AssemblyReferences.Add(implCSAss.ToRef());
+
+                    // PurifyCalls(methods.Select(m => m.Item2));
+
+                    log.InfoFormat("   added '{0}'!", CopyTypeRef(apiCSAss, opts.WorkDir));
+                    log.InfoFormat("   added '{0}'!", CopyTypeRef(implCSAss, opts.WorkDir));
                     ass.Write(file, wparam);
                 }
-
-            // log.InfoFormat("Added '{0}'!", CopyTypeRef<IInvocationHandler>(opts.WorkDir));
-            // log.InfoFormat("Added '{0}'!", CopyTypeRef<InteractiveHandler>(opts.WorkDir));
-
             return 0;
         }
 
@@ -152,8 +159,9 @@ namespace NetInject
             meth = new CSharpMethod(externMeth.Name);
             meth.Modifiers.Clear();
             meth.Modifiers.Add("public");
-            meth.Body = $"{prefix}{externMeth.Name}()";
             meth.ReturnType = externMeth.ReturnType;
+            var preamble = meth.ReturnType.ToLowerInvariant() == "void" ? "" : "return ";
+            meth.Body = $"{preamble}{prefix}{externMeth.Name}();";
             yield return meth;
         }
 

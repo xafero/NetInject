@@ -57,7 +57,7 @@ namespace NetInject
                     var apiCSAss = Compiler.CreateAssembly(apiName, new[] { apiCS });
                     File.Copy(apiCSAss.Location, f = Path.Combine(halDir, apiName + ".dll"), true);
                     log.Info($"   --> '{Path.GetFileName(apiCS)}' ({Path.GetFileName(f)})");
-                    ass.MainModule.AssemblyReferences.Add(apiCSAss.ToRef());
+                    var apiAssDef = AssemblyDefinition.ReadAssembly(f, rparam);
                     using (var pinvoke = new CSharpWriter(File.Create(implCS)))
                     {
                         pinvoke.Usings.Add("System");
@@ -91,10 +91,11 @@ namespace NetInject
                     var implCSAss = Compiler.CreateAssembly(implName, new[] { implCS }, new[] { f });
                     File.Copy(implCSAss.Location, f = Path.Combine(halDir, implName + ".dll"), true);
                     log.Info($"   --> '{Path.GetFileName(implCS)}' ({Path.GetFileName(f)})");
-                    ass.MainModule.AssemblyReferences.Add(implCSAss.ToRef());
-
-                    // PurifyCalls(methods.Select(m => m.Item2));
-
+                    var implAssDef = AssemblyDefinition.ReadAssembly(f, rparam);
+                    var iplat = apiAssDef.GetAllTypes().First(t => t.Name == "IPlatform");
+                    var platfs = implAssDef.GetAllTypes().First(t => t.Name == "Platforms");
+                    var platGet = platfs.Methods.First();
+                    PurifyCalls(methods.Select(m => m.Item2), platGet, iplat);
                     log.InfoFormat("   added '{0}'!", CopyTypeRef(apiCSAss, opts.WorkDir));
                     log.InfoFormat("   added '{0}'!", CopyTypeRef(implCSAss, opts.WorkDir));
                     ass.Write(file, wparam);
@@ -102,7 +103,7 @@ namespace NetInject
             return 0;
         }
 
-        static void PurifyCalls(IEnumerable<MethodDefinition> meths)
+        static void PurifyCalls(IEnumerable<MethodDefinition> meths, MethodDefinition platGet, TypeDefinition iplat)
         {
             foreach (var meth in meths)
             {
@@ -110,24 +111,20 @@ namespace NetInject
                 meth.IsPreserveSig = false;
                 var body = meth.Body ?? (meth.Body = new MethodBody(meth));
                 var proc = body.GetILProcessor();
-                body.Instructions.Add(proc.Create(OpCodes.Nop));
-                body.Instructions.Add(proc.Create(OpCodes.Ldstr, "Hello!"));
-                var redirected = meth.Module.ImportReference(typeof(Console).GetMethod("WriteLine", new[] { typeof(string) }));
-                body.Instructions.Add(proc.Create(OpCodes.Call, redirected));
-                body.Instructions.Add(proc.Create(OpCodes.Nop));
-                body.Instructions.Add(proc.Create(OpCodes.Ldc_I4_0));
+                var redirector = meth.Module.ImportReference(platGet);
+                body.Instructions.Add(proc.Create(OpCodes.Call, redirector));
+                var target = iplat.Methods.FirstOrDefault(m => m.Name == meth.Name);
+                if (target != null)
+                {
+                    var redirected = meth.Module.ImportReference(target);
+                    for (var i = 0; i < meth.Parameters.Count; i++)
+                        body.Instructions.Add(proc.Create(OpCodes.Ldarg, i));
+                    body.Instructions.Add(proc.Create(OpCodes.Callvirt, redirected));
+                }
+                if (meth.ReturnType.Name == "void")
+                    body.Instructions.Add(proc.Create(OpCodes.Nop));
                 body.Instructions.Add(proc.Create(OpCodes.Ret));
             }
-
-            /*
-                var meth = new CSharpMethod(externMeth.Name);
-                meth.Modifiers.Clear();
-                meth.Modifiers.Add("public");
-                meth.Modifiers.Add("static");
-                meth.Body = $"Platforms.GetInstance().{externMeth.Name}()";
-                meth.ReturnType = externMeth.ReturnType;
-                yield return meth;
-                */
         }
 
         static CSharpMethod CreateSwitchMethod()

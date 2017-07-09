@@ -13,6 +13,7 @@ namespace NetInject.Code
         public IList<string> Modifiers { get; }
         public string ReturnType { get; set; }
         public string Body { get; set; }
+        public IList<CSharpParameter> Parameters { get; }
 
         public CSharpMethod(string name)
         {
@@ -20,6 +21,7 @@ namespace NetInject.Code
             ReturnType = "void";
             Attributes = new List<CSharpAttribute>();
             Modifiers = new List<string> { "static", "extern" };
+            Parameters = new List<CSharpParameter>();
         }
 
         public CSharpMethod(CSharpMethod orig)
@@ -29,6 +31,7 @@ namespace NetInject.Code
             Modifiers = orig.Modifiers;
             ReturnType = orig.ReturnType;
             Body = orig.Body;
+            Parameters = orig.Parameters;
         }
 
         public string ToString(UnitKind kind)
@@ -42,7 +45,8 @@ namespace NetInject.Code
                 var mods = string.Join(" ", Modifiers);
                 if (kind == UnitKind.Interface)
                     mods = string.Empty;
-                writer.Write($"{indent}{mods} {Simplify(ReturnType)} {Name}()");
+                var parms = string.Join(", ", Parameters);
+                writer.Write($"{indent}{mods} {Simplify(ReturnType)} {Name}({parms})");
                 if (Body == null)
                     writer.WriteLine(";");
                 else

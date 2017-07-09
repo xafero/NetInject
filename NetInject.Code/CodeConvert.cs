@@ -15,7 +15,7 @@ namespace NetInject.Code
 
         public static string Simplify(string type)
         {
-            var t = type;
+            var t = type.TrimEnd('&');
             switch (type)
             {
                 case "Void": t = "void"; break;
@@ -26,6 +26,7 @@ namespace NetInject.Code
                 case "UInt32": t = "uint"; break;
                 case "UInt64": t = "ulong"; break;
                 case "Object": t = "object"; break;
+                case "String": t = "string"; break;
             }
             return t;
         }

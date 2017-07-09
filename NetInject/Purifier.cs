@@ -6,9 +6,10 @@ using System.Linq;
 using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
+using Mono.Cecil.Cil;
 
 using static NetInject.IOHelper;
-using Mono.Cecil.Cil;
+using static NetInject.Code.CodeConvert;
 
 namespace NetInject
 {
@@ -43,7 +44,9 @@ namespace NetInject
                     using (var pinvoke = new CSharpWriter(File.Create(apiCS)))
                     {
                         pinvoke.Usings.Add("System");
+                        pinvoke.Usings.Add("System.Runtime.InteropServices");
                         pinvoke.Usings.Add("System.Runtime.InteropServices.ComTypes");
+                        pinvoke.Usings.Add("System.Text");
                         var nsp = new CSharpNamespace(apiName);
                         pinvoke.Namespaces.Add(nsp);
                         var cla = new CSharpClass("IPlatform") { Kind = UnitKind.Interface };
@@ -63,6 +66,7 @@ namespace NetInject
                         pinvoke.Usings.Add("System");
                         pinvoke.Usings.Add("System.Runtime.InteropServices");
                         pinvoke.Usings.Add("System.Runtime.InteropServices.ComTypes");
+                        pinvoke.Usings.Add("System.Text");
                         var nsp = new CSharpNamespace(implName);
                         pinvoke.Namespaces.Add(nsp);
                         var cla = new CSharpClass("Win32Platform");
@@ -98,7 +102,7 @@ namespace NetInject
                     PurifyCalls(methods.Select(m => m.Item2), platGet, iplat);
                     log.InfoFormat("   added '{0}'!", CopyTypeRef(apiCSAss, opts.WorkDir));
                     log.InfoFormat("   added '{0}'!", CopyTypeRef(implCSAss, opts.WorkDir));
-                    ass.Write(file, wparam);
+                    // ass.Write(file, wparam);
                 }
             return 0;
         }
@@ -145,6 +149,8 @@ namespace NetInject
             meth.Modifiers.Add("public");
             meth.Body = $"throw new NotImplementedException(\"Sorry!\");";
             meth.ReturnType = externMeth.ReturnType;
+            foreach (var parm in externMeth.Parameters)
+                meth.Parameters.Add(parm);
             yield return meth;
         }
 
@@ -158,7 +164,10 @@ namespace NetInject
             meth.Modifiers.Add("public");
             meth.ReturnType = externMeth.ReturnType;
             var preamble = meth.ReturnType.ToLowerInvariant() == "void" ? "" : "return ";
-            meth.Body = $"{preamble}{prefix}{externMeth.Name}();";
+            var parms = string.Join(", ", externMeth.Parameters.Select(p => (p.IsRef ? "ref " : "") + p.Name));
+            meth.Body = $"{preamble}{prefix}{externMeth.Name}({parms});";
+            foreach (var parm in externMeth.Parameters)
+                meth.Parameters.Add(parm);
             yield return meth;
         }
 
@@ -187,11 +196,20 @@ namespace NetInject
                         var entryPoint = pinv.EntryPoint;
                         attr.Properties["EntryPoint"] = $"\"{entryPoint}\"";
                         gen.Attributes.Add(attr);
+                        foreach (var parm in meth.Parameters)
+                            AddParam(parm, gen);
                         methodSigs.Add(key);
                         if (Type.GetType(meth.ReturnType.FullName) == null)
                             continue;
                         yield return Tuple.Create(gen, meth);
                     }
+        }
+
+        static void AddParam(ParameterDefinition parm, CSharpMethod gen)
+        {
+            var par = new CSharpParameter(Simplify(parm.ParameterType.Name), parm.Name)
+            { IsRef = parm.ParameterType.IsByReference };
+            gen.Parameters.Add(par);
         }
     }
 }

@@ -38,6 +38,7 @@
     <Compile Include="CSharpClass.cs" />
     <Compile Include="CSharpMethod.cs" />
     <Compile Include="CSharpNamespace.cs" />
+    <Compile Include="CSharpParameter.cs" />
     <Compile Include="CSharpWriter.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="UnitKind.cs" />

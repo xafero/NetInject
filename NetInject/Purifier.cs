@@ -102,7 +102,7 @@ namespace NetInject
                     PurifyCalls(methods.Select(m => m.Item2), platGet, iplat);
                     log.InfoFormat("   added '{0}'!", CopyTypeRef(apiCSAss, opts.WorkDir));
                     log.InfoFormat("   added '{0}'!", CopyTypeRef(implCSAss, opts.WorkDir));
-                    // ass.Write(file, wparam);
+                    ass.Write(file, wparam);
                 }
             return 0;
         }
@@ -138,7 +138,7 @@ namespace NetInject
             meth.Modifiers.Clear();
             meth.Modifiers.Add("public");
             meth.Modifiers.Add("static");
-            meth.Body = "if (Environment.OSVersion.Platform != PlatformID.Win32NT) return new Win32Platform(); return new MonoPlatform();";
+            meth.Body = "if (Environment.OSVersion.Platform == PlatformID.Win32NT) return new Win32Platform(); return new MonoPlatform();";
             return meth;
         }
 
@@ -147,8 +147,12 @@ namespace NetInject
             var meth = new CSharpMethod(externMeth.Name);
             meth.Modifiers.Clear();
             meth.Modifiers.Add("public");
-            meth.Body = $"throw new NotImplementedException(\"Sorry!\");";
             meth.ReturnType = externMeth.ReturnType;
+            // meth.Body = $"throw new NotImplementedException(\"Sorry!\");";
+            if (meth.ReturnType.ToLowerInvariant() == "void")
+                meth.Body = "return;";
+            else
+                meth.Body = $"return default({meth.ReturnType});";
             foreach (var parm in externMeth.Parameters)
                 meth.Parameters.Add(parm);
             yield return meth;
@@ -201,13 +205,18 @@ namespace NetInject
                         methodSigs.Add(key);
                         if (Type.GetType(meth.ReturnType.FullName) == null)
                             continue;
+                        if (meth.Parameters.Any(p => Type.GetType(p.ParameterType.FullName) == null))
+                            continue;
                         yield return Tuple.Create(gen, meth);
                     }
         }
 
         static void AddParam(ParameterDefinition parm, CSharpMethod gen)
         {
-            var par = new CSharpParameter(Simplify(parm.ParameterType.Name), parm.Name)
+            var name = parm.Name;
+            if (!Enumerable.Range('A', 26).Contains(name.FirstOrDefault()))
+                name = "p" + gen.Parameters.Count;
+            var par = new CSharpParameter(Simplify(parm.ParameterType.Name), name)
             { IsRef = parm.ParameterType.IsByReference };
             gen.Parameters.Add(par);
         }

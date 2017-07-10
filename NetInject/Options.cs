@@ -22,7 +22,7 @@ namespace NetInject
         [Value(0, MetaName = "work", HelpText = "Directory to work in")]
         public string WorkDir { get; set; }
 
-        [Value(2, MetaName = "patches", HelpText = "type:method=value")]
+        [Value(1, MetaName = "patches", HelpText = "type:method=value")]
         public IEnumerable<string> Patches { get; set; }
     }
 
@@ -34,5 +34,15 @@ namespace NetInject
 
         [Value(1, MetaName = "code", HelpText = "Code generation directory")]
         public string CodeDir { get; set; }
+    }
+
+    [Verb("sip", HelpText = "Search an instruction and print.")]
+    class SipOptions
+    {
+        [Value(0, MetaName = "work", HelpText = "Directory to work in")]
+        public string WorkDir { get; set; }
+
+        [Value(1, MetaName = "wildcards", HelpText = "asmbl:namesp:type:opcode:term")]
+        public IEnumerable<string> Terms { get; set; }
     }
 }

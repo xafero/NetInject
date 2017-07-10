@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -41,6 +42,11 @@ namespace NetInject
                 File.Delete(assLib);
             File.Copy(ass.Location, assLib);
             return ass;
+        }
+
+        internal static T GetIndex<T>(this T[] array, int index)
+        {
+            try { return array[index]; } catch (IndexOutOfRangeException) { return default(T); }
         }
     }
 }

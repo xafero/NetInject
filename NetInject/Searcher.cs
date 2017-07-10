@@ -1,9 +1,11 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
 using log4net;
 using Mono.Cecil;
+using Mono.Cecil.Cil;
 using WildcardMatch;
 
 using static NetInject.IOHelper;
@@ -25,38 +27,65 @@ namespace NetInject
             var rparam = new ReaderParameters { AssemblyResolver = resolv };
             var wparam = new WriterParameters();
             foreach (var file in files)
-                using (var stream = new MemoryStream(File.ReadAllBytes(file)))
+                foreach (var tuple in FindInstructions(file, rparam, terms))
                 {
-                    var ass = AssemblyDefinition.ReadAssembly(stream, rparam);
-                    var assMask = new SearchMask { Assembly = ass.Name.Name };
-                    var assMatched = terms.Where(t => t.Matches(assMask)).ToArray();
-                    if (assMatched.Length < 1)
-                        continue;
-                    var types = ass.GetAllTypes();
-                    foreach (var type in types)
-                    {
-                        var subMask = new SearchMask
-                        {
-                            Assembly = assMask.Assembly, Namespace = type.Namespace
-                        };
-                        if (subMask.Namespace.Length < 1)
-                            subMask.Namespace = "-";
-                        var subMatched = assMatched.Where(t => t.Matches(subMask)).ToArray();
-                        if (subMatched.Length < 1)
-                            continue;
-                        subMask.Type = type.Name;
-                        subMatched = subMatched.Where(t => t.Matches(subMask)).ToArray();
-                        if (subMatched.Length < 1)
-                            continue;
-
-                        
-                        
-
-
-                        Console.WriteLine(subMask + " " + string.Join(", ", subMatched));
-                    }
+                    var meth = tuple.Item1.Method;
+                    var instr = tuple.Item2;
+                    Console.WriteLine(meth);
+                    Console.WriteLine($" {instr}");
                 }
             return 0;
+        }
+
+        static IEnumerable<Tuple<MethodBody, Instruction>> FindInstructions(string file, ReaderParameters rparam, SearchMask[] terms)
+        {
+            using (var stream = new MemoryStream(File.ReadAllBytes(file)))
+            {
+                var ass = AssemblyDefinition.ReadAssembly(stream, rparam);
+                var assMask = new SearchMask { Assembly = ass.Name.Name };
+                var assMatched = terms.Where(t => t.Matches(assMask)).ToArray();
+                if (assMatched.Length < 1)
+                    yield break;
+                var types = ass.GetAllTypes();
+                foreach (var type in types)
+                {
+                    var subMask = new SearchMask
+                    {
+                        Assembly = assMask.Assembly,
+                        Namespace = type.Namespace
+                    };
+                    if (subMask.Namespace.Length < 1)
+                        subMask.Namespace = "-";
+                    var subMatched = assMatched.Where(t => t.Matches(subMask)).ToArray();
+                    if (subMatched.Length < 1)
+                        continue;
+                    subMask.Type = type.Name;
+                    subMatched = subMatched.Where(t => t.Matches(subMask)).ToArray();
+                    if (subMatched.Length < 1)
+                        continue;
+                    foreach (var meth in type.Methods)
+                    {
+                        if (!meth.HasBody)
+                            continue;
+                        var instrs = meth.Body.Instructions;
+                        foreach (var instr in instrs)
+                        {
+                            var instrMask = new SearchMask
+                            {
+                                Assembly = assMask.Assembly,
+                                Namespace = type.Namespace,
+                                Type = type.Name,
+                                Opcode = instr.OpCode.Name,
+                                Argument = instr.Operand?.ToString()
+                            };
+                            var opMatched = subMatched.Where(t => t.Matches(instrMask)).ToArray();
+                            if (opMatched.Length < 1)
+                                continue;
+                            yield return Tuple.Create(meth.Body, instr);
+                        }
+                    }
+                }
+            }
         }
 
         public struct SearchMask
@@ -77,8 +106,7 @@ namespace NetInject
             public string Opcode { get; set; }
             public string Argument { get; set; }
 
-            public override string ToString() =>
-                $"{Assembly ?? "*"}:{Namespace ?? "*"}:{Type ?? "*"}:{Opcode ?? "*"}:{Argument ?? "*"}";
+            public override string ToString() => $"{Assembly ?? "*"}:{Namespace ?? "*"}:{Type ?? "*"}:{Opcode ?? "*"}:{Argument ?? "*"}";
 
             public bool Matches(SearchMask mask)
             {

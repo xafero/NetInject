@@ -76,6 +76,7 @@
     <Compile Include="Purifier.cs" />
     <Compile Include="Signer.cs" />
     <Compile Include="Searcher.cs" />
+    <Compile Include="Island.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />

@@ -16,11 +16,12 @@ namespace NetInject
             int res;
             using (var parser = Parser.Default)
             {
-                res = parser.ParseArguments<UnsignOptions, PatchOptions, PurifyOptions, SipOptions>(args).MapResult(
+                res = parser.ParseArguments<UnsignOptions, PatchOptions, PurifyOptions, SipOptions, IsleOptions>(args).MapResult(
                       (UnsignOptions opts) => Signer.Unsign(opts),
                       (PatchOptions opts) => Patcher.Modify(opts),
                       (PurifyOptions opts) => Purifier.Clean(opts),
                       (SipOptions opts) => Searcher.Find(opts),
+                      (IsleOptions opts) => Island.Replace(opts),
                       errs => 1);
             }
             return res;

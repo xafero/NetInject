@@ -45,4 +45,17 @@ namespace NetInject
         [Value(1, MetaName = "wildcards", HelpText = "asmbl:namesp:type:opcode:term")]
         public IEnumerable<string> Terms { get; set; }
     }
+
+    [Verb("isle", HelpText = "IL stream list and edit.")]
+    class IsleOptions
+    {
+        [Value(0, MetaName = "work", HelpText = "Directory to work in")]
+        public string WorkDir { get; set; }
+
+        [Value(1, MetaName = "wildcard", HelpText = "asmbl:namesp:type:opcode:term")]
+        public string Term { get; set; }
+
+        [Value(2, MetaName = "patch", HelpText = "opcode:term")]
+        public string Patch { get; set; }
+    }
 }

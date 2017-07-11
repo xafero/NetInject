@@ -37,7 +37,7 @@ namespace NetInject
             return 0;
         }
 
-        static IEnumerable<Tuple<MethodBody, Instruction>> FindInstructions(string file, ReaderParameters rparam, SearchMask[] terms)
+        internal static IEnumerable<Tuple<MethodBody, Instruction>> FindInstructions(string file, ReaderParameters rparam, params SearchMask[] terms)
         {
             using (var stream = new MemoryStream(File.ReadAllBytes(file)))
             {

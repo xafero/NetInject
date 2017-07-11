@@ -27,62 +27,61 @@ namespace NetInject
             var rparam = new ReaderParameters { AssemblyResolver = resolv };
             var wparam = new WriterParameters();
             foreach (var file in files)
-                foreach (var tuple in FindInstructions(file, rparam, terms))
-                {
-                    var meth = tuple.Item1.Method;
-                    var instr = tuple.Item2;
-                    Console.WriteLine(meth);
-                    Console.WriteLine($" {instr}");
-                }
+                using (var stream = IntoMemory(file))
+                    foreach (var tuple in FindInstructions(stream, rparam, terms))
+                    {
+                        var meth = tuple.Item1.Method;
+                        var instr = tuple.Item2;
+                        Console.WriteLine(meth);
+                        Console.WriteLine($" {instr}");
+                    }
             return 0;
         }
 
-        internal static IEnumerable<Tuple<MethodBody, Instruction>> FindInstructions(string file, ReaderParameters rparam, params SearchMask[] terms)
+        internal static IEnumerable<Tuple<MethodBody, Instruction>> FindInstructions(Stream stream, ReaderParameters rparam,
+                                                                                     params SearchMask[] terms)
         {
-            using (var stream = new MemoryStream(File.ReadAllBytes(file)))
+            var ass = AssemblyDefinition.ReadAssembly(stream, rparam);
+            var assMask = new SearchMask { Assembly = ass.Name.Name };
+            var assMatched = terms.Where(t => t.Matches(assMask)).ToArray();
+            if (assMatched.Length < 1)
+                yield break;
+            var types = ass.GetAllTypes();
+            foreach (var type in types)
             {
-                var ass = AssemblyDefinition.ReadAssembly(stream, rparam);
-                var assMask = new SearchMask { Assembly = ass.Name.Name };
-                var assMatched = terms.Where(t => t.Matches(assMask)).ToArray();
-                if (assMatched.Length < 1)
-                    yield break;
-                var types = ass.GetAllTypes();
-                foreach (var type in types)
+                var subMask = new SearchMask
                 {
-                    var subMask = new SearchMask
-                    {
-                        Assembly = assMask.Assembly,
-                        Namespace = type.Namespace
-                    };
-                    if (subMask.Namespace.Length < 1)
-                        subMask.Namespace = "-";
-                    var subMatched = assMatched.Where(t => t.Matches(subMask)).ToArray();
-                    if (subMatched.Length < 1)
+                    Assembly = assMask.Assembly,
+                    Namespace = type.Namespace
+                };
+                if (subMask.Namespace.Length < 1)
+                    subMask.Namespace = "-";
+                var subMatched = assMatched.Where(t => t.Matches(subMask)).ToArray();
+                if (subMatched.Length < 1)
+                    continue;
+                subMask.Type = type.Name;
+                subMatched = subMatched.Where(t => t.Matches(subMask)).ToArray();
+                if (subMatched.Length < 1)
+                    continue;
+                foreach (var meth in type.Methods)
+                {
+                    if (!meth.HasBody)
                         continue;
-                    subMask.Type = type.Name;
-                    subMatched = subMatched.Where(t => t.Matches(subMask)).ToArray();
-                    if (subMatched.Length < 1)
-                        continue;
-                    foreach (var meth in type.Methods)
+                    var instrs = meth.Body.Instructions;
+                    foreach (var instr in instrs)
                     {
-                        if (!meth.HasBody)
-                            continue;
-                        var instrs = meth.Body.Instructions;
-                        foreach (var instr in instrs)
+                        var instrMask = new SearchMask
                         {
-                            var instrMask = new SearchMask
-                            {
-                                Assembly = assMask.Assembly,
-                                Namespace = type.Namespace,
-                                Type = type.Name,
-                                Opcode = instr.OpCode.Name,
-                                Argument = instr.Operand?.ToString()
-                            };
-                            var opMatched = subMatched.Where(t => t.Matches(instrMask)).ToArray();
-                            if (opMatched.Length < 1)
-                                continue;
-                            yield return Tuple.Create(meth.Body, instr);
-                        }
+                            Assembly = assMask.Assembly,
+                            Namespace = type.Namespace,
+                            Type = type.Name,
+                            Opcode = instr.OpCode.Name,
+                            Argument = instr.Operand?.ToString()
+                        };
+                        var opMatched = subMatched.Where(t => t.Matches(instrMask)).ToArray();
+                        if (opMatched.Length < 1)
+                            continue;
+                        yield return Tuple.Create(meth.Body, instr);
                     }
                 }
             }

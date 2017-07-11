@@ -48,5 +48,7 @@ namespace NetInject
         {
             try { return array[index]; } catch (IndexOutOfRangeException) { return default(T); }
         }
+
+        internal static MemoryStream IntoMemory(string file) => new MemoryStream(File.ReadAllBytes(file));
     }
 }

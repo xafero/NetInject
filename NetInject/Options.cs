@@ -58,4 +58,17 @@ namespace NetInject
         [Value(2, MetaName = "patch", HelpText = "opcode:term")]
         public string Patch { get; set; }
     }
+
+    [Verb("adopt", HelpText = "Give up an assembly for adoption.")]
+    class AdoptOptions
+    {
+        [Value(0, MetaName = "work", HelpText = "Directory to work in")]
+        public string WorkDir { get; set; }
+
+        [Value(1, MetaName = "parent", HelpText = "The assembly name")]
+        public string Parent { get; set; }
+
+        [Value(2, MetaName = "foster", HelpText = "New assembly name")]
+        public string Foster { get; set; }
+    }
 }

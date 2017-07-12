@@ -65,6 +65,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Adopter.cs" />
     <Compile Include="AssHelper.cs" />
     <Compile Include="CecilHelper.cs" />
     <Compile Include="Compiler.cs" />

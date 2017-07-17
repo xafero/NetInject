@@ -28,5 +28,10 @@ namespace NetInject
                     assRef.PublicKey = new byte[0];
                 }
         }
+
+        internal static IEnumerable<T> GetAttribute<T>(this TypeDefinition type) where T : Attribute
+            => type.CustomAttributes.Where(a => a.AttributeType.FullName == typeof(T).FullName)
+            .Select(a => a.ConstructorArguments.Select(c => c.Value).ToArray())
+            .Select(a => (T)typeof(T).GetConstructors().First().Invoke(a));
     }
 }

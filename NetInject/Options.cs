@@ -71,4 +71,14 @@ namespace NetInject
         [Value(2, MetaName = "foster", HelpText = "New assembly name")]
         public string Foster { get; set; }
     }
+
+    [Verb("weave", HelpText = "Interweave new code into binary.")]
+    class WeaveOptions
+    {
+        [Value(0, MetaName = "work", HelpText = "Directory to work in")]
+        public string WorkDir { get; set; }
+
+        [Value(1, MetaName = "vamp", HelpText = "New code's binary")]
+        public string Binary { get; set; }
+    }
 }

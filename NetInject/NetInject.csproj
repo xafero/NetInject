@@ -78,6 +78,7 @@
     <Compile Include="Signer.cs" />
     <Compile Include="Searcher.cs" />
     <Compile Include="Island.cs" />
+    <Compile Include="Weaver.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />

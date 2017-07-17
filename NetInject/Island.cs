@@ -8,7 +8,7 @@ using static NetInject.Searcher;
 
 namespace NetInject
 {
-    class Island
+    static class Island
     {
         static readonly ILog log = LogManager.GetLogger(typeof(Island));
 

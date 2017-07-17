@@ -5,7 +5,7 @@ using System.Linq;
 
 namespace NetInject
 {
-    class AssHelper
+    static class AssHelper
     {
         internal static void RemoveSigning(AssemblyDefinition ass, IEnumerable<string> keys)
         {

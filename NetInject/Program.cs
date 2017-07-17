@@ -5,7 +5,7 @@ using CommandLine;
 
 namespace NetInject
 {
-    class Program
+    static class Program
     {
         static readonly ILog log = LogManager.GetLogger(typeof(Program).Namespace);
 

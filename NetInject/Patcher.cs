@@ -13,7 +13,7 @@ using static NetInject.IOHelper;
 
 namespace NetInject
 {
-    class Patcher
+    static class Patcher
     {
         static readonly ILog log = LogManager.GetLogger(typeof(Patcher));
 

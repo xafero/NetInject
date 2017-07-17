@@ -13,7 +13,7 @@ using static NetInject.Code.CodeConvert;
 
 namespace NetInject
 {
-    class Purifier
+    static class Purifier
     {
         const string prefix = "dll_";
 

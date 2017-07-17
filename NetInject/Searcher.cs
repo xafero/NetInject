@@ -12,7 +12,7 @@ using static NetInject.IOHelper;
 
 namespace NetInject
 {
-    class Searcher
+    static class Searcher
     {
         static readonly ILog log = LogManager.GetLogger(typeof(Searcher));
 

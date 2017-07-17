@@ -8,7 +8,7 @@ using static NetInject.AssHelper;
 
 namespace NetInject
 {
-    class Signer
+    static class Signer
     {
         static readonly ILog log = LogManager.GetLogger(typeof(Signer));
 

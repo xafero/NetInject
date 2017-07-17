@@ -1,7 +1,6 @@
 ﻿using log4net;
 using Mono.Cecil;
 using System;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -9,7 +8,7 @@ using static NetInject.IOHelper;
 
 namespace NetInject
 {
-    class Adopter
+    static class Adopter
     {
         static readonly ILog log = LogManager.GetLogger(typeof(Adopter));
 

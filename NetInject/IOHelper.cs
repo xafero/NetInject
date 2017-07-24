@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Mono.Cecil;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -8,6 +9,9 @@ namespace NetInject
 {
     static class IOHelper
     {
+        static readonly IEqualityComparer<AssemblyNameReference> assNameComp
+            = new AssemblyNameComparer();
+
         internal static IEnumerable<string> GetAssemblyFiles(string root)
         {
             var opt = SearchOption.AllDirectories;
@@ -26,6 +30,15 @@ namespace NetInject
         {
             var info = new FileInfo(file);
             info.IsReadOnly = false;
+        }
+
+        internal static void AddAssemblyByType<T>(AssemblyDefinition ass)
+        {
+            var refAss = typeof(T).Assembly.GetName();
+            var refRef = new AssemblyNameReference(refAss.Name, refAss.Version);
+            foreach (var mod in ass.Modules)
+                if (!mod.AssemblyReferences.Contains(refRef, assNameComp))
+                    mod.AssemblyReferences.Add(refRef);
         }
 
         internal static Assembly CopyTypeRef<T>(string workDir)

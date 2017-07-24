@@ -1,24 +1,13 @@
 ﻿using log4net;
 using Mono.Cecil;
 using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-using log4net;
-using Mono.Cecil;
-using NetInject.Code;
 using System.IO;
-using System.Linq;
-using System;
-using System.Collections.Generic;
-using System.Runtime.InteropServices;
-using Mono.Cecil.Cil;
 
 using static NetInject.IOHelper;
-using static NetInject.Code.CodeConvert;
-using System.Reflection;
+using NetInject.API;
+using NetInject.Autofac;
+using NetInject.Moq;
 
 namespace NetInject
 {
@@ -28,6 +17,7 @@ namespace NetInject
 
         internal static int Invert(InvertOptions opts)
         {
+            var isDirty = false;
             using (var resolv = new DefaultAssemblyResolver())
             {
                 resolv.AddSearchDirectory(opts.WorkDir);
@@ -40,13 +30,20 @@ namespace NetInject
                     {
                         var ass = AssemblyDefinition.ReadAssembly(stream, rparam);
                         log.Info($"'{ass.FullName}'");
-                        Invert(ass, opts, wparam, file);
+                        Invert(ass, opts, wparam, file, ref isDirty);
                     }
+            }
+            if (isDirty)
+            {
+                log.InfoFormat("Added '{0}'!", CopyTypeRef<IVessel>(opts.WorkDir));
+                log.InfoFormat("Added '{0}'!", CopyTypeRef<AutofacContainer>(opts.WorkDir));
+                log.InfoFormat("Added '{0}'!", CopyTypeRef<MoqContainer>(opts.WorkDir));
             }
             return 0;
         }
 
-        static void Invert(AssemblyDefinition ass, InvertOptions opts, WriterParameters wparam, string file)
+        static void Invert(AssemblyDefinition ass, InvertOptions opts,
+            WriterParameters wparam, string file, ref bool isOneDirty)
         {
             var assRefs = ass.Modules.SelectMany(m => m.AssemblyReferences).ToArray();
             var assTypes = ass.Modules.SelectMany(m => m.GetTypeReferences()).ToArray();
@@ -58,10 +55,19 @@ namespace NetInject
                 var myTypes = assTypes.Where(t => ContainsType(invRef, t)).ToArray();
                 var myMembers = assMembs.Where(m => ContainsMember(invRef, m)).GroupBy(m => m.DeclaringType).ToArray();
 
+
                 foreach (var myType in myTypes)
                     Console.WriteLine(myType);
 
-                isDirty = false;
+
+
+                // Add basic references
+                AddAssemblyByType<IVessel>(ass);
+                AddAssemblyByType<AutofacContainer>(ass);
+                AddAssemblyByType<MoqContainer>(ass);
+                // Set dirty flag
+                isDirty = true;
+                isOneDirty = true;
             }
             if (!isDirty)
                 return;

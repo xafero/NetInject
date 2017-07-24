@@ -74,6 +74,7 @@
     <Compile Include="Patcher.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Purger.cs" />
     <Compile Include="Purifier.cs" />
     <Compile Include="Signer.cs" />
     <Compile Include="Searcher.cs" />

@@ -23,7 +23,7 @@ namespace NetInject.Autofac
             asses.AddRange(AppDomain.CurrentDomain.GetAssemblies());
             var cmp = StringComparison.InvariantCulture;
             var builder = new ContainerBuilder();
-            foreach (var ass in asses.Distinct())
+            foreach (var ass in asses.Where(a => a != null).Distinct())
                 builder.RegisterAssemblyTypes(ass)
                        .Where(t => t.Name.EndsWith("Service", cmp))
                        .AsImplementedInterfaces();

@@ -1,6 +1,7 @@
 ﻿using Mono.Cecil;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -44,6 +45,9 @@ namespace NetInject
         internal static Assembly CopyTypeRef<T>(string workDir)
         {
             var ass = typeof(T).Assembly;
+            foreach (var refAss in ass.GetReferencedAssemblies().Select(Assembly.Load))
+                if (!refAss.GlobalAssemblyCache && !string.IsNullOrWhiteSpace(refAss.Location))
+                    CopyTypeRef(refAss, workDir);
             return CopyTypeRef(ass, workDir);
         }
 

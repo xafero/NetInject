@@ -4,10 +4,12 @@ using System;
 using System.Linq;
 using System.IO;
 
-using static NetInject.IOHelper;
 using NetInject.API;
 using NetInject.Autofac;
 using NetInject.Moq;
+
+using static NetInject.IOHelper;
+using static NetInject.AssHelper;
 
 namespace NetInject
 {
@@ -58,6 +60,14 @@ namespace NetInject
 
                 foreach (var myType in myTypes)
                     Console.WriteLine(myType);
+
+
+
+
+                // Inject container initializer
+                AddOrReplaceModuleSetup(ass);
+
+
 
 
 

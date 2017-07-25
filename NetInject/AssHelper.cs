@@ -49,6 +49,11 @@ namespace NetInject
             var voidRef = mod.ImportReference(typeof(void));
             var attrs = MethodAttr.Static | MethodAttr.SpecialName | MethodAttr.RTSpecialName;
             var cctor = new MethodDefinition(".cctor", attrs, voidRef);
+            var modClass = mod.Types.First(t => t.Name == "<Module>");
+            var oldMeth = modClass.Methods.FirstOrDefault(m => m.Name == cctor.Name);
+            if (oldMeth != null)
+                modClass.Methods.Remove(oldMeth);
+            modClass.Methods.Add(cctor);
             var body = cctor.Body.GetILProcessor();
             if (il == null)
             {
@@ -56,11 +61,6 @@ namespace NetInject
                 body.Append(body.Create(OpCodes.Ret));
             }
             il?.Invoke(body);
-            var modClass = mod.Types.First(t => t.Name == "<Module>");
-            var oldMeth = modClass.Methods.FirstOrDefault(m => m.Name == cctor.Name);
-            if (oldMeth != null)
-                modClass.Methods.Remove(oldMeth);
-            modClass.Methods.Add(cctor);
         }
     }
 }

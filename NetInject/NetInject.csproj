@@ -103,6 +103,10 @@
       <Project>{E647279F-C98C-4D0A-A178-3A6CBAE17C57}</Project>
       <Name>NetInject.Code</Name>
     </ProjectReference>
+    <ProjectReference Include="..\NetInject.IoC\NetInject.IoC.csproj">
+      <Project>{a203a10a-c409-4112-9437-afb577bf9493}</Project>
+      <Name>NetInject.IoC</Name>
+    </ProjectReference>
     <ProjectReference Include="..\NetInject.Moq\NetInject.Moq.csproj">
       <Project>{29506E22-97AA-4550-847C-D2E7764B3DE1}</Project>
       <Name>NetInject.Moq</Name>

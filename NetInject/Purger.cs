@@ -77,8 +77,6 @@ namespace NetInject
 
                 // Add basic references
                 AddAssemblyByType<IVessel>(ass);
-                AddAssemblyByType<AutofacContainer>(ass);
-                AddAssemblyByType<MoqContainer>(ass);
                 AddAssemblyByType<DefaultVessel>(ass);
                 // Set dirty flag
                 isDirty = true;

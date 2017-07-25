@@ -23,6 +23,9 @@ namespace NetInject
     {
         static readonly ILog log = LogManager.GetLogger(typeof(Purger));
 
+        static readonly string iocName = "IoC";
+        static readonly string cctorName = ".cctor";
+
         internal static int Invert(InvertOptions opts)
         {
             var isDirty = false;
@@ -64,20 +67,11 @@ namespace NetInject
                 var myTypes = assTypes.Where(t => ContainsType(invRef, t)).ToArray();
                 var myMembers = assMembs.Where(m => ContainsMember(invRef, m)).GroupBy(m => m.DeclaringType).ToArray();
 
-
                 foreach (var myType in myTypes)
                     Console.WriteLine(myType);
 
-
-
                 // Inject container initializer
                 AddOrReplaceModuleSetup(ass, AddOrReplaceIoc);
-
-
-
-                // Add basic references
-                AddAssemblyByType<IVessel>(ass);
-                AddAssemblyByType<DefaultVessel>(ass);
                 // Set dirty flag
                 isDirty = true;
                 isOneDirty = true;
@@ -101,7 +95,7 @@ namespace NetInject
                 .Where(n => !string.IsNullOrWhiteSpace(n)).OrderBy(n => n.Length).First();
             var attr = TypeAttr.Class | TypeAttr.Public | TypeAttr.Sealed | TypeAttr.Abstract | TypeAttr.BeforeFieldInit;
             var objBase = mod.ImportReference(typeof(object));
-            var type = new TypeDefinition(myNamespace, "IoC", attr, objBase);
+            var type = new TypeDefinition(myNamespace, iocName, attr, objBase);
             var oldType = mod.Types.FirstOrDefault(t => t.FullName == type.FullName);
             if (oldType != null)
                 mod.Types.Remove(oldType);
@@ -119,7 +113,7 @@ namespace NetInject
             var voidRef = mod.ImportReference(typeof(void));
             var constrAttrs = MethodAttr.Static | MethodAttr.SpecialName | MethodAttr.RTSpecialName
                 | MethodAttr.Private | MethodAttr.HideBySig;
-            var constr = new MethodDefinition(".cctor", constrAttrs, voidRef);
+            var constr = new MethodDefinition(cctorName, constrAttrs, voidRef);
             type.Methods.Add(constr);
             var cil = constr.Body.GetILProcessor();
             var multiMeth = typeof(DefaultVessel).GetConstructors().First();

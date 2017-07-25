@@ -6,6 +6,8 @@ namespace NetInject.Moq
 {
     public class MoqContainer : IVessel
     {
+        static readonly Microsoft.Practices.Unity.GenericParameter dummy;
+
         AutoMoqer Container { get; set; }
 
         public MoqContainer()

@@ -1,5 +1,4 @@
-﻿using System;
-using System.Linq;
+﻿using System.Linq;
 using System.IO;
 
 using log4net;
@@ -16,6 +15,8 @@ using static NetInject.AssHelper;
 using MethodAttr = Mono.Cecil.MethodAttributes;
 using TypeAttr = Mono.Cecil.TypeAttributes;
 using FieldAttr = Mono.Cecil.FieldAttributes;
+using System.Text;
+using NetInject.Purge;
 
 namespace NetInject
 {
@@ -28,6 +29,7 @@ namespace NetInject
 
         internal static int Invert(InvertOptions opts)
         {
+            var purged = new PurgedAssemblies();
             var isDirty = false;
             using (var resolv = new DefaultAssemblyResolver())
             {
@@ -41,7 +43,7 @@ namespace NetInject
                     {
                         var ass = AssemblyDefinition.ReadAssembly(stream, rparam);
                         log.Info($"'{ass.FullName}'");
-                        Invert(ass, opts, wparam, file, ref isDirty);
+                        Invert(ass, opts, wparam, file, ref isDirty, purged);
                     }
             }
             if (isDirty)
@@ -51,11 +53,17 @@ namespace NetInject
                 log.InfoFormat("Added '{0}'!", CopyTypeRef<MoqContainer>(opts.WorkDir));
                 log.InfoFormat("Added '{0}'!", CopyTypeRef<DefaultVessel>(opts.WorkDir));
             }
+
+            var x = Newtonsoft.Json.JsonConvert.SerializeObject(purged, Newtonsoft.Json.Formatting.Indented);
+            File.WriteAllText("test.json", x, Encoding.UTF8);
+            System.Diagnostics.Process.Start("test.json");
+
             return 0;
         }
 
         static void Invert(AssemblyDefinition ass, InvertOptions opts,
-            WriterParameters wparam, string file, ref bool isOneDirty)
+            WriterParameters wparam, string file, ref bool isOneDirty,
+            PurgedAssemblies purged)
         {
             var assRefs = ass.Modules.SelectMany(m => m.AssemblyReferences).ToArray();
             var assTypes = ass.Modules.SelectMany(m => m.GetTypeReferences()).ToArray();
@@ -64,12 +72,30 @@ namespace NetInject
             foreach (var invRef in assRefs.Where(r => opts.Assemblies.Contains(r.Name)))
             {
                 log.Info($" - '{invRef.FullName}'");
+                PurgedAssembly purge;
+                if (!purged.TryGetValue(invRef.FullName, out purge))
+                    purged[invRef.FullName] = purge = new PurgedAssembly(invRef.Name, invRef.Version);
                 var myTypes = assTypes.Where(t => ContainsType(invRef, t)).ToArray();
                 var myMembers = assMembs.Where(m => ContainsMember(invRef, m)).GroupBy(m => m.DeclaringType).ToArray();
-
                 foreach (var myType in myTypes)
-                    Console.WriteLine(myType);
-
+                {
+                    PurgedType ptype;
+                    if (!purge.Types.TryGetValue(myType.FullName, out ptype))
+                        purge.Types[myType.FullName] = ptype = new PurgedType(myType.Namespace, myType.Name);
+                }
+                foreach (var myPair in myMembers)
+                {
+                    var myType = myPair.Key;
+                    PurgedType ptype;
+                    if (!purge.Types.TryGetValue(myType.FullName, out ptype))
+                        purge.Types[myType.FullName] = ptype = new PurgedType(myType.Namespace, myType.Name);
+                    foreach (var myMember in myPair)
+                    {
+                        PurgedMethod pmethod;
+                        if (!ptype.Methods.TryGetValue(myMember.FullName, out pmethod))
+                            ptype.Methods[myMember.FullName] = pmethod = new PurgedMethod(myMember.Name);
+                    }
+                }
                 // Inject container initializer
                 AddOrReplaceModuleSetup(ass, AddOrReplaceIoc);
                 // Set dirty flag

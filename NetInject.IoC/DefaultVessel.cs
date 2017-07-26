@@ -6,7 +6,7 @@ namespace NetInject.IoC
 {
     public class DefaultVessel : MultiVessel
     {
-        public DefaultVessel() : base(new AutofacContainer()/*, new MoqContainer()*/)
+        public DefaultVessel() : base(new AutofacContainer(), new MoqContainer())
         {
         }
     }

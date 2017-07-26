@@ -164,7 +164,7 @@ namespace NetInject
                     var pairs = ass.Types.GroupBy(t => t.Value.Namespace);
                     foreach (var pair in pairs)
                     {
-                        var nsp = new CSharpNamespace(pair.Key);
+                        var nsp = new CSharpNamespace($"Purge.{pair.Key}");
                         foreach (var type in pair)
                         {
                             var name = type.Value.Name;

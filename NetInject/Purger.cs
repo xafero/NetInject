@@ -28,6 +28,8 @@ namespace NetInject
 
         static readonly string iocName = "IoC";
         static readonly string cctorName = ".cctor";
+        static readonly string apiSuffix = ".API";
+        static readonly string apiPrefix = "Purge.";
 
         internal static int Invert(InvertOptions opts)
         {
@@ -61,6 +63,8 @@ namespace NetInject
                         {
                             log.Info($"... '{ass.FullName}'");
                             ReplaceCalls(ass, gens);
+                            ass.Write(file, wparam);
+                            log.InfoFormat($"Replaced something in '{ass}'!");
                         }
                 }
             }
@@ -118,7 +122,7 @@ namespace NetInject
             if (!isDirty)
                 return;
             ass.Write(file, wparam);
-            log.InfoFormat($"Replaced something in '{ass}'!");
+            log.InfoFormat($"Purged something in '{ass}'!");
         }
 
         static bool ContainsType(AssemblyNameReference assRef, TypeReference typRef)
@@ -180,7 +184,7 @@ namespace NetInject
                     writer.Usings.Add("System");
                     foreach (var pair in ass.Types.GroupBy(t => t.Value.Namespace))
                     {
-                        var nsp = new CSharpNamespace($"Purge.{pair.Key}");
+                        var nsp = new CSharpNamespace($"{apiPrefix}{pair.Key}");
                         foreach (var type in pair)
                         {
                             var name = type.Value.Name;
@@ -222,7 +226,7 @@ namespace NetInject
                     writer.WriteUsings();
                     writer.WriteNamespaces();
                 }
-                var apiName = $"{purge.Value.Name}.API";
+                var apiName = $"{purge.Value.Name}{apiSuffix}";
                 var apiCSAss = Compiler.CreateAssembly(apiName, new[] { fileName });
                 var apiFile = Path.Combine(workDir, $"{apiName}.dll");
                 File.Copy(apiCSAss.Location, apiFile, true);
@@ -234,7 +238,26 @@ namespace NetInject
 
         static void ReplaceCalls(AssemblyDefinition ass, IDictionary<string, AssemblyDefinition> gens)
         {
-            throw new NotImplementedException();
+            foreach (var type in ass.GetAllTypes())
+            {
+                foreach (var field in type.Fields)
+                {
+                    var fieldAss = field.FieldType.Scope as AssemblyNameReference;
+                    if (fieldAss == null)
+                        continue;
+                    AssemblyDefinition genAss;
+                    if (!gens.TryGetValue($"{fieldAss.Name}{apiSuffix}", out genAss))
+                        continue;
+                    var newType = genAss.GetAllTypes().FirstOrDefault(
+                        t => t.Namespace == $"{apiPrefix}{field.FieldType.Namespace}"
+                        && (t.Name == field.FieldType.Name || t.Name == $"I{field.FieldType.Name}"));
+                    field.FieldType = type.Module.ImportReference(newType);
+                }
+                foreach (var meth in type.Methods)
+                {
+                    // TODO: newobj in static call to factory ?!
+                }
+            }
         }
     }
 }

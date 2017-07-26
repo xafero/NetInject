@@ -88,7 +88,10 @@ namespace NetInject
         [Value(0, MetaName = "work", HelpText = "Directory to work in")]
         public string WorkDir { get; set; }
 
-        [Value(1, MetaName = "legacy", HelpText = "Old dependencies to purge")]
+        [Value(1, MetaName = "temp", HelpText = "Directory for temp stuff")]
+        public string TempDir { get; set; }
+
+        [Value(2, MetaName = "legacy", HelpText = "Old dependencies to purge")]
         public IEnumerable<string> Assemblies { get; set; }
     }
 }

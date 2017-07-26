@@ -15,10 +15,10 @@ using static NetInject.AssHelper;
 using MethodAttr = Mono.Cecil.MethodAttributes;
 using TypeAttr = Mono.Cecil.TypeAttributes;
 using FieldAttr = Mono.Cecil.FieldAttributes;
-using System.Text;
 using NetInject.Purge;
-using System;
 using NetInject.Code;
+using System.Collections.Generic;
+using System;
 
 namespace NetInject
 {
@@ -32,7 +32,7 @@ namespace NetInject
         internal static int Invert(InvertOptions opts)
         {
             var purged = new PurgedAssemblies();
-            var isDirty = false;
+            var filesToWatch = new HashSet<string>();
             using (var resolv = new DefaultAssemblyResolver())
             {
                 resolv.AddSearchDirectory(opts.WorkDir);
@@ -42,16 +42,30 @@ namespace NetInject
                 log.Info($"Found {files.Length} file(s)!");
                 foreach (var file in files)
                     using (var stream = new MemoryStream(File.ReadAllBytes(file)))
+                    using (var ass = AssemblyDefinition.ReadAssembly(stream, rparam))
                     {
-                        var ass = AssemblyDefinition.ReadAssembly(stream, rparam);
                         log.Info($"'{ass.FullName}'");
-                        Invert(ass, opts, wparam, file, ref isDirty, purged);
+                        var isFileDirty = false;
+                        Invert(ass, opts, wparam, file, ref isFileDirty, purged);
+                        if (!isFileDirty)
+                            continue;
+                        filesToWatch.Add(file);
                     }
+                if (filesToWatch.Count >= 1 && purged.Count >= 1)
+                {
+                    var gens = GenerateCode(purged, opts.TempDir, opts.WorkDir, rparam)
+                        .ToDictionary(k => k.Name.Name, v => v);
+                    foreach (var file in filesToWatch)
+                        using (var stream = new MemoryStream(File.ReadAllBytes(file)))
+                        using (var ass = AssemblyDefinition.ReadAssembly(stream, rparam))
+                        {
+                            log.Info($"... '{ass.FullName}'");
+                            ReplaceCalls(ass, gens);
+                        }
+                }
             }
-            if (isDirty)
+            if (filesToWatch.Count >= 1 && purged.Count >= 1)
             {
-                GenerateCode(purged);
-                // TODO
                 log.InfoFormat("Added '{0}'!", CopyTypeRef<IVessel>(opts.WorkDir));
                 log.InfoFormat("Added '{0}'!", CopyTypeRef<AutofacContainer>(opts.WorkDir));
                 log.InfoFormat("Added '{0}'!", CopyTypeRef<MoqContainer>(opts.WorkDir));
@@ -151,18 +165,20 @@ namespace NetInject
             il.Append(il.Create(OpCodes.Ret));
         }
 
-        static void GenerateCode(PurgedAssemblies purged)
+        static IEnumerable<AssemblyDefinition> GenerateCode(PurgedAssemblies purged, string tempDir,
+            string workDir, ReaderParameters rparam)
         {
             foreach (var purge in purged)
             {
                 var ass = purge.Value;
-                var fileName = ass.Name + ".cs";
+                var fileName = Path.Combine(tempDir, $"{ass.Name}.cs");
+                if (!Directory.Exists(tempDir))
+                    Directory.CreateDirectory(tempDir);
                 using (var stream = File.Create(fileName))
                 using (var writer = new CSharpWriter(stream))
                 {
                     writer.Usings.Add("System");
-                    var pairs = ass.Types.GroupBy(t => t.Value.Namespace);
-                    foreach (var pair in pairs)
+                    foreach (var pair in ass.Types.GroupBy(t => t.Value.Namespace))
                     {
                         var nsp = new CSharpNamespace($"Purge.{pair.Key}");
                         foreach (var type in pair)
@@ -206,9 +222,19 @@ namespace NetInject
                     writer.WriteUsings();
                     writer.WriteNamespaces();
                 }
-
-                System.Diagnostics.Process.Start(fileName);
+                var apiName = $"{purge.Value.Name}.API";
+                var apiCSAss = Compiler.CreateAssembly(apiName, new[] { fileName });
+                var apiFile = Path.Combine(workDir, $"{apiName}.dll");
+                File.Copy(apiCSAss.Location, apiFile, true);
+                var apiAssDef = AssemblyDefinition.ReadAssembly(apiFile, rparam);
+                log.Info($"   --> '{apiAssDef}'");
+                yield return apiAssDef;
             }
+        }
+
+        static void ReplaceCalls(AssemblyDefinition ass, IDictionary<string, AssemblyDefinition> gens)
+        {
+            throw new NotImplementedException();
         }
     }
 }

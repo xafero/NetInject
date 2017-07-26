@@ -160,6 +160,49 @@ namespace NetInject
                 using (var stream = File.Create(fileName))
                 using (var writer = new CSharpWriter(stream))
                 {
+                    writer.Usings.Add("System");
+                    var pairs = ass.Types.GroupBy(t => t.Value.Namespace);
+                    foreach (var pair in pairs)
+                    {
+                        var nsp = new CSharpNamespace(pair.Key);
+                        foreach (var type in pair)
+                        {
+                            var name = type.Value.Name;
+                            if (!name.StartsWith("I"))
+                                name = $"I{name}";
+                            var typ = new CSharpClass(name)
+                            {
+                                Kind = UnitKind.Interface
+                            };
+                            foreach (var meth in type.Value.Methods)
+                            {
+                                var mmeth = meth.Value;
+                                var cmeth = new CSharpMethod(mmeth.Name);
+                                if (cmeth.Name == "Dispose")
+                                {
+                                    typ.Bases.Add("IDisposable");
+                                    continue;
+                                }
+                                if (cmeth.Name == ".ctor")
+                                {
+                                    var factMethod = new CSharpMethod($"Create{type.Value.Name}")
+                                    {
+                                        ReturnType = typ.Name
+                                    };
+                                    var factType = new CSharpClass($"I{type.Value.Name}Factory")
+                                    {
+                                        Kind = UnitKind.Interface
+                                    };
+                                    factType.Methods.Add(factMethod);
+                                    nsp.Classes.Add(factType);
+                                    continue;
+                                }
+                                typ.Methods.Add(cmeth);
+                            }
+                            nsp.Classes.Add(typ);
+                        }
+                        writer.Namespaces.Add(nsp);
+                    }
                     writer.WriteUsings();
                     writer.WriteNamespaces();
                 }

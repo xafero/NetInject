@@ -242,11 +242,8 @@ namespace NetInject
             {
                 foreach (var field in type.Fields)
                 {
-                    var fieldAss = field.FieldType.Scope as AssemblyNameReference;
-                    if (fieldAss == null)
-                        continue;
-                    AssemblyDefinition genAss;
-                    if (!gens.TryGetValue($"{fieldAss.Name}{apiSuffix}", out genAss))
+                    var genAss = FindGenerated(field.FieldType, gens);
+                    if (genAss == null)
                         continue;
                     var newType = genAss.GetAllTypes().FirstOrDefault(
                         t => t.Namespace == $"{apiPrefix}{field.FieldType.Namespace}"
@@ -255,9 +252,42 @@ namespace NetInject
                 }
                 foreach (var meth in type.Methods)
                 {
-                    // TODO: newobj in static call to factory ?!
+                    var ils = meth.Body.GetILProcessor();
+                    foreach (var il in meth.Body.Instructions.ToArray())
+                    {
+                        var opMethDef = il.Operand as MethodDefinition;
+                        var opMethRef = il.Operand as MethodReference;
+                        if (opMethDef == null && opMethRef == null)
+                            continue;
+                        var methType = opMethDef?.DeclaringType ?? opMethRef.DeclaringType;
+                        var genAss = FindGenerated(methType, gens);
+                        if (genAss == null)
+                            continue;
+                        if (il.OpCode == OpCodes.Newobj)
+                        {
+                            var newType = genAss.GetAllTypes().FirstOrDefault(
+                                t => t.Namespace == $"{apiPrefix}{methType.Namespace}"
+                                && t.Name == $"I{methType.Name}Factory");
+                            var newMeth = newType.Methods.FirstOrDefault(m => m.Name == $"Create{methType.Name}");
+                            if (newMeth == null)
+                                continue;
+                            log.Info($"   ::> '{newMeth}'");
+                            ils.Replace(il, ils.Create(OpCodes.Callvirt, type.Module.ImportReference(newMeth)));
+                        }
+                    }
                 }
             }
+        }
+
+        static AssemblyDefinition FindGenerated(TypeReference origType, IDictionary<string, AssemblyDefinition> gens)
+        {
+            var origAss = origType.Scope as AssemblyNameReference;
+            if (origAss == null)
+                return null;
+            AssemblyDefinition genAss;
+            if (!gens.TryGetValue($"{origAss.Name}{apiSuffix}", out genAss))
+                return null;
+            return genAss;
         }
     }
 }

@@ -17,6 +17,8 @@ using TypeAttr = Mono.Cecil.TypeAttributes;
 using FieldAttr = Mono.Cecil.FieldAttributes;
 using System.Text;
 using NetInject.Purge;
+using System;
+using NetInject.Code;
 
 namespace NetInject
 {
@@ -48,16 +50,13 @@ namespace NetInject
             }
             if (isDirty)
             {
+                GenerateCode(purged);
+                // TODO
                 log.InfoFormat("Added '{0}'!", CopyTypeRef<IVessel>(opts.WorkDir));
                 log.InfoFormat("Added '{0}'!", CopyTypeRef<AutofacContainer>(opts.WorkDir));
                 log.InfoFormat("Added '{0}'!", CopyTypeRef<MoqContainer>(opts.WorkDir));
                 log.InfoFormat("Added '{0}'!", CopyTypeRef<DefaultVessel>(opts.WorkDir));
             }
-
-            var x = Newtonsoft.Json.JsonConvert.SerializeObject(purged, Newtonsoft.Json.Formatting.Indented);
-            File.WriteAllText("test.json", x, Encoding.UTF8);
-            System.Diagnostics.Process.Start("test.json");
-
             return 0;
         }
 
@@ -150,6 +149,23 @@ namespace NetInject
             il.Append(il.Create(OpCodes.Call, getMethod));
             il.Append(il.Create(OpCodes.Pop));
             il.Append(il.Create(OpCodes.Ret));
+        }
+
+        static void GenerateCode(PurgedAssemblies purged)
+        {
+            foreach (var purge in purged)
+            {
+                var ass = purge.Value;
+                var fileName = ass.Name + ".cs";
+                using (var stream = File.Create(fileName))
+                using (var writer = new CSharpWriter(stream))
+                {
+                    writer.WriteUsings();
+                    writer.WriteNamespaces();
+                }
+
+                System.Diagnostics.Process.Start(fileName);
+            }
         }
     }
 }

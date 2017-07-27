@@ -6,6 +6,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 
+using static NetInject.Autofac.DynamicLoad;
+
 namespace NetInject.Autofac
 {
     public class AutofacContainer : IVessel
@@ -22,6 +24,7 @@ namespace NetInject.Autofac
                 Assembly.GetEntryAssembly()
             });
             asses.AddRange(AppDomain.CurrentDomain.GetAssemblies());
+            asses.AddRange(GetSameDirectoryAssemblies(GetType()));
             var cmp = StringComparison.InvariantCulture;
             var builder = new ContainerBuilder();
             foreach (var ass in asses.Where(a => a != null).Distinct())

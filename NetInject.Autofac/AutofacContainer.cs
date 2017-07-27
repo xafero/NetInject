@@ -1,4 +1,5 @@
 ﻿using Autofac;
+using Autofac.Core.Registration;
 using NetInject.API;
 using System;
 using System.Collections.Generic;
@@ -30,7 +31,17 @@ namespace NetInject.Autofac
             Container = builder.Build();
         }
 
-        public T Resolve<T>() => Container.Resolve<T>();
+        public T Resolve<T>()
+        {
+            try
+            {
+                return Container.Resolve<T>();
+            }
+            catch (ComponentNotRegisteredException)
+            {
+                return default(T);
+            }
+        }
 
         public void Dispose()
         {

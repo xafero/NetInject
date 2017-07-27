@@ -238,7 +238,11 @@ namespace NetInject
 
         static void ReplaceCalls(AssemblyDefinition ass, IDictionary<string, AssemblyDefinition> gens)
         {
-            foreach (var type in ass.GetAllTypes())
+            var types = ass.GetAllTypes().ToArray();
+            var iocType = types.First(t => t.Name == iocName);
+            var iocMeth = iocType.Methods.First(m => m.Name == "GetScope");
+            var resolv = typeof(IVessel).GetMethod("Resolve").MakeGenericMethod(typeof(IDisposable));
+            foreach (var type in types)
             {
                 foreach (var field in type.Fields)
                 {
@@ -272,6 +276,10 @@ namespace NetInject
                             if (newMeth == null)
                                 continue;
                             log.Info($"   ::> '{newMeth}'");
+                            ils.InsertBefore(il, ils.Create(OpCodes.Call, type.Module.ImportReference(iocMeth)));
+                            var impResolv = (GenericInstanceMethod)type.Module.ImportReference(resolv);
+                            impResolv.GenericArguments[0] = type.Module.ImportReference(newType);
+                            ils.InsertBefore(il, ils.Create(OpCodes.Callvirt, impResolv));
                             ils.Replace(il, ils.Create(OpCodes.Callvirt, type.Module.ImportReference(newMeth)));
                         }
                     }

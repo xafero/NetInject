@@ -12,7 +12,7 @@ namespace NetInject.API
             Vessels = vessels;
         }
 
-        public T Resolve<T>()
+        public T Resolve<T>() where T : class
         {
             var resolved = default(T);
             foreach (var vessel in Vessels)

@@ -20,7 +20,7 @@ namespace NetInject.Moq
             });
         }
 
-        public T Resolve<T>() => Container.Resolve<T>();
+        public T Resolve<T>() where T : class => Container.GetMock<T>().Object;
 
         public void Dispose()
         {

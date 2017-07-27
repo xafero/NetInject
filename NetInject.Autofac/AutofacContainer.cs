@@ -31,7 +31,7 @@ namespace NetInject.Autofac
             Container = builder.Build();
         }
 
-        public T Resolve<T>()
+        public T Resolve<T>() where T : class
         {
             try
             {

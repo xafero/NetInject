@@ -15,7 +15,7 @@ namespace NetInject
             {
                 GenerateExecutable = false,
                 IncludeDebugInformation = true,
-                ReferencedAssemblies = { "System.dll" },
+                ReferencedAssemblies = { "System.dll", "System.Drawing.dll" },
                 GenerateInMemory = false,
                 TreatWarningsAsErrors = true,
                 OutputAssembly = name + ".dll"

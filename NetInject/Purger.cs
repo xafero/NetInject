@@ -247,6 +247,7 @@ namespace NetInject
                 using (var writer = new CSharpWriter(stream))
                 {
                     writer.Usings.Add("System");
+                    writer.Usings.Add("System.Drawing");
                     foreach (var pair in ass.Types.GroupBy(t => t.Value.Namespace))
                     {
                         var nsp = new CSharpNamespace($"{apiPrefix}{pair.Key}");

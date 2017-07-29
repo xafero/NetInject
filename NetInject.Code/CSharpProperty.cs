@@ -1,6 +1,8 @@
 ﻿using System.IO;
 using System.Linq;
 
+using static NetInject.Code.CodeConvert;
+
 namespace NetInject.Code
 {
     public class CSharpProperty
@@ -24,7 +26,7 @@ namespace NetInject.Code
             const string indent = "\t\t";
             using (var writer = new StringWriter())
             {
-                writer.WriteLine($"{indent}{PropType} {Name} {{");
+                writer.WriteLine($"{indent}{Simplify(PropType)} {Name} {{");
                 if (Getter != null)
                 {
                     writer.Write($"{indent}\t{Get}");

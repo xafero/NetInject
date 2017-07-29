@@ -16,8 +16,7 @@ namespace NetInject.Code
         public override string ToString()
         {
             var mod = IsRef ? "ref " : string.Empty;
-            var text = $"{mod}{PType} {Name}";
-            return text;
+            return $"{mod}{CodeConvert.Simplify(PType)} {Name}";
         }
     }
 }

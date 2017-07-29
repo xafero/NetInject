@@ -141,13 +141,14 @@ namespace NetInject
             IEnumerable<TypeDefinition> types)
         {
             log.Info($" - '{invRef}'");
+            var invRefName = Capitalize(Path.GetFileNameWithoutExtension(invRef.Name));
             PurgedAssembly purge;
-            if (!purged.TryGetValue(invRef.ToString(), out purge))
-                purged[invRef.ToString()] = purge = new PurgedAssembly(invRef.Name, new Version("0.0.0.0"));
-            var ptypeName = invRef.Name.Split('.').First();
+            if (!purged.TryGetValue(invRefName, out purge))
+                purged[invRefName] = purge = new PurgedAssembly(invRefName, new Version("0.0.0.0"));
+            var ptypeName = invRefName.Split('.').First();
             PurgedType ptype;
             if (!purge.Types.TryGetValue(ptypeName, out ptype))
-                purge.Types[ptypeName] = ptype = new PurgedType(invRef.Name, ptypeName);
+                purge.Types[ptypeName] = ptype = new PurgedType(invRefName, ptypeName);
             foreach (var type in types)
                 foreach (var meth in type.Methods)
                 {
@@ -156,7 +157,7 @@ namespace NetInject
                         continue;
                     var managedTypeName = meth.DeclaringType.FullName;
                     var managedMethName = meth.Name;
-                    var nativeTypeName = invRef.Name;
+                    var nativeTypeName = invRefName;
                     var nativeMethName = pinv.EntryPoint;
                     PurgedMethod pmethod;
                     if (!ptype.Methods.TryGetValue(nativeMethName, out pmethod))

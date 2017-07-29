@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Text;
 
 namespace NetInject
 {
@@ -66,5 +67,24 @@ namespace NetInject
         }
 
         internal static MemoryStream IntoMemory(string file) => new MemoryStream(File.ReadAllBytes(file));
+
+        internal static string Capitalize(string text)
+        {
+            var bld = new StringBuilder();
+            var first = true;
+            foreach (var letter in text)
+            {
+                if (first)
+                {
+                    bld.Append(char.ToUpper(letter));
+                    first = false;
+                    continue;
+                }
+                bld.Append(letter);
+                if (letter == '.')
+                    first = true;
+            }
+            return bld.ToString();
+        }
     }
 }

@@ -279,6 +279,7 @@ namespace NetInject
         static void ReplaceCalls(AssemblyDefinition ass, IDictionary<string, AssemblyDefinition> gens,
             KeyValuePair<string, string>[] mappings)
         {
+            var membersToDelete = new HashSet<IMetadataTokenProvider>();
             var myMappings = ToSafeDict(mappings);
             var types = ass.GetAllTypes().ToArray();
             var iocType = types.First(t => t.Name == iocName);
@@ -329,8 +330,13 @@ namespace NetInject
                                 continue;
                             if (il.OpCode == OpCodes.Call)
                             {
+                                membersToDelete.Add((IMetadataTokenProvider)il.Operand);
                                 log.Info($"   ::> '{newMeth}'");
-                                ils.Replace(il, ils.Create(OpCodes.Call, type.Module.ImportReference(newMeth)));
+                                ils.InsertBefore(il, ils.Create(OpCodes.Call, type.Module.ImportReference(iocMeth)));
+                                var implResolv = (GenericInstanceMethod)type.Module.ImportReference(resolv);
+                                implResolv.GenericArguments[0] = type.Module.ImportReference(nativeType);
+                                ils.InsertBefore(il, ils.Create(OpCodes.Callvirt, implResolv));
+                                ils.Replace(il, ils.Create(OpCodes.Callvirt, type.Module.ImportReference(newMeth)));
                             }
                         }
                         if (il.OpCode == OpCodes.Newobj)
@@ -350,6 +356,12 @@ namespace NetInject
                         }
                     }
                 }
+            }
+            foreach (var member in membersToDelete)
+            {
+                var methDef = member as MethodDefinition;
+                ass.Remove(methDef?.PInvokeInfo?.Module);
+                methDef?.DeclaringType.Methods.Remove(methDef);
             }
         }
 

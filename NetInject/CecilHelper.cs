@@ -36,5 +36,11 @@ namespace NetInject
 
         public static IEnumerable<IMetadataScope> GetAllExternalRefs(this ModuleDefinition mod)
             => mod.AssemblyReferences.OfType<IMetadataScope>().Concat(mod.ModuleReferences);
+
+        public static void Remove(this AssemblyDefinition ass, ModuleReference native)
+        {
+            foreach (var mod in ass.Modules)
+                mod.ModuleReferences.Remove(native);
+        }
     }
 }

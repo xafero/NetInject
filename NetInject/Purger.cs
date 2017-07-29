@@ -296,6 +296,8 @@ namespace NetInject
                 }
                 foreach (var meth in type.Methods)
                 {
+                    if (!meth.HasBody)
+                        continue;
                     var ils = meth.Body.GetILProcessor();
                     foreach (var il in meth.Body.Instructions.ToArray())
                     {

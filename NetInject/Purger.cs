@@ -31,6 +31,8 @@ namespace NetInject
         static readonly string apiSuffix = ".API";
         static readonly string apiPrefix = "Purge.";
 
+        static readonly StringComparison cmp = StringComparison.InvariantCulture;
+
         internal static int Invert(InvertOptions opts)
         {
             var purged = new PurgedAssemblies();
@@ -229,7 +231,7 @@ namespace NetInject
                         foreach (var type in pair)
                         {
                             var name = type.Value.Name;
-                            if (!name.StartsWith("I"))
+                            if (!name.StartsWith("I", cmp))
                                 name = $"I{name}";
                             var typ = new CSharpClass(name)
                             {
@@ -239,6 +241,11 @@ namespace NetInject
                             {
                                 var mmeth = meth.Value;
                                 var cmeth = new CSharpMethod(mmeth.Name);
+                                foreach (var parm in meth.Value.Parameters)
+                                {
+                                    var mparm = new CSharpParameter(parm.ParamType, parm.Name);
+                                    cmeth.Parameters.Add(mparm);
+                                }
                                 if (cmeth.Name == "Dispose")
                                 {
                                     typ.Bases.Add("IDisposable");
@@ -250,6 +257,8 @@ namespace NetInject
                                     {
                                         ReturnType = typ.Name
                                     };
+                                    foreach (var parm in cmeth.Parameters)
+                                        factMethod.Parameters.Add(parm);
                                     var factType = new CSharpClass($"I{type.Value.Name}Factory")
                                     {
                                         Kind = UnitKind.Interface

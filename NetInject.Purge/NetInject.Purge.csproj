@@ -36,6 +36,7 @@
     <Compile Include="PurgedAssemblies.cs" />
     <Compile Include="PurgedAssembly.cs" />
     <Compile Include="PurgedMethod.cs" />
+    <Compile Include="PurgedParam.cs" />
     <Compile Include="PurgedType.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

@@ -1,4 +1,5 @@
 ﻿using System.IO;
+using System.Linq;
 
 namespace NetInject.Code
 {
@@ -16,7 +17,7 @@ namespace NetInject.Code
             Name = name;
         }
 
-        public string PropType => Getter?.ReturnType ?? Setter.ReturnType;
+        public string PropType => Getter?.ReturnType ?? Setter.Parameters.First().PType;
 
         public string ToString(UnitKind kind)
         {

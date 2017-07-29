@@ -104,6 +104,7 @@ namespace NetInject
                     log.InfoFormat("   added '{0}'!", CopyTypeRef(implCSAss, opts.WorkDir));
                     ass.Write(file, wparam);
                 }
+            resolv.Dispose();
             return 0;
         }
 

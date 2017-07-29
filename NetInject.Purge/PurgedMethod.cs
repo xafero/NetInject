@@ -6,6 +6,7 @@ namespace NetInject.Purge
     {
         public string Name { get; }
         public ISet<string> Refs { get; }
+        public string ReturnType { get; set; }
 
         public PurgedMethod(string name)
         {

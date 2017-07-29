@@ -161,6 +161,7 @@ namespace NetInject
                     PurgedMethod pmethod;
                     if (!ptype.Methods.TryGetValue(nativeMethName, out pmethod))
                         ptype.Methods[nativeMethName] = pmethod = new PurgedMethod(nativeMethName);
+                    pmethod.ReturnType = meth.ReturnType.FullName;
                     pmethod.Refs.Add(meth.FullName);
                 }
         }
@@ -257,6 +258,8 @@ namespace NetInject
                                     nsp.Classes.Add(factType);
                                     continue;
                                 }
+                                if (meth.Value.ReturnType != null)
+                                    cmeth.ReturnType = meth.Value.ReturnType;
                                 typ.Methods.Add(cmeth);
                             }
                             nsp.Classes.Add(typ);

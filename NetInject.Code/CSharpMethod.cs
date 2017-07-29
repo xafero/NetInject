@@ -47,12 +47,17 @@ namespace NetInject.Code
                     mods = string.Empty;
                 var parms = string.Join(", ", Parameters);
                 writer.Write($"{indent}{mods} {Simplify(ReturnType)} {Name}({parms})");
-                if (Body == null)
-                    writer.WriteLine(";");
-                else
-                    WriteBody(writer, Body);
+                WriteJustBody(writer);
                 return writer.ToString();
             }
+        }
+
+        public void WriteJustBody(StringWriter writer)
+        {
+            if (Body == null)
+                writer.WriteLine(";");
+            else
+                WriteBody(writer, Body);
         }
 
         static void WriteBody(TextWriter writer, string body)

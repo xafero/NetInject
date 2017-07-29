@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
+using System;
 
 namespace NetInject
 {
@@ -23,5 +24,17 @@ namespace NetInject
 
         public static AssemblyNameReference ToRef(this Assembly ass)
             => new AssemblyNameReference(ass.GetName().Name, ass.GetName().Version);
+
+        public static IEnumerable<string> GetAllNatives(this AssemblyDefinition ass)
+            => ass.Modules.SelectMany(m => m.GetAllNatives());
+
+        public static IEnumerable<string> GetAllNatives(this ModuleDefinition mod)
+            => mod.ModuleReferences.Select(m => m.Name);
+
+        public static IEnumerable<IMetadataScope> GetAllExternalRefs(this AssemblyDefinition ass)
+            => ass.Modules.SelectMany(m => m.GetAllExternalRefs());
+
+        public static IEnumerable<IMetadataScope> GetAllExternalRefs(this ModuleDefinition mod)
+            => mod.AssemblyReferences.OfType<IMetadataScope>().Concat(mod.ModuleReferences);
     }
 }

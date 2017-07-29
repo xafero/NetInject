@@ -82,37 +82,19 @@ namespace NetInject
             WriterParameters wparam, string file, ref bool isOneDirty,
             PurgedAssemblies purged)
         {
-            var assRefs = ass.Modules.SelectMany(m => m.AssemblyReferences).ToArray();
+            var assRefs = ass.GetAllExternalRefs().ToArray();
             var assTypes = ass.Modules.SelectMany(m => m.GetTypeReferences()).ToArray();
             var assMembs = ass.Modules.SelectMany(m => m.GetMemberReferences()).ToArray();
             var isDirty = false;
-            foreach (var invRef in assRefs.Where(r => opts.Assemblies.Contains(r.Name)))
+            var cmp = StringComparer.InvariantCultureIgnoreCase;
+            foreach (var invRef in assRefs.Where(r => opts.Assemblies.Contains(r.Name, cmp)))
             {
-                log.Info($" - '{invRef.FullName}'");
-                PurgedAssembly purge;
-                if (!purged.TryGetValue(invRef.FullName, out purge))
-                    purged[invRef.FullName] = purge = new PurgedAssembly(invRef.Name, invRef.Version);
-                var myTypes = assTypes.Where(t => ContainsType(invRef, t)).ToArray();
-                var myMembers = assMembs.Where(m => ContainsMember(invRef, m)).GroupBy(m => m.DeclaringType).ToArray();
-                foreach (var myType in myTypes)
-                {
-                    PurgedType ptype;
-                    if (!purge.Types.TryGetValue(myType.FullName, out ptype))
-                        purge.Types[myType.FullName] = ptype = new PurgedType(myType.Namespace, myType.Name);
-                }
-                foreach (var myPair in myMembers)
-                {
-                    var myType = myPair.Key;
-                    PurgedType ptype;
-                    if (!purge.Types.TryGetValue(myType.FullName, out ptype))
-                        purge.Types[myType.FullName] = ptype = new PurgedType(myType.Namespace, myType.Name);
-                    foreach (var myMember in myPair)
-                    {
-                        PurgedMethod pmethod;
-                        if (!ptype.Methods.TryGetValue(myMember.FullName, out pmethod))
-                            ptype.Methods[myMember.FullName] = pmethod = new PurgedMethod(myMember.Name);
-                    }
-                }
+                var assRef = invRef as AssemblyNameReference;
+                if (assRef != null)
+                    InvertAssemblyRef(assRef, purged, assTypes, assMembs);
+                var modRef = invRef as ModuleReference;
+                if (modRef != null)
+                    InvertNativeRef(modRef, purged);
                 // Inject container initializer
                 AddOrReplaceModuleSetup(ass, AddOrReplaceIoc);
                 // Set dirty flag
@@ -123,6 +105,43 @@ namespace NetInject
                 return;
             ass.Write(file, wparam);
             log.InfoFormat($"Purged something in '{ass}'!");
+        }
+
+        static void InvertAssemblyRef(AssemblyNameReference invRef, PurgedAssemblies purged,
+            TypeReference[] assTypes, MemberReference[] assMembs)
+        {
+            log.Info($" - '{invRef.FullName}'");
+            PurgedAssembly purge;
+            if (!purged.TryGetValue(invRef.FullName, out purge))
+                purged[invRef.FullName] = purge = new PurgedAssembly(invRef.Name, invRef.Version);
+            var myTypes = assTypes.Where(t => ContainsType(invRef, t)).ToArray();
+            var myMembers = assMembs.Where(m => ContainsMember(invRef, m)).GroupBy(m => m.DeclaringType).ToArray();
+            foreach (var myType in myTypes)
+            {
+                PurgedType ptype;
+                if (!purge.Types.TryGetValue(myType.FullName, out ptype))
+                    purge.Types[myType.FullName] = ptype = new PurgedType(myType.Namespace, myType.Name);
+            }
+            foreach (var myPair in myMembers)
+            {
+                var myType = myPair.Key;
+                PurgedType ptype;
+                if (!purge.Types.TryGetValue(myType.FullName, out ptype))
+                    purge.Types[myType.FullName] = ptype = new PurgedType(myType.Namespace, myType.Name);
+                foreach (var myMember in myPair)
+                {
+                    PurgedMethod pmethod;
+                    if (!ptype.Methods.TryGetValue(myMember.FullName, out pmethod))
+                        ptype.Methods[myMember.FullName] = pmethod = new PurgedMethod(myMember.Name);
+                }
+            }
+        }
+
+        static void InvertNativeRef(ModuleReference invRef, PurgedAssemblies purged)
+        {
+            log.Info($" - '{invRef}'");
+
+            throw new NotImplementedException();
         }
 
         static bool ContainsType(AssemblyNameReference assRef, TypeReference typRef)

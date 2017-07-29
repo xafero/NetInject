@@ -94,7 +94,7 @@ namespace NetInject
                     InvertAssemblyRef(assRef, purged, assTypes, assMembs);
                 var modRef = invRef as ModuleReference;
                 if (modRef != null)
-                    InvertNativeRef(modRef, purged);
+                    InvertNativeRef(modRef, purged, ass.GetAllTypes());
                 // Inject container initializer
                 AddOrReplaceModuleSetup(ass, AddOrReplaceIoc);
                 // Set dirty flag
@@ -137,11 +137,31 @@ namespace NetInject
             }
         }
 
-        static void InvertNativeRef(ModuleReference invRef, PurgedAssemblies purged)
+        static void InvertNativeRef(ModuleReference invRef, PurgedAssemblies purged,
+            IEnumerable<TypeDefinition> types)
         {
             log.Info($" - '{invRef}'");
-
-            throw new NotImplementedException();
+            PurgedAssembly purge;
+            if (!purged.TryGetValue(invRef.ToString(), out purge))
+                purged[invRef.ToString()] = purge = new PurgedAssembly(invRef.Name, new Version("0.0.0.0"));
+            var ptypeName = invRef.Name.Split('.').First();
+            PurgedType ptype;
+            if (!purge.Types.TryGetValue(ptypeName, out ptype))
+                purge.Types[ptypeName] = ptype = new PurgedType(invRef.Name, ptypeName);
+            foreach (var type in types)
+                foreach (var meth in type.Methods)
+                {
+                    PInvokeInfo pinv;
+                    if (!meth.HasPInvokeInfo || invRef != (pinv = meth.PInvokeInfo).Module)
+                        continue;
+                    var managedTypeName = meth.DeclaringType.FullName;
+                    var managedMethName = meth.Name;
+                    var nativeTypeName = invRef.Name;
+                    var nativeMethName = pinv.EntryPoint;
+                    PurgedMethod pmethod;
+                    if (!ptype.Methods.TryGetValue(nativeMethName, out pmethod))
+                        ptype.Methods[nativeMethName] = pmethod = new PurgedMethod(nativeMethName);
+                }
         }
 
         static bool ContainsType(AssemblyNameReference assRef, TypeReference typRef)

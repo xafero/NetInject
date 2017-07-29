@@ -62,5 +62,10 @@ namespace NetInject
             }
             il?.Invoke(body);
         }
+
+        static string[] CSharpKeyWords = { "object" };
+
+        internal static string Escape(string name)
+            => CSharpKeyWords.Contains(name) ? $"@{name}" : name;
     }
 }

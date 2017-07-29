@@ -136,6 +136,18 @@ namespace NetInject
                     PurgedMethod pmethod;
                     if (!ptype.Methods.TryGetValue(myMember.FullName, out pmethod))
                         ptype.Methods[myMember.FullName] = pmethod = new PurgedMethod(myMember.Name);
+                    var pmd = (MethodDefinition)myMember.Resolve();
+                    foreach (var parm in pmd.Parameters)
+                    {
+                        var pparm = new PurgedParam
+                        {
+                            Name = Escape(parm.Name),
+                            ParamType = parm.ParameterType.FullName
+                        };
+                        pmethod.Parameters.Add(pparm);
+                    }
+                    if (pmd.ReturnType.FullName != typeof(void).FullName)
+                        pmethod.ReturnType = pmd.ReturnType.FullName;
                 }
             }
         }
@@ -163,7 +175,17 @@ namespace NetInject
                     PurgedMethod pmethod;
                     if (!ptype.Methods.TryGetValue(nativeMethName, out pmethod))
                         ptype.Methods[nativeMethName] = pmethod = new PurgedMethod(nativeMethName);
-                    pmethod.ReturnType = meth.ReturnType.FullName;
+                    foreach (var parm in meth.Parameters)
+                    {
+                        var mparm = new PurgedParam
+                        {
+                            Name = Escape(parm.Name),
+                            ParamType = parm.ParameterType.FullName
+                        };
+                        pmethod.Parameters.Add(mparm);
+                    }
+                    if (meth.ReturnType.FullName != typeof(void).FullName)
+                        pmethod.ReturnType = meth.ReturnType.FullName;
                     pmethod.Refs.Add(meth.FullName);
                 }
         }

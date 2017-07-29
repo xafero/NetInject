@@ -86,5 +86,13 @@ namespace NetInject
             }
             return bld.ToString();
         }
+
+        internal static IDictionary<K, V> ToSafeDict<K, V>(IEnumerable<KeyValuePair<K, V>> pairs)
+        {
+            var dict = new Dictionary<K, V>();
+            foreach (var pair in pairs)
+                dict[pair.Key] = pair.Value;
+            return dict;
+        }
     }
 }

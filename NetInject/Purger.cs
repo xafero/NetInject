@@ -57,12 +57,13 @@ namespace NetInject
                 {
                     var gens = GenerateCode(purged, opts.TempDir, opts.WorkDir, rparam)
                         .ToDictionary(k => k.Name.Name, v => v);
+                    var mappings = purged.GetNativeMappings(apiPrefix).ToArray();
                     foreach (var file in filesToWatch)
                         using (var stream = new MemoryStream(File.ReadAllBytes(file)))
                         using (var ass = AssemblyDefinition.ReadAssembly(stream, rparam))
                         {
                             log.Info($"... '{ass.FullName}'");
-                            ReplaceCalls(ass, gens);
+                            ReplaceCalls(ass, gens, mappings);
                             ass.Write(file, wparam);
                             log.InfoFormat($"Replaced something in '{ass}'!");
                         }
@@ -155,13 +156,12 @@ namespace NetInject
                     PInvokeInfo pinv;
                     if (!meth.HasPInvokeInfo || invRef != (pinv = meth.PInvokeInfo).Module)
                         continue;
-                    var managedTypeName = meth.DeclaringType.FullName;
-                    var managedMethName = meth.Name;
                     var nativeTypeName = invRefName;
                     var nativeMethName = pinv.EntryPoint;
                     PurgedMethod pmethod;
                     if (!ptype.Methods.TryGetValue(nativeMethName, out pmethod))
                         ptype.Methods[nativeMethName] = pmethod = new PurgedMethod(nativeMethName);
+                    pmethod.Refs.Add(meth.FullName);
                 }
         }
 
@@ -276,8 +276,10 @@ namespace NetInject
             }
         }
 
-        static void ReplaceCalls(AssemblyDefinition ass, IDictionary<string, AssemblyDefinition> gens)
+        static void ReplaceCalls(AssemblyDefinition ass, IDictionary<string, AssemblyDefinition> gens,
+            KeyValuePair<string, string>[] mappings)
         {
+            var myMappings = ToSafeDict(mappings);
             var types = ass.GetAllTypes().ToArray();
             var iocType = types.First(t => t.Name == iocName);
             var iocMeth = iocType.Methods.First(m => m.Name == "GetScope");
@@ -308,7 +310,29 @@ namespace NetInject
                         var methType = opMethDef?.DeclaringType ?? opMethRef.DeclaringType;
                         var genAss = FindGenerated(methType, gens);
                         if (genAss == null)
-                            continue;
+                        {
+                            var methStr = opMethDef?.ToString() ?? opMethRef.ToString();
+                            string nativeMeth;
+                            if (!myMappings.TryGetValue(methStr, out nativeMeth))
+                                continue;
+                            var nativeTypeFn = nativeMeth.Substring(0, nativeMeth.LastIndexOf('.'));
+                            var nativeAss = nativeTypeFn.Replace(apiPrefix, "").Substring(0, nativeTypeFn.IndexOf('.') + 1);
+                            var nativeMethName = nativeMeth.Replace(nativeTypeFn, string.Empty).TrimStart('.');
+                            genAss = gens.FirstOrDefault(g => g.Key == $"{nativeAss}{apiSuffix}").Value;
+                            if (genAss == null)
+                                continue;
+                            var nativeType = genAss.GetAllTypes().FirstOrDefault(g => g.FullName == nativeTypeFn);
+                            if (nativeType == null)
+                                continue;
+                            var newMeth = nativeType.Methods.FirstOrDefault(m => m.Name == nativeMethName);
+                            if (newMeth == null)
+                                continue;
+                            if (il.OpCode == OpCodes.Call)
+                            {
+                                log.Info($"   ::> '{newMeth}'");
+                                ils.Replace(il, ils.Create(OpCodes.Call, type.Module.ImportReference(newMeth)));
+                            }
+                        }
                         if (il.OpCode == OpCodes.Newobj)
                         {
                             var newType = genAss.GetAllTypes().FirstOrDefault(

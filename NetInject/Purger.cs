@@ -275,6 +275,14 @@ namespace NetInject
                         foreach (var type in pair)
                         {
                             var name = type.Value.Name;
+                            if (type.Value.Values.Any())
+                            {
+                                var enu = new CSharpEnum(name);
+                                foreach (var val in type.Value.Values)
+                                    enu.Values.Add(new CSharpEnumVal(val.Value.Name));
+                                nsp.Enums.Add(enu);
+                                continue;
+                            }
                             if (!name.StartsWith("I", cmp))
                                 name = $"I{name}";
                             var typ = new CSharpClass(name)

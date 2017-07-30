@@ -46,8 +46,10 @@ namespace NetInject
                 log.Info($"Found {files.Length} file(s)!");
                 foreach (var file in files)
                     using (var stream = new MemoryStream(File.ReadAllBytes(file)))
-                    using (var ass = AssemblyDefinition.ReadAssembly(stream, rparam))
+                    using (var ass = ReadAssembly(stream, rparam, file))
                     {
+                        if (ass == null)
+                            continue;
                         log.Info($"'{ass.FullName}'");
                         var isFileDirty = false;
                         Invert(ass, opts, wparam, file, ref isFileDirty, purged);

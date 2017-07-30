@@ -5,11 +5,15 @@ using System.Collections.Generic;
 using System.Linq;
 
 using MethodAttr = Mono.Cecil.MethodAttributes;
+using System.IO;
+using log4net;
 
 namespace NetInject
 {
     static class AssHelper
     {
+        static readonly ILog log = LogManager.GetLogger(typeof(AssHelper));
+
         internal static void RemoveSigning(AssemblyDefinition ass, IEnumerable<string> keys)
         {
             if (!keys.Any(k => ass.FullName.EndsWith($"={k}", StringComparison.InvariantCulture)))
@@ -67,5 +71,19 @@ namespace NetInject
 
         internal static string Escape(string name)
             => CSharpKeyWords.Contains(name) ? $"@{name}" : name;
+
+        public static AssemblyDefinition ReadAssembly(
+            Stream stream, ReaderParameters rparam, string file)
+        {
+            try
+            {
+                return AssemblyDefinition.ReadAssembly(stream, rparam);
+            }
+            catch (BadImageFormatException)
+            {
+                log.Error($"Could not read image from: '{file}'");
+                return null;
+            }
+        }
     }
 }

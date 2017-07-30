@@ -28,9 +28,17 @@ namespace NetInject.Autofac
             var cmp = StringComparison.InvariantCulture;
             var builder = new ContainerBuilder();
             foreach (var ass in asses.Where(a => a != null).Distinct())
-                builder.RegisterAssemblyTypes(ass)
-                       .Where(t => t.Name.EndsWith("Service", cmp))
-                       .AsImplementedInterfaces();
+                try
+                {
+                    ass.GetTypes();
+                    builder.RegisterAssemblyTypes(ass)
+                           .Where(t => t.Name.EndsWith("Service", cmp))
+                           .AsImplementedInterfaces();
+                }
+                catch (ReflectionTypeLoadException)
+                {
+                    Console.Error.WriteLine($"Could not reflect types from '{ass.Location}!");
+                }
             Container = builder.Build();
         }
 

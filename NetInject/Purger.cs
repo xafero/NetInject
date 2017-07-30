@@ -124,6 +124,27 @@ namespace NetInject
                 PurgedType ptype;
                 if (!purge.Types.TryGetValue(myType.FullName, out ptype))
                     purge.Types[myType.FullName] = ptype = new PurgedType(myType.Namespace, myType.Name);
+                var myTypeDef = myType.Resolve();
+                if (myTypeDef.IsEnum)
+                {
+                    foreach (var enumFld in myTypeDef.Fields.Where(f => !f.Name.EndsWith("__", cmp)).ToArray())
+                        ptype.Values[enumFld.Name] = new PurgedEnumVal(enumFld.Name);
+                }
+                if (myTypeDef.IsClass && myTypeDef.BaseType.FullName == typeof(MulticastDelegate).FullName)
+                {
+                    var dlgtSig = myTypeDef.Methods.First(m => m.Name == "Invoke");
+                    var dlgtMeth = new PurgedMethod(dlgtSig.Name)
+                    {
+                        ReturnType = dlgtSig.ReturnType.FullName
+                    };
+                    foreach (var dlgtParm in dlgtSig.Parameters)
+                        dlgtMeth.Parameters.Add(new PurgedParam
+                        {
+                            Name = Escape(dlgtParm.Name),
+                            ParamType = dlgtParm.ParameterType.FullName
+                        });
+                    ptype.Methods[dlgtMeth.Name] = dlgtMeth;
+                }
             }
             foreach (var myPair in myMembers)
             {

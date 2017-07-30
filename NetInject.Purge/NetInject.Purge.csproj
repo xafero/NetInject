@@ -35,6 +35,7 @@
   <ItemGroup>
     <Compile Include="PurgedAssemblies.cs" />
     <Compile Include="PurgedAssembly.cs" />
+    <Compile Include="PurgedEnumVal.cs" />
     <Compile Include="PurgedMethod.cs" />
     <Compile Include="PurgedParam.cs" />
     <Compile Include="PurgedType.cs" />

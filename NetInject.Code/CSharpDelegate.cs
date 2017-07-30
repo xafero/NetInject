@@ -5,7 +5,7 @@ using static NetInject.Code.CodeConvert;
 
 namespace NetInject.Code
 {
-    public class CSharpDelegate
+    public class CSharpDelegate : IHasParameters
     {
         public string Name { get; }
         public IList<string> Modifiers { get; set; }

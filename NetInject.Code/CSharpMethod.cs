@@ -6,7 +6,7 @@ using static NetInject.Code.CodeConvert;
 
 namespace NetInject.Code
 {
-    public class CSharpMethod
+    public class CSharpMethod : IHasParameters
     {
         public string Name { get; set; }
         public IList<CSharpAttribute> Attributes { get; }

@@ -3,7 +3,7 @@ namespace NetInject.Code
 {
     public class CSharpParameter
     {
-        public string PType { get; }
+        public string PType { get; set; }
         public string Name { get; }
         public bool IsRef { get; set; }
 

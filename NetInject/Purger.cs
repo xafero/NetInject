@@ -335,6 +335,7 @@ namespace NetInject
                             nsp.Classes.Add(typ);
                         }
                         writer.Namespaces.Add(nsp);
+                        PatchTypes(nsp);
                     }
                     writer.WriteUsings();
                     writer.WriteNamespaces();
@@ -416,7 +417,7 @@ namespace NetInject
                         {
                             var newType = genAss.GetAllTypes().FirstOrDefault(
                                 t => t.Namespace == $"{apiPrefix}{methType.Namespace}"
-                                && t.Name == $"I{methType.Name}Factory");
+                                && (t.Name == $"I{methType.Name}Factory" || t.Name == methType.Name));
                             var newMeth = newType.Methods.FirstOrDefault(m => m.Name == $"Create{methType.Name}");
                             if (newMeth == null)
                                 continue;
@@ -447,6 +448,32 @@ namespace NetInject
             if (!gens.TryGetValue($"{origAss.Name}{apiSuffix}", out genAss))
                 return null;
             return genAss;
+        }
+
+        static void PatchTypes(CSharpNamespace nsp)
+        {
+            var names = nsp.Classes.Select(c => c.Name)
+                .Concat(nsp.Delegates.Select(d => d.Name))
+                .Concat(nsp.Enums.Select(e => e.Name)).Distinct().ToArray();
+            foreach (var dlgt in nsp.Delegates)
+                PatchTypes(dlgt, nsp.Name, names);
+            foreach (var cla in nsp.Classes)
+                foreach (var meth in cla.Methods)
+                    PatchTypes(meth, nsp.Name, names);
+        }
+
+        static void PatchTypes(IHasParameters parms, string nspName, IEnumerable<string> names)
+        {
+            foreach (var dparm in parms.Parameters)
+            {
+                var dparamNsp = dparm.PType.Substring(0, dparm.PType.LastIndexOf('.'));
+                if ((apiPrefix + dparamNsp) != nspName)
+                    continue;
+                var dparamName = 'I' + dparm.PType.Substring(dparamNsp.Length).TrimStart('.');
+                if (!names.Contains(dparamName))
+                    continue;
+                dparm.PType = $"{nspName}.{dparamName}";
+            }
         }
     }
 }

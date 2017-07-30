@@ -13,8 +13,21 @@ namespace NetInject.Autofac
             var selfDir = Path.GetDirectoryName(selfLoc);
             foreach (var otherLoc in Directory.GetFiles(selfDir, "*.dll"))
             {
-                var otherAss = Assembly.LoadFrom(otherLoc);
+                var otherAss = LoadAssembly(otherLoc);
                 yield return otherAss;
+            }
+        }
+
+        static Assembly LoadAssembly(string file)
+        {
+            try
+            {
+                return Assembly.LoadFrom(file);
+            }
+            catch (BadImageFormatException)
+            {
+                Console.Error.WriteLine($"Could not read image from '{file}'!");
+                return null;
             }
         }
     }

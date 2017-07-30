@@ -81,7 +81,7 @@ namespace NetInject
             }
             catch (BadImageFormatException)
             {
-                log.Error($"Could not read image from: '{file}'");
+                log.Error($"Could not read image from '{file}'!");
                 return null;
             }
         }

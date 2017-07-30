@@ -36,6 +36,9 @@
     <Compile Include="CodeConvert.cs" />
     <Compile Include="CSharpAttribute.cs" />
     <Compile Include="CSharpClass.cs" />
+    <Compile Include="CSharpDelegate.cs" />
+    <Compile Include="CSharpEnum.cs" />
+    <Compile Include="CSharpEnumVal.cs" />
     <Compile Include="CSharpEvent.cs" />
     <Compile Include="CSharpMethod.cs" />
     <Compile Include="CSharpNamespace.cs" />

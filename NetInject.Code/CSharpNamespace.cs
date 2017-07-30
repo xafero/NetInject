@@ -8,12 +8,14 @@ namespace NetInject.Code
         public string Name { get; }
         public IList<CSharpClass> Classes { get; }
         public IList<CSharpEnum> Enums { get; }
+        public IList<CSharpDelegate> Delegates { get; }
 
         public CSharpNamespace(string name)
         {
             Name = name;
             Classes = new List<CSharpClass>();
             Enums = new List<CSharpEnum>();
+            Delegates = new List<CSharpDelegate>();
         }
 
         public override string ToString()
@@ -21,8 +23,9 @@ namespace NetInject.Code
             using (var writer = new StringWriter())
             {
                 writer.WriteLine($"namespace {Name} {{");
-                WriteClasses(writer);
                 WriteEnums(writer);
+                WriteDelegates(writer);
+                WriteClasses(writer);
                 writer.WriteLine("}");
                 writer.Flush();
                 return writer.ToString();
@@ -39,6 +42,12 @@ namespace NetInject.Code
         {
             foreach (var enu in Enums)
                 writer.WriteLine(enu);
+        }
+
+        public void WriteDelegates(TextWriter writer)
+        {
+            foreach (var dlgt in Delegates)
+                writer.WriteLine(dlgt);
         }
     }
 }

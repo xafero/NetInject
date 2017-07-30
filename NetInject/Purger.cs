@@ -283,6 +283,15 @@ namespace NetInject
                                 nsp.Enums.Add(enu);
                                 continue;
                             }
+                            var meths = type.Value.Methods;
+                            if (meths.FirstOrDefault().Value?.Name == "Invoke")
+                            {
+                                var dlgt = new CSharpDelegate(name);
+                                foreach (var dparm in meths.First().Value.Parameters)
+                                    dlgt.Parameters.Add(new CSharpParameter(dparm.ParamType, dparm.Name));
+                                nsp.Delegates.Add(dlgt);
+                                continue;
+                            }
                             if (!name.StartsWith("I", cmp))
                                 name = $"I{name}";
                             var typ = new CSharpClass(name)

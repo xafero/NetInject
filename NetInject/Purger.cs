@@ -433,12 +433,16 @@ namespace NetInject
                             il.Operand = type.Module.ImportReference(newMeth);
                             continue;
                         }
-                        var stepsBack = newMeth.Parameters.Count;
-                        var ilStart = il.GoBack(stepsBack);
-                        ils.InsertBefore(ilStart, ils.Create(OpCodes.Call, type.Module.ImportReference(iocMeth)));
-                        var impResolv = (GenericInstanceMethod)type.Module.ImportReference(resolv);
-                        impResolv.GenericArguments[0] = type.Module.ImportReference(newType);
-                        ils.InsertBefore(ilStart, ils.Create(OpCodes.Callvirt, impResolv));
+                        var isStatic = opMethDef?.IsStatic ?? !opMethRef.HasThis;
+                        if (methName == ctorName || isStatic)
+                        {
+                            var stepsBack = newMeth.Parameters.Count;
+                            var ilStart = il.GoBack(stepsBack);
+                            ils.InsertBefore(ilStart, ils.Create(OpCodes.Call, type.Module.ImportReference(iocMeth)));
+                            var impResolv = (GenericInstanceMethod)type.Module.ImportReference(resolv);
+                            impResolv.GenericArguments[0] = type.Module.ImportReference(newType);
+                            ils.InsertBefore(ilStart, ils.Create(OpCodes.Callvirt, impResolv));
+                        }
                         ils.Replace(il, ils.Create(OpCodes.Callvirt, type.Module.ImportReference(newMeth)));
                     }
                 }

@@ -68,6 +68,7 @@
     <Compile Include="Adopter.cs" />
     <Compile Include="AssemblyNameComparer.cs" />
     <Compile Include="AssHelper.cs" />
+    <Compile Include="Captivator.cs" />
     <Compile Include="CecilHelper.cs" />
     <Compile Include="Compiler.cs" />
     <Compile Include="IOHelper.cs" />

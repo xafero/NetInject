@@ -28,10 +28,13 @@ namespace NetInject
 
         static readonly string iocName = "IoC";
         static readonly string cctorName = ".cctor";
-        static readonly string apiSuffix = ".API";
-        static readonly string apiPrefix = "Purge.";
+
+        public static readonly string apiSuffix = ".API";
+        public static readonly string apiPrefix = "Purge.";
 
         static readonly StringComparison cmp = StringComparison.InvariantCulture;
+
+        static readonly IParser nativeParser = new Captivator();
 
         internal static int Invert(InvertOptions opts)
         {
@@ -386,47 +389,24 @@ namespace NetInject
                             continue;
                         var methType = opMethDef?.DeclaringType ?? opMethRef.DeclaringType;
                         var methName = opMethDef?.Name ?? opMethRef.Name;
+                        var methId = opMethDef?.ToString() ?? opMethRef.ToString();
                         var genAss = FindGenerated(methType, gens);
-                        if (genAss == null)
-                        {
-                            var methStr = opMethDef?.ToString() ?? opMethRef.ToString();
-                            string nativeFqName;
-                            if (!myMappings.TryGetValue(methStr, out nativeFqName))
-                                continue;
-                            var nativeTypeFn = nativeFqName.Substring(0, nativeFqName.LastIndexOf('.'));
-                            var nativeAss = nativeTypeFn.Replace(apiPrefix, "").Substring(0, nativeTypeFn.IndexOf('.') + 1);
-                            var nativeMethName = nativeFqName.Replace(nativeTypeFn, string.Empty).TrimStart('.');
-                            genAss = gens.FirstOrDefault(g => g.Key == $"{nativeAss}{apiSuffix}").Value;
-                            if (genAss == null)
-                                continue;
-                            var nativeType = genAss.GetAllTypes().FirstOrDefault(g => g.FullName == nativeTypeFn);
-                            if (nativeType == null)
-                                continue;
-                            var nativeMeth = nativeType.Methods.FirstOrDefault(m => m.Name == nativeMethName);
-                            if (nativeMeth == null)
-                                continue;
-                            if (il.OpCode == OpCodes.Call)
-                            {
-                                membersToDelete.Add((IMetadataTokenProvider)il.Operand);
-                                log.Info($"   ::> '{nativeMeth}'");
-                                ils.InsertBefore(il, ils.Create(OpCodes.Call, type.Module.ImportReference(iocMeth)));
-                                var implResolv = (GenericInstanceMethod)type.Module.ImportReference(resolv);
-                                implResolv.GenericArguments[0] = type.Module.ImportReference(nativeType);
-                                ils.InsertBefore(il, ils.Create(OpCodes.Callvirt, implResolv));
-                                ils.Replace(il, ils.Create(OpCodes.Callvirt, type.Module.ImportReference(nativeMeth)));
-                                continue;
-                            }
-                        }
                         TypeDefinition newType = null;
                         MethodDefinition newMeth = null;
-                        if (il.OpCode == OpCodes.Newobj)
+                        if (genAss == null)
+                        {
+                            var nativeResolv = nativeParser.Parse(il, methId, myMappings, gens);
+                            newType = nativeResolv?.NewType;
+                            newMeth = nativeResolv?.NewMethod;
+                        }
+                        if (genAss != null && il.OpCode == OpCodes.Newobj)
                         {
                             newType = genAss.GetAllTypes().FirstOrDefault(
                                 t => t.Namespace == $"{apiPrefix}{methType.Namespace}"
                                 && t.Name == $"I{methType.Name}Factory");
-                            newMeth = newType.Methods.FirstOrDefault(m => m.Name == $"Create{methType.Name}");
+                            newMeth = newType?.Methods.FirstOrDefault(m => m.Name == $"Create{methType.Name}");
                         }
-                        else if (il.OpCode == OpCodes.Call)
+                        else if (genAss != null && il.OpCode == OpCodes.Call)
                         {
                             newType = genAss.GetAllTypes().FirstOrDefault(
                                 t => t.Namespace == $"{apiPrefix}{methType.Namespace}"
@@ -444,7 +424,7 @@ namespace NetInject
                     }
                 }
             }
-            foreach (var member in membersToDelete)
+            foreach (var member in nativeParser.MembersToDelete)
             {
                 var methDef = member as MethodDefinition;
                 ass.Remove(methDef?.PInvokeInfo?.Module);

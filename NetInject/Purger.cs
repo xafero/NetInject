@@ -420,7 +420,7 @@ namespace NetInject
                                 && (t.Name == $"I{methType.Name}Factory" || t.Name == methType.Name));
                             newMeth = newType?.Methods.FirstOrDefault(m => m.Name == $"Create{methType.Name}" || m.Name == ctorName);
                         }
-                        else if (genAss != null && il.OpCode == OpCodes.Call)
+                        else if (genAss != null && (il.OpCode == OpCodes.Call || il.OpCode == OpCodes.Callvirt))
                         {
                             newType = FindType(genAss, methType);
                             newMeth = newType.Methods.FirstOrDefault(m => m.Name == methName);

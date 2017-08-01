@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
+using Mono.Cecil.Cil;
+using System;
 
 namespace NetInject
 {
@@ -40,6 +42,14 @@ namespace NetInject
         {
             foreach (var mod in ass.Modules)
                 mod.ModuleReferences.Remove(native);
+        }
+
+        public static Instruction GoBack(this Instruction il, int steps)
+        {
+            var previous = il;
+            for (var i = 0; i < steps; i++)
+                previous = previous.Previous;
+            return previous;
         }
     }
 }

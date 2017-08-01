@@ -400,7 +400,20 @@ namespace NetInject
                             newType = nativeResolv?.NewType;
                             newMeth = nativeResolv?.NewMethod;
                         }
-                        if (genAss != null && il.OpCode == OpCodes.Newobj)
+                        if (genAss == null && il.OpCode == OpCodes.Ldftn)
+                        {
+                            foreach (var parm in opMethDef.Parameters)
+                            {
+                                var parmAss = FindGenerated(parm.ParameterType, gens);
+                                if (parmAss == null)
+                                    continue;
+                                var parmType = FindType(parmAss, parm.ParameterType);
+                                if (parmType == null)
+                                    continue;
+                                parm.ParameterType = type.Module.ImportReference(parmType);
+                            }
+                        }
+                        else if (genAss != null && il.OpCode == OpCodes.Newobj)
                         {
                             newType = genAss.GetAllTypes().FirstOrDefault(
                                 t => t.Namespace == $"{apiPrefix}{methType.Namespace}"
@@ -409,9 +422,7 @@ namespace NetInject
                         }
                         else if (genAss != null && il.OpCode == OpCodes.Call)
                         {
-                            newType = genAss.GetAllTypes().FirstOrDefault(
-                                t => t.Namespace == $"{apiPrefix}{methType.Namespace}"
-                                && t.Name == $"I{methType.Name}");
+                            newType = FindType(genAss, methType);
                             newMeth = newType.Methods.FirstOrDefault(m => m.Name == methName);
                         }
                         if (newMeth == null || newType == null)
@@ -439,6 +450,9 @@ namespace NetInject
                 methDef?.DeclaringType.Methods.Remove(methDef);
             }
         }
+
+        static TypeDefinition FindType(AssemblyDefinition ass, TypeReference type) => ass.GetAllTypes().FirstOrDefault(
+            t => t.Namespace == $"{apiPrefix}{type.Namespace}" && t.Name == $"I{type.Name}");
 
         static AssemblyDefinition FindGenerated(TypeReference origType, IDictionary<string, AssemblyDefinition> gens)
         {

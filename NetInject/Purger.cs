@@ -28,6 +28,7 @@ namespace NetInject
 
         static readonly string iocName = "IoC";
         static readonly string cctorName = ".cctor";
+        static readonly string ctorName = ".ctor";
 
         public static readonly string apiSuffix = ".API";
         public static readonly string apiPrefix = "Purge.";
@@ -317,7 +318,7 @@ namespace NetInject
                                     typ.Bases.Add("IDisposable");
                                     continue;
                                 }
-                                if (cmeth.Name == ".ctor")
+                                if (cmeth.Name == ctorName)
                                 {
                                     var factMethod = new CSharpMethod($"Create{type.Value.Name}")
                                     {
@@ -403,8 +404,8 @@ namespace NetInject
                         {
                             newType = genAss.GetAllTypes().FirstOrDefault(
                                 t => t.Namespace == $"{apiPrefix}{methType.Namespace}"
-                                && t.Name == $"I{methType.Name}Factory");
-                            newMeth = newType?.Methods.FirstOrDefault(m => m.Name == $"Create{methType.Name}");
+                                && (t.Name == $"I{methType.Name}Factory" || t.Name == methType.Name));
+                            newMeth = newType?.Methods.FirstOrDefault(m => m.Name == $"Create{methType.Name}" || m.Name == ctorName);
                         }
                         else if (genAss != null && il.OpCode == OpCodes.Call)
                         {
@@ -415,9 +416,14 @@ namespace NetInject
                         }
                         if (newMeth == null || newType == null)
                             continue;
-                        var stepsBack = (newMeth.IsStatic ? 0 : 1) + newMeth.Parameters.Count;
-                        var ilStart = il.GoBack(stepsBack);
                         log.Info($"   ::> '{newMeth}'");
+                        if (newMeth.Name == ctorName)
+                        {
+                            il.Operand = type.Module.ImportReference(newMeth);
+                            continue;
+                        }
+                        var stepsBack = newMeth.Parameters.Count;
+                        var ilStart = il.GoBack(stepsBack);
                         ils.InsertBefore(ilStart, ils.Create(OpCodes.Call, type.Module.ImportReference(iocMeth)));
                         var impResolv = (GenericInstanceMethod)type.Module.ImportReference(resolv);
                         impResolv.GenericArguments[0] = type.Module.ImportReference(newType);

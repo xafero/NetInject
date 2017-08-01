@@ -415,11 +415,13 @@ namespace NetInject
                         }
                         if (newMeth == null || newType == null)
                             continue;
+                        var stepsBack = (newMeth.IsStatic ? 0 : 1) + newMeth.Parameters.Count;
+                        var ilStart = il.GoBack(stepsBack);
                         log.Info($"   ::> '{newMeth}'");
-                        ils.InsertBefore(il, ils.Create(OpCodes.Call, type.Module.ImportReference(iocMeth)));
+                        ils.InsertBefore(ilStart, ils.Create(OpCodes.Call, type.Module.ImportReference(iocMeth)));
                         var impResolv = (GenericInstanceMethod)type.Module.ImportReference(resolv);
                         impResolv.GenericArguments[0] = type.Module.ImportReference(newType);
-                        ils.InsertBefore(il, ils.Create(OpCodes.Callvirt, impResolv));
+                        ils.InsertBefore(ilStart, ils.Create(OpCodes.Callvirt, impResolv));
                         ils.Replace(il, ils.Create(OpCodes.Callvirt, type.Module.ImportReference(newMeth)));
                     }
                 }

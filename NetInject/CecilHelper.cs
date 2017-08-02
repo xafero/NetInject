@@ -44,6 +44,12 @@ namespace NetInject
                 mod.ModuleReferences.Remove(native);
         }
 
+        public static void Remove(this AssemblyDefinition ass, AssemblyNameReference assembly)
+        {
+            foreach (var mod in ass.Modules)
+                mod.AssemblyReferences.Remove(assembly);
+        }
+
         public static Instruction GoBack(this Instruction il, int steps)
         {
             var previous = il;

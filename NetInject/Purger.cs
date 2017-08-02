@@ -35,7 +35,7 @@ namespace NetInject
 
         static readonly StringComparison cmpa = StringComparison.InvariantCulture;
         static readonly StringComparer comp = StringComparer.InvariantCultureIgnoreCase;
-        
+
         static readonly IParser nativeParser = new Captivator();
 
         internal static int Invert(InvertOptions opts)
@@ -443,15 +443,18 @@ namespace NetInject
                             impResolv.GenericArguments[0] = type.Module.ImportReference(newType);
                             ils.InsertBefore(ilStart, ils.Create(OpCodes.Callvirt, impResolv));
                         }
+                        membersToDelete.Add((IMetadataTokenProvider)il.Operand);
                         ils.Replace(il, ils.Create(OpCodes.Callvirt, type.Module.ImportReference(newMeth)));
                     }
                 }
             }
-            foreach (var member in nativeParser.MembersToDelete)
+            foreach (var member in nativeParser.MembersToDelete.Concat(membersToDelete))
             {
                 var methDef = member as MethodDefinition;
                 ass.Remove(methDef?.PInvokeInfo?.Module);
-                methDef?.DeclaringType.Methods.Remove(methDef);
+                methDef?.DeclaringType?.Methods.Remove(methDef);
+                var methRef = member as MethodReference;
+                ass.Remove(methRef?.DeclaringType?.Scope as AssemblyNameReference);
             }
         }
 

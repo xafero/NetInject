@@ -316,7 +316,8 @@ namespace NetInject
                                 if (cmeth.Name == "Dispose")
                                 {
                                     typ.Bases.Add("IDisposable");
-                                    continue;
+                                    if (cmeth.Parameters.Count == 0)
+                                        continue;
                                 }
                                 if (cmeth.Name == ctorName)
                                 {

@@ -72,6 +72,7 @@
     <Compile Include="CecilHelper.cs" />
     <Compile Include="Compiler.cs" />
     <Compile Include="IOHelper.cs" />
+    <Compile Include="MethodDefComparer.cs" />
     <Compile Include="Options.cs" />
     <Compile Include="Patcher.cs" />
     <Compile Include="Program.cs" />

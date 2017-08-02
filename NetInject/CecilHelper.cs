@@ -57,5 +57,13 @@ namespace NetInject
                 previous = previous.Previous;
             return previous;
         }
+
+        public static IEnumerable<TypeDefinition> GetDerivedTypes(this AssemblyDefinition ass,
+            TypeReference baseType)
+        {
+            foreach (var type in ass.GetAllTypes())
+                if (type.BaseType == baseType)
+                    yield return type;
+        }
     }
 }

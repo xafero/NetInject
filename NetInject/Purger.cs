@@ -37,6 +37,7 @@ namespace NetInject
         static readonly StringComparer comp = StringComparer.InvariantCultureIgnoreCase;
 
         static readonly IParser nativeParser = new Captivator();
+        static readonly MethodDefComparer methCmp = new MethodDefComparer();
 
         internal static int Invert(InvertOptions opts)
         {
@@ -150,6 +151,26 @@ namespace NetInject
                             ParamType = dlgtParm.ParameterType.FullName
                         });
                     ptype.Methods[dlgtMeth.Name] = dlgtMeth;
+                }
+                if (!myTypeDef.IsValueType && !myTypeDef.IsSpecialName && !myTypeDef.IsSealed
+                    && !myTypeDef.IsRuntimeSpecialName && !myTypeDef.IsPrimitive
+                    && !myTypeDef.IsInterface && !myTypeDef.IsArray && (myTypeDef.IsPublic
+                    || myTypeDef.IsNestedPublic) && myTypeDef.IsClass)
+                {
+                    var virtuals = myTypeDef.Methods.Where(m => m.IsVirtual || m.IsAbstract).ToArray();
+                    if (virtuals.Any())
+                    {
+                        var derived = myType.Module.Assembly.GetDerivedTypes(myType).ToArray();
+                        if (derived.Any())
+                        {
+                            var overrides = derived.SelectMany(d => d.Methods).Where(
+                                m => m.IsAbstract || m.IsVirtual).Intersect(virtuals, methCmp).ToArray();
+                            if (overrides.Any())
+                            {
+                                Console.WriteLine(" (TODO) Override " + string.Join(", ", overrides.Select(o => o.FullName)));
+                            }
+                        }
+                    }
                 }
             }
             foreach (var myPair in myMembers)

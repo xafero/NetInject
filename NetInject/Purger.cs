@@ -33,8 +33,9 @@ namespace NetInject
         public static readonly string apiSuffix = ".API";
         public static readonly string apiPrefix = "Purge.";
 
-        static readonly StringComparison cmp = StringComparison.InvariantCulture;
-
+        static readonly StringComparison cmpa = StringComparison.InvariantCulture;
+        static readonly StringComparer comp = StringComparer.InvariantCultureIgnoreCase;
+        
         static readonly IParser nativeParser = new Captivator();
 
         internal static int Invert(InvertOptions opts)
@@ -95,8 +96,7 @@ namespace NetInject
             var assTypes = ass.Modules.SelectMany(m => m.GetTypeReferences()).ToArray();
             var assMembs = ass.Modules.SelectMany(m => m.GetMemberReferences()).ToArray();
             var isDirty = false;
-            var cmp = StringComparer.InvariantCultureIgnoreCase;
-            foreach (var invRef in assRefs.Where(r => opts.Assemblies.Contains(r.Name, cmp)))
+            foreach (var invRef in assRefs.Where(r => opts.Assemblies.Contains(r.Name, comp)))
             {
                 var assRef = invRef as AssemblyNameReference;
                 if (assRef != null)
@@ -133,7 +133,7 @@ namespace NetInject
                 var myTypeDef = myType.Resolve();
                 if (myTypeDef.IsEnum)
                 {
-                    foreach (var enumFld in myTypeDef.Fields.Where(f => !f.Name.EndsWith("__", cmp)).ToArray())
+                    foreach (var enumFld in myTypeDef.Fields.Where(f => !f.Name.EndsWith("__", cmpa)).ToArray())
                         ptype.Values[enumFld.Name] = new PurgedEnumVal(enumFld.Name);
                 }
                 if (myTypeDef.IsClass && myTypeDef.BaseType.FullName == typeof(MulticastDelegate).FullName)
@@ -298,7 +298,7 @@ namespace NetInject
                                 nsp.Delegates.Add(dlgt);
                                 continue;
                             }
-                            if (!name.StartsWith("I", cmp))
+                            if (!name.StartsWith("I", cmpa))
                                 name = $"I{name}";
                             var typ = new CSharpClass(name)
                             {

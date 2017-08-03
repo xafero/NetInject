@@ -163,11 +163,16 @@ namespace NetInject
                         var derived = myType.Module.Assembly.GetDerivedTypes(myType).ToArray();
                         if (derived.Any())
                         {
-                            var overrides = derived.SelectMany(d => d.Methods).Where(
-                                m => m.IsAbstract || m.IsVirtual).Intersect(virtuals, methCmp).ToArray();
+                            var overrides = virtuals.Intersect(derived.SelectMany(d => d.Methods)
+                                .Where(m => m.IsAbstract || m.IsVirtual), methCmp).ToArray();
                             if (overrides.Any())
                             {
-                                Console.WriteLine(" (TODO) Override " + string.Join(", ", overrides.Select(o => o.FullName)));
+                                var otypeName = myType.Name;
+                                var otypeFqn = myType.FullName;
+                                PurgedType otype;
+                                if (!purge.Types.TryGetValue(otypeFqn, out otype))
+                                    purge.Types[otypeFqn] = otype = new PurgedType(myType.Namespace, otypeName);
+                                HandleAbstractClass(otype, overrides);
                             }
                         }
                     }
@@ -517,6 +522,16 @@ namespace NetInject
                 if (!names.Contains(dparamName))
                     continue;
                 dparm.PType = $"{nspName}.{dparamName}";
+            }
+        }
+
+        static void HandleAbstractClass(PurgedType fake, MethodDefinition[] overrides)
+        {
+            foreach (var overrid in overrides)
+            {
+                PurgedMethod pmethod;
+                if (!fake.Methods.TryGetValue(overrid.FullName, out pmethod))
+                    fake.Methods[overrid.FullName] = pmethod = new PurgedMethod(overrid.Name);
             }
         }
     }

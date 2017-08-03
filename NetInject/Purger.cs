@@ -190,15 +190,16 @@ namespace NetInject
                     if (!ptype.Methods.TryGetValue(myMember.FullName, out pmethod))
                         ptype.Methods[myMember.FullName] = pmethod = new PurgedMethod(myMember.Name);
                     var pmd = (MethodDefinition)myMember.Resolve();
-                    foreach (var parm in pmd.Parameters)
-                    {
-                        var pparm = new PurgedParam
+                    if (pmethod.Parameters.Count == 0)
+                        foreach (var parm in pmd.Parameters)
                         {
-                            Name = Escape(parm.Name),
-                            ParamType = parm.ParameterType.FullName
-                        };
-                        pmethod.Parameters.Add(pparm);
-                    }
+                            var pparm = new PurgedParam
+                            {
+                                Name = Escape(parm.Name),
+                                ParamType = parm.ParameterType.FullName
+                            };
+                            pmethod.Parameters.Add(pparm);
+                        }
                     if (pmd.ReturnType.FullName != typeof(void).FullName)
                         pmethod.ReturnType = pmd.ReturnType.FullName;
                 }
@@ -532,6 +533,18 @@ namespace NetInject
                 PurgedMethod pmethod;
                 if (!fake.Methods.TryGetValue(overrid.FullName, out pmethod))
                     fake.Methods[overrid.FullName] = pmethod = new PurgedMethod(overrid.Name);
+                if (pmethod.Parameters.Count == 0)
+                    foreach (var parm in overrid.Parameters)
+                    {
+                        var pparm = new PurgedParam
+                        {
+                            Name = Escape(parm.Name),
+                            ParamType = parm.ParameterType.FullName
+                        };
+                        pmethod.Parameters.Add(pparm);
+                    }
+                if (overrid.ReturnType.FullName != typeof(void).FullName)
+                    pmethod.ReturnType = overrid.ReturnType.FullName;
             }
         }
     }

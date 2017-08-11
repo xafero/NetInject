@@ -1,5 +1,4 @@
-﻿
-namespace NetInject.Code
+﻿namespace NetInject
 {
     public static class CodeConvert
     {

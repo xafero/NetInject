@@ -6,8 +6,8 @@ namespace NetInject.Inspect
     {
         ICollection<string> Files { get; }
 
-        IDictionary<string, ISet<string>> NativeRefs { get; }
-
         IDictionary<string, ISet<string>> ManagedRefs { get; }
+        
+        IDictionary<string, ISet<string>> NativeRefs { get; }
     }
 }

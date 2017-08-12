@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using Mono.Cecil;
 using NetInject.Cecil;
-
 using static NetInject.Cecil.CecilHelper;
 
 namespace NetInject.Inspect
@@ -25,16 +24,16 @@ namespace NetInject.Inspect
             var natives = 0;
             var types = ass.GetAllTypes().ToArray();
             foreach (var nativeRef in ass.Modules.SelectMany(m => m.ModuleReferences)
-                .Where(r => Filters.Contains(r.Name, Comp)))
+                .Where(r => Filters.Count < 1 || Filters.Contains(r.Name, Comp)))
             {
                 var key = NormalizeNativeRef(nativeRef);
                 ISet<string> list;
                 if (!report.NativeRefs.TryGetValue(key, out list))
                     report.NativeRefs[key] = list = new SortedSet<string>();
                 list.Add(ass.FullName);
-                
+
                 // PurgedAssemblies purged
-                
+
                 natives++;
             }
             return natives;
@@ -92,5 +91,3 @@ static void InvertNativeRef(ModuleReference invRef, PurgedAssemblies purged,
         }
         
         */
-        
-        

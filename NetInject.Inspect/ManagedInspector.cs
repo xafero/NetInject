@@ -25,7 +25,7 @@ namespace NetInject.Inspect
             var assTypes = ass.GetAllTypeRefs().ToArray();
             var assMembs = ass.GetAllMemberRefs().ToArray();
             foreach (var assRef in ass.Modules.SelectMany(m => m.AssemblyReferences)
-                .Where(r => Filters.Contains(r.Name, Comp)))
+                .Where(r => Filters.Count < 1 || Filters.Contains(r.Name, Comp)))
             {
                 var key = assRef.Name;
                 if (IsStandardLib(key))
@@ -171,4 +171,3 @@ static void InvertAssemblyRef(AssemblyNameReference invRef, PurgedAssemblies pur
         }
         
         */
-        

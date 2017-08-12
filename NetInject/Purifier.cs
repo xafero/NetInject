@@ -1,6 +1,5 @@
 ﻿using log4net;
 using Mono.Cecil;
-using NetInject.Code;
 using System.IO;
 using System.Linq;
 using System;
@@ -8,8 +7,13 @@ using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using Mono.Cecil.Cil;
 
+using Noaster.Api;
+using Noaster.Dist;
+
+using Noast = Noaster.Dist.Noaster;
+
 using static NetInject.IOHelper;
-using static NetInject.Code.CodeConvert;
+using static NetInject.CodeConvert;
 
 namespace NetInject
 {
@@ -41,56 +45,41 @@ namespace NetInject
                     var apiCS = Path.Combine(halDir, apiName + ".cs");
                     var implName = ass.Name.Name + ".OS.Impl";
                     var implCS = Path.Combine(halDir, implName + ".cs");
-                    using (var pinvoke = new CSharpWriter(File.Create(apiCS)))
+                    using (var pinvoke = File.CreateText(apiCS))
                     {
-                        pinvoke.Usings.Add("System");
-                        pinvoke.Usings.Add("System.Runtime.InteropServices");
-                        pinvoke.Usings.Add("System.Runtime.InteropServices.ComTypes");
-                        pinvoke.Usings.Add("System.Text");
-                        var nsp = new CSharpNamespace(apiName);
-                        pinvoke.Namespaces.Add(nsp);
-                        var cla = new CSharpClass("IPlatform") { Kind = UnitKind.Interface };
+                        var nsp = Noast.Create<INamespace>(apiName);
+                        nsp.AddUsing("System");
+                        nsp.AddUsing("System.Runtime.InteropServices");
+                        nsp.AddUsing("System.Runtime.InteropServices.ComTypes");
+                        nsp.AddUsing("System.Text");
+                        var cla = Noast.Create<IInterface>("IPlatform", nsp);
                         foreach (var meth in methods.Select(m => m.Item1))
                             cla.Methods.Add(meth);
-                        nsp.Classes.Add(cla);
-                        pinvoke.WriteUsings();
-                        pinvoke.WriteNamespaces();
+                        pinvoke.Write(nsp);
                     }
                     string f;
                     var apiCSAss = Compiler.CreateAssembly(apiName, new[] { apiCS });
                     File.Copy(apiCSAss.Location, f = Path.Combine(halDir, apiName + ".dll"), true);
                     log.Info($"   --> '{Path.GetFileName(apiCS)}' ({Path.GetFileName(f)})");
                     var apiAssDef = AssemblyDefinition.ReadAssembly(f, rparam);
-                    using (var pinvoke = new CSharpWriter(File.Create(implCS)))
+                    using (var pinvoke = File.CreateText(implCS))
                     {
-                        pinvoke.Usings.Add("System");
-                        pinvoke.Usings.Add("System.Runtime.InteropServices");
-                        pinvoke.Usings.Add("System.Runtime.InteropServices.ComTypes");
-                        pinvoke.Usings.Add("System.Text");
-                        var nsp = new CSharpNamespace(implName);
-                        pinvoke.Namespaces.Add(nsp);
-                        var cla = new CSharpClass("Win32Platform");
-                        cla.Modifiers.Clear();
-                        cla.Modifiers.Add("internal");
-                        cla.Bases.Add(apiName + ".IPlatform");
-                        nsp.Classes.Add(cla);
+                        var nsp = Noast.Create<INamespace>(implName);
+                        nsp.AddUsing("System");
+                        nsp.AddUsing("System.Runtime.InteropServices");
+                        nsp.AddUsing("System.Runtime.InteropServices.ComTypes");
+                        nsp.AddUsing("System.Text");
+                        var cla = Noast.Create<IClass>("Win32Platform", nsp).With(Visibility.Internal);
+                        cla.AddImplements(apiName + ".IPlatform");
                         foreach (var meth in methods.Select(m => m.Item1).SelectMany(DelegateInterface))
                             cla.Methods.Add(meth);
-                        cla = new CSharpClass("MonoPlatform");
-                        cla.Modifiers.Clear();
-                        cla.Modifiers.Add("internal");
-                        cla.Bases.Add(apiName + ".IPlatform");
-                        nsp.Classes.Add(cla);
+                        cla = Noast.Create<IClass>("MonoPlatform", nsp).With(Visibility.Internal);
+                        cla.AddImplements(apiName + ".IPlatform");
                         foreach (var meth in methods.Select(m => m.Item1).SelectMany(ImplementInterface))
                             cla.Methods.Add(meth);
-                        cla = new CSharpClass("Platforms");
-                        cla.Modifiers.Clear();
-                        cla.Modifiers.Add("public");
-                        cla.Modifiers.Add("static");
+                        cla = Noast.Create<IClass>("Platforms", nsp).With(Visibility.Public).With(Modifier.Static);
                         cla.Methods.Add(CreateSwitchMethod());
-                        nsp.Classes.Add(cla);
-                        pinvoke.WriteUsings();
-                        pinvoke.WriteNamespaces();
+                        pinvoke.Write(nsp);
                     }
                     var implCSAss = Compiler.CreateAssembly(implName, new[] { implCS }, new[] { f });
                     File.Copy(implCSAss.Location, f = Path.Combine(halDir, implName + ".dll"), true);
@@ -132,22 +121,17 @@ namespace NetInject
             }
         }
 
-        static CSharpMethod CreateSwitchMethod()
+        static IMethod CreateSwitchMethod()
         {
-            var meth = new CSharpMethod("GetInstance");
+            var meth = Noast.Create<IMethod>("GetInstance").With(Visibility.Public).With(Modifier.Static);
             meth.ReturnType = "Api.IPlatform";
-            meth.Modifiers.Clear();
-            meth.Modifiers.Add("public");
-            meth.Modifiers.Add("static");
             meth.Body = "if (Environment.OSVersion.Platform == PlatformID.Win32NT) return new Win32Platform(); return new MonoPlatform();";
             return meth;
         }
 
-        static IEnumerable<CSharpMethod> ImplementInterface(CSharpMethod externMeth)
+        static IEnumerable<IMethod> ImplementInterface(IMethod externMeth)
         {
-            var meth = new CSharpMethod(externMeth.Name);
-            meth.Modifiers.Clear();
-            meth.Modifiers.Add("public");
+            var meth = Noast.Create<IMethod>(externMeth.Name).With(Visibility.Public);
             meth.ReturnType = externMeth.ReturnType;
             // meth.Body = $"throw new NotImplementedException(\"Sorry!\");";
             if (meth.ReturnType.ToLowerInvariant() == "void")
@@ -159,24 +143,21 @@ namespace NetInject
             yield return meth;
         }
 
-        static IEnumerable<CSharpMethod> DelegateInterface(CSharpMethod externMeth)
+        static IEnumerable<IMethod> DelegateInterface(IMethod externMeth)
         {
-            var meth = new CSharpMethod(externMeth);
-            meth.Name = $"{prefix}{externMeth.Name}";
+            var meth = Noast.Create<IMethod>($"{prefix}{externMeth.Name}");   // TODO: method cloning?! externMeth
             yield return meth;
-            meth = new CSharpMethod(externMeth.Name);
-            meth.Modifiers.Clear();
-            meth.Modifiers.Add("public");
+            meth = Noast.Create<IMethod>(externMeth.Name).With(Visibility.Public);
             meth.ReturnType = externMeth.ReturnType;
             var preamble = meth.ReturnType.ToLowerInvariant() == "void" ? "" : "return ";
-            var parms = string.Join(", ", externMeth.Parameters.Select(p => (p.IsRef ? "ref " : "") + p.Name));
+            var parms = string.Join(", ", externMeth.Parameters.Select(p => (p.IsRef() ? "ref " : "") + p.Name));
             meth.Body = $"{preamble}{prefix}{externMeth.Name}({parms});";
             foreach (var parm in externMeth.Parameters)
                 meth.Parameters.Add(parm);
             yield return meth;
         }
 
-        static IEnumerable<Tuple<CSharpMethod, MethodDefinition>> CollectPInvokes(AssemblyDefinition ass)
+        static IEnumerable<Tuple<IMethod, MethodDefinition>> CollectPInvokes(AssemblyDefinition ass)
         {
             var methodSigs = new List<string>();
             foreach (var type in ass.GetAllTypes())
@@ -192,10 +173,10 @@ namespace NetInject
                         var key = (pinv.Module.Name + "/" + pinv.EntryPoint + "/" + name).ToLowerInvariant();
                         if (methodSigs.Contains(key))
                             continue;
-                        var gen = new CSharpMethod(name);
+                        var gen = Noast.Create<IMethod>(name);
                         gen.ReturnType = meth.ReturnType.Name;
-                        var attr = new CSharpAttribute(typeof(DllImportAttribute).Name);
-                        attr.Value = $"\"{pinv.Module}\"";
+                        var attr = Noast.Create<IAttribute>(typeof(DllImportAttribute).Name);
+                        attr.Values.Add($"\"{pinv.Module}\"");
                         attr.Properties["CharSet"] = pinv.ToCharset();
                         attr.Properties["SetLastError"] = pinv.SupportsLastError;
                         var entryPoint = pinv.EntryPoint;
@@ -212,13 +193,14 @@ namespace NetInject
                     }
         }
 
-        static void AddParam(ParameterDefinition parm, CSharpMethod gen)
+        static void AddParam(ParameterDefinition parm, IMethod gen)
         {
             var name = parm.Name;
             if (!Enumerable.Range('A', 26).Contains(name.FirstOrDefault()))
                 name = "p" + gen.Parameters.Count;
-            var par = new CSharpParameter(Simplify(parm.ParameterType.Name), name)
-            { IsRef = parm.ParameterType.IsByReference };
+            var par = Noast.Create<IParameter>(name);
+            par.Type = Simplify(parm.ParameterType.Name);
+            if (parm.ParameterType.IsByReference) par.Modifier = ParamModifier.Ref;
             gen.Parameters.Add(par);
         }
     }

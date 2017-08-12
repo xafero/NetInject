@@ -16,9 +16,13 @@ using MethodAttr = Mono.Cecil.MethodAttributes;
 using TypeAttr = Mono.Cecil.TypeAttributes;
 using FieldAttr = Mono.Cecil.FieldAttributes;
 using NetInject.Purge;
-using NetInject.Code;
 using System.Collections.Generic;
 using System;
+
+using Noaster.Api;
+using Noaster.Dist;
+
+using Noast = Noaster.Dist.Noaster;
 
 namespace NetInject
 {
@@ -297,82 +301,68 @@ namespace NetInject
                 var fileName = Path.Combine(tempDir, $"{ass.Name}.cs");
                 if (!Directory.Exists(tempDir))
                     Directory.CreateDirectory(tempDir);
-                using (var stream = File.Create(fileName))
-                using (var writer = new CSharpWriter(stream))
+                using (var stream = File.CreateText(fileName))
                 {
-                    writer.Usings.Add("System");
-                    writer.Usings.Add("System.Drawing");
                     foreach (var pair in ass.Types.GroupBy(t => t.Value.Namespace))
                     {
-                        var nsp = new CSharpNamespace($"{apiPrefix}{pair.Key}");
+                        var nsp = Noast.Create<INamespace>($"{apiPrefix}{pair.Key}");
+                        nsp.AddUsing("System");
+                        nsp.AddUsing("System.Drawing");
                         foreach (var type in pair)
                         {
                             var name = type.Value.Name;
                             if (type.Value.Values.Any())
                             {
-                                var enu = new CSharpEnum(name);
+                                var enu = Noast.Create<IEnum>(name, nsp);
                                 foreach (var val in type.Value.Values)
-                                    enu.Values.Add(new CSharpEnumVal(val.Value.Name));
-                                nsp.Enums.Add(enu);
+                                    enu.Values.Add(Noast.Create<IEnumVal>(val.Value.Name));
                                 continue;
                             }
                             var meths = type.Value.Methods;
                             if (meths.FirstOrDefault().Value?.Name == "Invoke")
                             {
-                                var dlgt = new CSharpDelegate(name);
+                                var dlgt = Noast.Create<IDelegate>(name, nsp);
                                 foreach (var dparm in meths.First().Value.Parameters)
-                                    dlgt.Parameters.Add(new CSharpParameter(dparm.ParamType, dparm.Name));
-                                nsp.Delegates.Add(dlgt);
+                                    dlgt.AddParameter(dparm.Name, dparm.ParamType);
                                 continue;
                             }
                             if (!name.StartsWith("I", cmpa))
                                 name = $"I{name}";
-                            var typ = new CSharpClass(name)
-                            {
-                                Kind = UnitKind.Interface
-                            };
+                            var typ = Noast.Create<IInterface>(name, nsp);
                             foreach (var meth in type.Value.Methods)
                             {
                                 var mmeth = meth.Value;
-                                var cmeth = new CSharpMethod(mmeth.Name);
+                                var cmeth = Noast.Create<IMethod>(mmeth.Name);
                                 foreach (var parm in meth.Value.Parameters)
                                 {
-                                    var mparm = new CSharpParameter(parm.ParamType, parm.Name);
+                                    var mparm = Noast.Create<IParameter>(parm.Name);
+                                    mparm.Type = parm.ParamType;
                                     cmeth.Parameters.Add(mparm);
                                 }
                                 if (cmeth.Name == "Dispose")
                                 {
-                                    typ.Bases.Add("IDisposable");
+                                    typ.AddImplements("IDisposable");
                                     if (cmeth.Parameters.Count == 0)
                                         continue;
                                 }
                                 if (cmeth.Name == ctorName)
                                 {
-                                    var factMethod = new CSharpMethod($"Create{type.Value.Name}")
-                                    {
-                                        ReturnType = typ.Name
-                                    };
+                                    var factMethod = Noast.Create<IMethod>($"Create{type.Value.Name}");
+                                    factMethod.ReturnType = typ.Name;
                                     foreach (var parm in cmeth.Parameters)
                                         factMethod.Parameters.Add(parm);
-                                    var factType = new CSharpClass($"I{type.Value.Name}Factory")
-                                    {
-                                        Kind = UnitKind.Interface
-                                    };
+                                    var factType = Noast.Create<IInterface>($"I{type.Value.Name}Factory", nsp);
                                     factType.Methods.Add(factMethod);
-                                    nsp.Classes.Add(factType);
                                     continue;
                                 }
                                 if (meth.Value.ReturnType != null)
                                     cmeth.ReturnType = meth.Value.ReturnType;
                                 typ.Methods.Add(cmeth);
                             }
-                            nsp.Classes.Add(typ);
                         }
-                        writer.Namespaces.Add(nsp);
                         PatchTypes(nsp);
+                        stream.Write(nsp);
                     }
-                    writer.WriteUsings();
-                    writer.WriteNamespaces();
                 }
                 var apiName = $"{purge.Value.Name}{apiSuffix}";
                 var apiCSAss = Compiler.CreateAssembly(apiName, new[] { fileName });
@@ -500,14 +490,12 @@ namespace NetInject
             return genAss;
         }
 
-        static void PatchTypes(CSharpNamespace nsp)
+        static void PatchTypes(INamespace nsp)
         {
-            var names = nsp.Classes.Select(c => c.Name)
-                .Concat(nsp.Delegates.Select(d => d.Name))
-                .Concat(nsp.Enums.Select(e => e.Name)).Distinct().ToArray();
-            foreach (var dlgt in nsp.Delegates)
+            var names = nsp.Members.OfType<INamed>().Select(c => c.Name).Distinct().ToArray();
+            foreach (var dlgt in nsp.Members.OfType<IDelegate>())
                 PatchTypes(dlgt, nsp.Name, names);
-            foreach (var cla in nsp.Classes)
+            foreach (var cla in nsp.Members.OfType<IClass>())
                 foreach (var meth in cla.Methods)
                     PatchTypes(meth, nsp.Name, names);
         }
@@ -516,13 +504,13 @@ namespace NetInject
         {
             foreach (var dparm in parms.Parameters)
             {
-                var dparamNsp = dparm.PType.Substring(0, dparm.PType.LastIndexOf('.'));
+                var dparamNsp = dparm.Type.Substring(0, dparm.Type.LastIndexOf('.'));
                 if ((apiPrefix + dparamNsp) != nspName)
                     continue;
-                var dparamName = 'I' + dparm.PType.Substring(dparamNsp.Length).TrimStart('.');
+                var dparamName = 'I' + dparm.Type.Substring(dparamNsp.Length).TrimStart('.');
                 if (!names.Contains(dparamName))
                     continue;
-                dparm.PType = $"{nspName}.{dparamName}";
+                dparm.Type = $"{nspName}.{dparamName}";
             }
         }
 

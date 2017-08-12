@@ -9,9 +9,10 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>NetInject</RootNamespace>
     <AssemblyName>NetInject</AssemblyName>
-    <TargetFrameworkVersion>v4.5.1</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.6</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+    <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
@@ -57,10 +58,10 @@
       <HintPath>..\packages\Mono.Cecil.0.10.0-beta5\lib\net40\Mono.Cecil.Rocks.dll</HintPath>
       <Private>True</Private>
     </Reference>
-    <Reference Include="Noaster, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null">
+    <Reference Include="Noaster">
       <HintPath>..\lib\Noaster.dll</HintPath>
     </Reference>
-    <Reference Include="Noaster.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null">
+    <Reference Include="Noaster.Api">
       <HintPath>..\lib\Noaster.Api.dll</HintPath>
     </Reference>
     <Reference Include="System" />

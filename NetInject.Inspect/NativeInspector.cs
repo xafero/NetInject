@@ -1,16 +1,20 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
+using System.Diagnostics;
+using System.IO;
 using System.Linq;
+using System.Text;
 using Mono.Cecil;
 using NetInject.Cecil;
 using static NetInject.Cecil.CecilHelper;
+using static NetInject.Cecil.WordHelper;
 
 namespace NetInject.Inspect
 {
     public class NativeInspector : IInspector
     {
-        private static readonly StringComparer Comp
-            = StringComparer.InvariantCultureIgnoreCase;
+        private static readonly StringComparer Comp = StringComparer.InvariantCultureIgnoreCase;
 
         public IList<string> Filters { get; }
 
@@ -32,7 +36,8 @@ namespace NetInject.Inspect
                     report.NativeRefs[key] = list = new SortedSet<string>();
                 list.Add(ass.FullName);
 
-                // PurgedAssemblies purged
+                // PurgedAssemblies purged                
+                Process(key, types, nativeRef);
 
                 natives++;
             }
@@ -48,15 +53,46 @@ namespace NetInject.Inspect
                 name = $"{name}{suffix}";
             return name;
         }
+
+        private static string Deobfuscate(string text)
+        {
+            var buff = new StringBuilder();
+            foreach (var letter in text)
+                if ((letter >= 'A' && letter <= 'Z') || (letter >= 'a' && letter <= 'z')
+                    || (letter >= '0' && letter <= '9') || letter == '.' || letter == '&'
+                    || letter == ' ' || letter == '/' || letter == ',')
+                    buff.Append(letter);
+            return buff.ToString();
+        }
+
+        private static string GetParamStr(IMetadataTokenProvider meth)
+            => meth.ToString().Split(new[] {'('}, 2).Last().TrimEnd(')');
+
+        private static void Process(string name, IEnumerable<TypeDefinition> types, IMetadataTokenProvider invRef)
+        {
+            var nativeTypeName = Capitalize(Path.GetFileNameWithoutExtension(name));
+            foreach (var meth in types.SelectMany(t => t.Methods))
+            {
+                PInvokeInfo pinv;
+                if (!meth.HasPInvokeInfo || invRef != (pinv = meth.PInvokeInfo).Module)
+                    continue;
+                var nativeMethName = pinv.EntryPoint;
+                var retType = Deobfuscate(meth.ReturnType.ToString());
+                var parms = Deobfuscate(GetParamStr(meth));
+                var key = $"{nativeMethName}__{retType}__{parms}";
+                
+                
+                
+                
+            }
+        }
     }
 }
 
 /*
 static void InvertNativeRef(ModuleReference invRef, PurgedAssemblies purged,
             IEnumerable<TypeDefinition> types)
-        {
-            log.Info($" - '{invRef}'");
-            var invRefName = Capitalize(Path.GetFileNameWithoutExtension(invRef.Name));
+        {            
             PurgedAssembly purge;
             if (!purged.TryGetValue(invRefName, out purge))
                 purged[invRefName] = purge = new PurgedAssembly(invRefName, new Version("0.0.0.0"));
@@ -64,14 +100,8 @@ static void InvertNativeRef(ModuleReference invRef, PurgedAssemblies purged,
             PurgedType ptype;
             if (!purge.Types.TryGetValue(ptypeName, out ptype))
                 purge.Types[ptypeName] = ptype = new PurgedType(invRefName, ptypeName);
-            foreach (var type in types)
-            foreach (var meth in type.Methods)
-            {
-                PInvokeInfo pinv;
-                if (!meth.HasPInvokeInfo || invRef != (pinv = meth.PInvokeInfo).Module)
-                    continue;
-                var nativeTypeName = invRefName;
-                var nativeMethName = pinv.EntryPoint;
+            
+                
                 PurgedMethod pmethod;
                 if (!ptype.Methods.TryGetValue(nativeMethName, out pmethod))
                     ptype.Methods[nativeMethName] = pmethod = new PurgedMethod(nativeMethName);

@@ -50,6 +50,7 @@
   <ItemGroup>
     <Compile Include="CecilHelper.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="WordHelper.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

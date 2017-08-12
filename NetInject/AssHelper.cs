@@ -3,7 +3,6 @@ using Mono.Cecil.Cil;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-
 using MethodAttr = Mono.Cecil.MethodAttributes;
 using System.IO;
 using log4net;
@@ -27,19 +26,19 @@ namespace NetInject
         internal static void RemoveSignedRefs(IEnumerable<ModuleDefinition> modules, IEnumerable<string> keys)
         {
             foreach (var module in modules)
-                foreach (var assRef in module.AssemblyReferences)
-                {
-                    if (!keys.Any(k => assRef.FullName.EndsWith($"={k}", StringComparison.InvariantCulture)))
-                        continue;
-                    assRef.HasPublicKey = false;
-                    assRef.PublicKey = new byte[0];
-                }
+            foreach (var assRef in module.AssemblyReferences)
+            {
+                if (!keys.Any(k => assRef.FullName.EndsWith($"={k}", StringComparison.InvariantCulture)))
+                    continue;
+                assRef.HasPublicKey = false;
+                assRef.PublicKey = new byte[0];
+            }
         }
 
         internal static IEnumerable<T> GetAttribute<T>(this TypeDefinition type) where T : Attribute
             => type.CustomAttributes.Where(a => a.AttributeType.FullName == typeof(T).FullName)
-            .Select(a => a.ConstructorArguments.Select(c => c.Value).ToArray())
-            .Select(a => (T)typeof(T).GetConstructors().First().Invoke(a));
+                .Select(a => a.ConstructorArguments.Select(c => c.Value).ToArray())
+                .Select(a => (T) typeof(T).GetConstructors().First().Invoke(a));
 
         internal static void RemovePInvoke(this MethodDefinition meth)
         {
@@ -67,7 +66,7 @@ namespace NetInject
             il?.Invoke(body);
         }
 
-        static string[] CSharpKeyWords = { "object" };
+        static string[] CSharpKeyWords = {"object"};
 
         internal static string Escape(string name)
             => CSharpKeyWords.Contains(name) ? $"@{name}" : name;
@@ -77,7 +76,9 @@ namespace NetInject
         {
             try
             {
-                return AssemblyDefinition.ReadAssembly(stream, rparam);
+                return stream == null
+                    ? AssemblyDefinition.ReadAssembly(file, rparam)
+                    : AssemblyDefinition.ReadAssembly(stream, rparam);
             }
             catch (BadImageFormatException)
             {

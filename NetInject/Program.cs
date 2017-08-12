@@ -16,7 +16,7 @@ namespace NetInject
             int res;
             using (var parser = Parser.Default)
             {
-                res = parser.ParseArguments<UnsignOptions, PatchOptions, PurifyOptions, SipOptions, IsleOptions, AdoptOptions, WeaveOptions, InvertOptions>(args).MapResult(
+                res = parser.ParseArguments<UnsignOptions, PatchOptions, PurifyOptions, SipOptions, IsleOptions, AdoptOptions, WeaveOptions, InvertOptions, UsagesOptions>(args).MapResult(
                       (UnsignOptions opts) => Signer.Unsign(opts),
                       (PatchOptions opts) => Patcher.Modify(opts),
                       (PurifyOptions opts) => Purifier.Clean(opts),
@@ -25,6 +25,7 @@ namespace NetInject
                       (AdoptOptions opts) => Adopter.Force(opts),
                       (WeaveOptions opts) => Weaver.Web(opts),
                       (InvertOptions opts) => Purger.Invert(opts),
+                      (UsagesOptions opts) => Usager.Poll(opts),
                       errs => 1);
             }
             return res;

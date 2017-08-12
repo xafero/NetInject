@@ -94,4 +94,11 @@ namespace NetInject
         [Value(2, MetaName = "legacy", HelpText = "Old dependencies to purge")]
         public IEnumerable<string> Assemblies { get; set; }
     }
+
+    [Verb("usages", HelpText = "Poll assemblies for detailed usages.")]
+    class UsagesOptions
+    {
+        [Value(0, MetaName = "work", HelpText = "Directory to work in")]
+        public string WorkDir { get; set; }        
+    }
 }

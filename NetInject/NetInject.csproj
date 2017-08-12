@@ -58,10 +58,10 @@
       <Private>True</Private>
     </Reference>
     <Reference Include="Noaster, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null">
-      <HintPath>..\..\Noaster\Noaster\bin\Debug\Noaster.dll</HintPath>
+      <HintPath>..\lib\Noaster.dll</HintPath>
     </Reference>
     <Reference Include="Noaster.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null">
-      <HintPath>..\..\Noaster\Noaster\bin\Debug\Noaster.Api.dll</HintPath>
+      <HintPath>..\lib\Noaster.Api.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Configuration" />

@@ -42,21 +42,17 @@
       <HintPath>..\packages\log4net.2.0.8\lib\net45-full\log4net.dll</HintPath>
       <Private>True</Private>
     </Reference>
-    <Reference Include="Mono.Cecil, Version=0.10.0.0, Culture=neutral, PublicKeyToken=50cebf1cceb9d05e, processorArchitecture=MSIL">
-      <HintPath>..\packages\Mono.Cecil.0.10.0-beta5\lib\net40\Mono.Cecil.dll</HintPath>
-      <Private>True</Private>
+    <Reference Include="Mono.Cecil, Version=0.10.0.0, Culture=neutral, PublicKeyToken=50cebf1cceb9d05e">
+      <HintPath>..\packages\Mono.Cecil.0.10.0-beta6\lib\net40\Mono.Cecil.dll</HintPath>
     </Reference>
-    <Reference Include="Mono.Cecil.Mdb, Version=0.10.0.0, Culture=neutral, PublicKeyToken=50cebf1cceb9d05e, processorArchitecture=MSIL">
-      <HintPath>..\packages\Mono.Cecil.0.10.0-beta5\lib\net40\Mono.Cecil.Mdb.dll</HintPath>
-      <Private>True</Private>
+    <Reference Include="Mono.Cecil.Mdb, Version=0.10.0.0, Culture=neutral, PublicKeyToken=50cebf1cceb9d05e">
+      <HintPath>..\packages\Mono.Cecil.0.10.0-beta6\lib\net40\Mono.Cecil.Mdb.dll</HintPath>
     </Reference>
-    <Reference Include="Mono.Cecil.Pdb, Version=0.10.0.0, Culture=neutral, PublicKeyToken=50cebf1cceb9d05e, processorArchitecture=MSIL">
-      <HintPath>..\packages\Mono.Cecil.0.10.0-beta5\lib\net40\Mono.Cecil.Pdb.dll</HintPath>
-      <Private>True</Private>
+    <Reference Include="Mono.Cecil.Pdb, Version=0.10.0.0, Culture=neutral, PublicKeyToken=50cebf1cceb9d05e">
+      <HintPath>..\packages\Mono.Cecil.0.10.0-beta6\lib\net40\Mono.Cecil.Pdb.dll</HintPath>
     </Reference>
-    <Reference Include="Mono.Cecil.Rocks, Version=0.10.0.0, Culture=neutral, PublicKeyToken=50cebf1cceb9d05e, processorArchitecture=MSIL">
-      <HintPath>..\packages\Mono.Cecil.0.10.0-beta5\lib\net40\Mono.Cecil.Rocks.dll</HintPath>
-      <Private>True</Private>
+    <Reference Include="Mono.Cecil.Rocks, Version=0.10.0.0, Culture=neutral, PublicKeyToken=50cebf1cceb9d05e">
+      <HintPath>..\packages\Mono.Cecil.0.10.0-beta6\lib\net40\Mono.Cecil.Rocks.dll</HintPath>
     </Reference>
     <Reference Include="Newtonsoft.Json, Version=10.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed">
       <HintPath>..\packages\Newtonsoft.Json.10.0.3\lib\net45\Newtonsoft.Json.dll</HintPath>
@@ -112,6 +108,10 @@
     <ProjectReference Include="..\NetInject.Basic\NetInject.Basic.csproj">
       <Project>{FD8DBA49-7F01-437B-B7EC-5B308AD999B5}</Project>
       <Name>NetInject.Basic</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\NetInject.Inspect\NetInject.Inspect.csproj">
+      <Project>{40F65F07-9DFA-4B3C-8945-087AC4EE8CBD}</Project>
+      <Name>NetInject.Inspect</Name>
     </ProjectReference>
     <ProjectReference Include="..\NetInject.IoC\NetInject.IoC.csproj">
       <Project>{a203a10a-c409-4112-9437-afb577bf9493}</Project>

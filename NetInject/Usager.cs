@@ -4,26 +4,13 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Mono.Cecil;
+using NetInject.Inspect;
 using Newtonsoft.Json;
 using static NetInject.IOHelper;
 using static NetInject.AssHelper;
 
 namespace NetInject
 {
-    public class DependencyReport
-    {
-        public ISet<string> FoundFiles { get; set; }
-        public IDictionary<string, ISet<string>> NativeReferences { get; set; }
-        public IDictionary<string, ISet<string>> ManagedReferences { get; set; }
-
-        public DependencyReport()
-        {
-            FoundFiles = new SortedSet<string>();
-            NativeReferences = new SortedDictionary<string, ISet<string>>();
-            ManagedReferences = new SortedDictionary<string, ISet<string>>();
-        }
-    }
-
     internal static class Usager
     {
         private static readonly ILog Log = LogManager.GetLogger(typeof(Usager));
@@ -37,56 +24,37 @@ namespace NetInject
             {
                 resolv.AddSearchDirectory(opts.WorkDir);
                 var rparam = new ReaderParameters {AssemblyResolver = resolv};
+                var nativeInsp = new NativeInspector();
+                var managedInsp = new ManagedInspector();
                 foreach (var file in files)
-                    Poll(file, rparam, report);
+                    Poll(file, rparam, report, nativeInsp, managedInsp);
             }
+
             Console.WriteLine(JsonConvert.SerializeObject(report, Formatting.Indented));
+
             return 0;
         }
 
-        private static void Poll(string file, ReaderParameters rparam, DependencyReport report)
+        private static void Poll(string file, ReaderParameters rparam,
+            IDependencyReport report, params IInspector[] inspectors)
         {
             using (var ass = ReadAssembly(null, rparam, file))
             {
                 if (ass == null)
                     return;
-                var natives = 0;
-                var manageds = 0;
-                foreach (var nativeRef in ass.Modules.SelectMany(m => m.ModuleReferences))
+                var founds = new Dictionary<string, int>();
+                foreach (var inspector in inspectors)
                 {
-                    var key = NormalizeNativeRef(nativeRef);
-                    ISet<string> list;
-                    if (!report.NativeReferences.TryGetValue(key, out list))
-                        report.NativeReferences[key] = list = new SortedSet<string>();
-                    list.Add(ass.FullName);
-                    natives++;
-                }
-                foreach (var assRef in ass.Modules.SelectMany(m => m.AssemblyReferences))
-                {
-                    var key = assRef.Name;
-                    if (key == "mscorlib" || key == "System" || key == "System.Core" || key == "Microsoft.CSharp")
+                    var count = inspector.Inspect(ass, report);
+                    if (count < 1)
                         continue;
-                    ISet<string> list;
-                    if (!report.ManagedReferences.TryGetValue(key, out list))
-                        report.ManagedReferences[key] = list = new SortedSet<string>();
-                    list.Add(ass.FullName);
-                    manageds++;
+                    founds[inspector.GetType().Name] = count;
                 }
-                if (natives < 1 && manageds < 1)
+                if (founds.Count < 1)
                     return;
-                Log.Info($"'{ass.FullName}' ({natives} native & {manageds} managed refs)");
-                report.FoundFiles.Add(Path.GetFullPath(file));
+                Log.Info($"'{ass.FullName}' {string.Join(" ", founds)}");
+                report.Files.Add(Path.GetFullPath(file));
             }
-        }
-
-        private static string NormalizeNativeRef(IMetadataScope nativeRef)
-        {
-            var name = nativeRef.Name;
-            name = name.ToLowerInvariant();
-            const string suffix = ".dll";
-            if (!name.EndsWith(suffix))
-                name = $"{name}{suffix}";
-            return name;
         }
     }
 }

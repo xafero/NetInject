@@ -24,8 +24,8 @@ namespace NetInject
             {
                 resolv.AddSearchDirectory(opts.WorkDir);
                 var rparam = new ReaderParameters {AssemblyResolver = resolv};
-                var nativeInsp = new NativeInspector();
-                var managedInsp = new ManagedInspector();
+                var nativeInsp = new NativeInspector(opts.Assemblies);
+                var managedInsp = new ManagedInspector(opts.Assemblies);
                 foreach (var file in files)
                     Poll(file, rparam, report, nativeInsp, managedInsp);
             }

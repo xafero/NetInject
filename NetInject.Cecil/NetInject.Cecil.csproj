@@ -4,12 +4,12 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{40F65F07-9DFA-4B3C-8945-087AC4EE8CBD}</ProjectGuid>
+    <ProjectGuid>{7D9F6684-1213-489D-857C-05F655AEB89C}</ProjectGuid>
     <ProjectTypeGuids>{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>NetInject.Inspect</RootNamespace>
-    <AssemblyName>NetInject.Inspect</AssemblyName>
+    <RootNamespace>NetInject.Cecil</RootNamespace>
+    <AssemblyName>NetInject.Cecil</AssemblyName>
     <TargetFrameworkVersion>v4.6</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
   </PropertyGroup>
@@ -48,21 +48,11 @@
     <Reference Include="System" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="DependencyReport.cs" />
-    <Compile Include="IDependencyReport.cs" />
-    <Compile Include="IInspector.cs" />
-    <Compile Include="ManagedInspector.cs" />
-    <Compile Include="NativeInspector.cs" />
+    <Compile Include="CecilHelper.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\NetInject.Cecil\NetInject.Cecil.csproj">
-      <Project>{7D9F6684-1213-489D-857C-05F655AEB89C}</Project>
-      <Name>NetInject.Cecil</Name>
-    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

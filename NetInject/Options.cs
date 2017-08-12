@@ -99,6 +99,9 @@ namespace NetInject
     class UsagesOptions
     {
         [Value(0, MetaName = "work", HelpText = "Directory to work in")]
-        public string WorkDir { get; set; }        
+        public string WorkDir { get; set; }
+
+        [Value(1, MetaName = "legacy", HelpText = "Dependency name filter")]
+        public IEnumerable<string> Assemblies { get; set; }
     }
 }

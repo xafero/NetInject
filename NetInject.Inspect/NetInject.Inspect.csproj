@@ -48,6 +48,7 @@
     <Reference Include="System" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="ApiExts.cs" />
     <Compile Include="AssemblyMethod.cs" />
     <Compile Include="AssemblyType.cs" />
     <Compile Include="AssemblyUnit.cs" />

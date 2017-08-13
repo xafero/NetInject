@@ -41,10 +41,6 @@ namespace NetInject.Inspect
             }
             return manageds;
         }
-
-        private static bool IsStandardLib(string key)
-            => key == "mscorlib" || key == "System" ||
-               key == "System.Core" || key == "Microsoft.CSharp";
     }
 }
 

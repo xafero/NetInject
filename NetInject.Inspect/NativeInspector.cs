@@ -6,6 +6,7 @@ using System.Text;
 using Mono.Cecil;
 using NetInject.Cecil;
 using static NetInject.Cecil.WordHelper;
+using static NetInject.Cecil.CecilHelper;
 
 namespace NetInject.Inspect
 {
@@ -48,22 +49,6 @@ namespace NetInject.Inspect
             return name;
         }
 
-        private static string Deobfuscate(string text)
-        {
-            var buff = new StringBuilder();
-            foreach (var letter in text)
-                if ((letter >= 'A' && letter <= 'Z') || (letter >= 'a' && letter <= 'z')
-                    || (letter >= '0' && letter <= '9') || letter == '.' || letter == '&'
-                    || letter == ' ' || letter == '/' || letter == ','
-                    || letter == '(' || letter == ')' || letter == ':'
-                    || letter == '[' || letter == ']' || letter == '_')
-                    buff.Append(letter);
-            return buff.ToString();
-        }
-
-        private static string GetParamStr(IMetadataTokenProvider meth)
-            => meth.ToString().Split(new[] {'('}, 2).Last().TrimEnd(')');
-
         private static void Process(string name, IEnumerable<TypeDefinition> types,
             IMetadataTokenProvider invRef, IDictionary<string, IUnit> units)
         {
@@ -87,16 +72,29 @@ namespace NetInject.Inspect
                 if (!ptype.Methods.TryGetValue(key, out pmethod))
                     ptype.Methods[key] = pmethod
                         = new AssemblyMethod(nativeMethName, Deobfuscate(meth.ReturnType.FullName));
+                CheckAndInclude(meth.ReturnType);
                 pmethod.Parameters.Clear();
                 foreach (var parm in meth.Parameters)
                 {
                     var mparm = new MethodParameter(parm.Name, Deobfuscate(parm.ParameterType.FullName));
                     pmethod.Parameters.Add(mparm);
+                    CheckAndInclude(parm.ParameterType);
                 }
                 const StringSplitOptions sso = StringSplitOptions.None;
                 var text = $"{meth}".Split(new[] {$"{meth.ReturnType}"}, 2, sso).Last().Trim();
                 pmethod.Aliases.Add(Deobfuscate(text));
             }
+        }
+
+        private static void CheckAndInclude(TypeReference type)
+        {
+            var assRef = type.Scope as AssemblyNameReference;
+            var modRef = type.Scope as ModuleDefinition;
+            if ((assRef == null || IsStandardLib(assRef.Name)) && modRef == null)
+                return;
+            var typeDef = type.Resolve();
+            var kind = typeDef.GetTypeKind();
+            Console.WriteLine(kind + " " + Deobfuscate(typeDef + "")); // TODO: Include used types recursively!
         }
     }
 }

@@ -1,6 +1,7 @@
 ﻿using System;
 using log4net;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -8,6 +9,7 @@ using System.Text;
 using Mono.Cecil;
 using NetInject.Inspect;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
 using static NetInject.IOHelper;
 using static NetInject.AssHelper;
 
@@ -32,7 +34,14 @@ namespace NetInject
                     Poll(file, rparam, report, nativeInsp, managedInsp);
             }
             var outFile = Path.GetFullPath("report.json");
-            var json = JsonConvert.SerializeObject(report, Formatting.Indented);
+            var jopts = new JsonSerializerSettings
+            {
+                Formatting = Formatting.Indented,
+                Converters = {new StringEnumConverter()},
+                NullValueHandling = NullValueHandling.Ignore,
+                DefaultValueHandling = DefaultValueHandling.Ignore
+            };
+            var json = JsonConvert.SerializeObject(report, jopts);
             File.WriteAllText(outFile, json, Encoding.UTF8);
             Log.Info($"Report is in '{outFile}'.");
             return 0;

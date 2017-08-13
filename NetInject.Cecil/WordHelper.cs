@@ -22,5 +22,18 @@ namespace NetInject.Cecil
             }
             return bld.ToString();
         }
+        
+        public static string Deobfuscate(string text)
+        {
+            var buff = new StringBuilder();
+            foreach (var letter in text)
+                if ((letter >= 'A' && letter <= 'Z') || (letter >= 'a' && letter <= 'z')
+                    || (letter >= '0' && letter <= '9') || letter == '.' || letter == '&'
+                    || letter == ' ' || letter == '/' || letter == ','
+                    || letter == '(' || letter == ')' || letter == ':'
+                    || letter == '[' || letter == ']' || letter == '_')
+                    buff.Append(letter);
+            return buff.ToString();
+        }
     }
 }

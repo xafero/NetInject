@@ -35,7 +35,7 @@ namespace NetInject.Inspect
                 if (!report.NativeRefs.TryGetValue(key, out list))
                     report.NativeRefs[key] = list = new SortedSet<string>();
                 list.Add(ass.FullName);
-                Process(key, types, nativeRef, report.Units);
+                Process(key, types, nativeRef, report);
                 natives++;
             }
             return natives;
@@ -52,8 +52,9 @@ namespace NetInject.Inspect
         }
 
         private void Process(string name, IEnumerable<TypeDefinition> types,
-            IMetadataTokenProvider invRef, IDictionary<string, IUnit> units)
+            IMetadataTokenProvider invRef, IDependencyReport report)
         {
+            var units = report.Units;
             var nativeTypeName = Capitalize(Path.GetFileNameWithoutExtension(name));
             foreach (var meth in types.SelectMany(t => t.Methods))
             {
@@ -69,18 +70,18 @@ namespace NetInject.Inspect
                     units[name] = unit = new AssemblyUnit(nativeTypeName, new Version("0.0.0.0"));
                 IType ptype;
                 if (!unit.Types.TryGetValue(nativeTypeName, out ptype))
-                    unit.Types[nativeTypeName] = ptype = new AssemblyType(nativeTypeName);
+                    unit.Types[nativeTypeName] = ptype = new AssemblyType(nativeTypeName, TypeKind.Class);
                 IMethod pmethod;
                 if (!ptype.Methods.TryGetValue(key, out pmethod))
                     ptype.Methods[key] = pmethod
                         = new AssemblyMethod(nativeMethName, Deobfuscate(meth.ReturnType.FullName));
-                CheckAndInclude(meth.ReturnType);
+                CheckAndInclude(report, meth.ReturnType);
                 pmethod.Parameters.Clear();
                 foreach (var parm in meth.Parameters)
                 {
                     var mparm = new MethodParameter(parm.Name, Deobfuscate(parm.ParameterType.FullName));
                     pmethod.Parameters.Add(mparm);
-                    CheckAndInclude(parm.ParameterType);
+                    CheckAndInclude(report, parm.ParameterType);
                 }
                 const StringSplitOptions sso = StringSplitOptions.None;
                 var text = $"{meth}".Split(new[] {$"{meth.ReturnType}"}, 2, sso).Last().Trim();
@@ -88,12 +89,12 @@ namespace NetInject.Inspect
             }
         }
 
-        private void CheckAndInclude(TypeReference type)
+        private void CheckAndInclude(IDependencyReport report, TypeReference type)
         {
             if (type.IsInStandardLib())
                 return;
             var typeDef = type.Resolve();
-            Managed.InspectType(type, typeDef);
+            Managed.InspectType(report, type, typeDef);
         }
     }
 }

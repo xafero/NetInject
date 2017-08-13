@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using Mono.Cecil;
 using NetInject.Cecil;
@@ -36,48 +37,62 @@ namespace NetInject.Inspect
                 if (!report.ManagedRefs.TryGetValue(key, out list))
                     report.ManagedRefs[key] = list = new SortedSet<string>();
                 list.Add(ass.FullName);
-                Process(assRef, assTypes, assMembs);
+                Process(report, assRef, assTypes, assMembs);
                 manageds++;
             }
             return manageds;
         }
 
-        private void Process(AssemblyNameReference invRef, IEnumerable<TypeReference> assTypes,
-            IEnumerable<MemberReference> assMembs)
+        private void Process(IDependencyReport report, AssemblyNameReference invRef,
+            IEnumerable<TypeReference> assTypes, IEnumerable<MemberReference> assMembs)
         {
             var myTypes = assTypes.Where(t => ContainsType(invRef, t)).ToArray();
             var myMembers = assMembs.Where(m => ContainsMember(invRef, m)).GroupBy(m => m.DeclaringType).ToArray();
             foreach (var myType in myTypes)
             {
                 var myTypeDef = myType.Resolve();
-                InspectType(myType, myTypeDef);
+                InspectType(report, myType, myTypeDef);
+            }
+            foreach (var myPair in myMembers)
+            {
+                var myType = myPair.Key;
+                var myTypeDef = myType.Resolve();
+                InspectType(report, myType, myTypeDef);
             }
         }
 
-        internal void InspectType(TypeReference typeRef, TypeDefinition typeDef)
+        internal void InspectType(IDependencyReport report, TypeReference typeRef, TypeDefinition typeDef)
         {
+            var purged = report.Units;
+            var invRef = typeDef.Module.Assembly;
+            IUnit purge;
+            if (!purged.TryGetValue(invRef.Name.Name, out purge))
+                purged[invRef.Name.Name] = purge = new AssemblyUnit(invRef.Name.Name, new Version(0, 0, 0, 0));
             var kind = typeDef.GetTypeKind();
+            IType ptype;
+            if (!purge.Types.TryGetValue(typeDef.FullName, out ptype))
+                purge.Types[typeDef.FullName] = ptype = new AssemblyType(typeDef.FullName, kind);
             switch (kind)
             {
                 case TypeKind.Enum:
-                    InspectEnum(typeRef, typeDef);
+                    InspectEnum(ptype, typeRef, typeDef);
                     break;
                 case TypeKind.Delegate:
-                    InspectDelegate(typeRef, typeDef);
+                    InspectDelegate(ptype, typeRef, typeDef);
                     break;
                 case TypeKind.Struct:
-                    InspectStruct(typeRef, typeDef);
+                    InspectStruct(ptype, typeRef, typeDef);
                     break;
                 case TypeKind.Interface:
-                    InspectInterface(typeRef, typeDef);
+                    InspectInterface(ptype, typeRef, typeDef);
                     break;
                 case TypeKind.Class:
-                    InspectClass(typeRef, typeDef);
+                    InspectClass(ptype, typeRef, typeDef);
                     break;
             }
         }
 
-        private void InspectClass(TypeReference typeRef, TypeDefinition typeDef)
+        private void InspectClass(IType type, TypeReference typeRef, TypeDefinition typeDef)
         {
             var virtuals = new MethodDefinition[0];
             var derived = new TypeDefinition[0];
@@ -88,22 +103,16 @@ namespace NetInject.Inspect
                          && (overrides = virtuals.Intersect(derived.SelectMany(d => d.Methods)
                              .Where(m => m.IsAbstract || m.IsVirtual), MethCmp).ToArray()).Any();
 
-
-            foreach (var @override in overrides)
-                Console.WriteLine(@override);
-            
-
-            
+            Console.WriteLine(typeDef + " is class");
         }
 
-        private void InspectInterface(TypeReference typeRef, TypeDefinition typeDef)
+        private void InspectInterface(IType type, TypeReference typeRef, TypeDefinition typeDef)
         {
-            throw new NotImplementedException();
+            Console.WriteLine(typeDef + " is interface");
         }
 
-        private void InspectDelegate(TypeReference typeRef, TypeDefinition typeDef)
+        private void InspectDelegate(IType type, TypeReference typeRef, TypeDefinition typeDef)
         {
-            IType type = null;
             var dlgtSig = typeDef.Methods.First(m => m.Name == "Invoke");
             var dlgtMeth = new AssemblyMethod(dlgtSig.Name, dlgtSig.ReturnType.FullName);
             foreach (var dlgtParm in dlgtSig.Parameters)
@@ -111,14 +120,13 @@ namespace NetInject.Inspect
             type.Methods[dlgtMeth.Name] = dlgtMeth;
         }
 
-        private void InspectStruct(TypeReference typeRef, TypeDefinition typeDef)
+        private void InspectStruct(IType type, TypeReference typeRef, TypeDefinition typeDef)
         {
-            throw new NotImplementedException();
+            Console.WriteLine(typeDef + " is struct");
         }
 
-        private void InspectEnum(TypeReference typeRef, TypeDefinition typeDef)
+        private void InspectEnum(IType type, TypeReference typeRef, TypeDefinition typeDef)
         {
-            IType type = null;
             foreach (var enumFld in typeDef.Fields.Where(f => !f.Name.EndsWith("__", Cmpa)).ToArray())
                 type.Values[enumFld.Name] = new EnumValue(enumFld.Name);
         }
@@ -126,36 +134,13 @@ namespace NetInject.Inspect
 }
 
 /*
-static void InvertAssemblyRef(, PurgedAssemblies purged,
-            TypeReference[] assTypes, MemberReference[] assMembs)
-        {
-             
-            PurgedAssembly purge;
-            if (!purged.TryGetValue(invRef.FullName, out purge))
-                purged[invRef.FullName] = purge = new PurgedAssembly(invRef.Name, invRef.Version);
-             
-            
-                PurgedType ptype;
-                if (!purge.Types.TryGetValue(myType.FullName, out ptype))
-                    purge.Types[myType.FullName] = ptype = new PurgedType(myType.Namespace, myType.Name);
-                
-                
-                 
-                        
-                            
                                 var otypeName = myType.Name;
                                 var otypeFqn = myType.FullName;
                                 PurgedType otype;
                                 if (!purge.Types.TryGetValue(otypeFqn, out otype))
                                     purge.Types[otypeFqn] = otype = new PurgedType(myType.Namespace, otypeName);
                                 HandleAbstractClass(otype, overrides);
-                            }
-                        }
-                    }
-                }
-            }
-            foreach (var myPair in myMembers)
-            {
+                       
                 var myType = myPair.Key;
                 PurgedType ptype;
                 if (!purge.Types.TryGetValue(myType.FullName, out ptype))
@@ -179,8 +164,6 @@ static void InvertAssemblyRef(, PurgedAssemblies purged,
                     if (pmd.ReturnType.FullName != typeof(void).FullName)
                         pmethod.ReturnType = pmd.ReturnType.FullName;
                 }
-            }
-        }
 
         static void HandleAbstractClass(PurgedType fake, MethodDefinition[] overrides)
         {
@@ -202,6 +185,4 @@ static void InvertAssemblyRef(, PurgedAssemblies purged,
                 if (overrid.ReturnType.FullName != typeof(void).FullName)
                     pmethod.ReturnType = overrid.ReturnType.FullName;
             }
-        }
-        
-        */
+        } */

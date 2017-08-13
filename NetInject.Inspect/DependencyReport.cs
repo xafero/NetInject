@@ -7,12 +7,14 @@ namespace NetInject.Inspect
         public ICollection<string> Files { get; }
         public IDictionary<string, ISet<string>> ManagedRefs { get; set; }
         public IDictionary<string, ISet<string>> NativeRefs { get; set; }
+        public IDictionary<string, IUnit> Units { get; }
 
         public DependencyReport()
         {
             Files = new SortedSet<string>();
             NativeRefs = new SortedDictionary<string, ISet<string>>();
             ManagedRefs = new SortedDictionary<string, ISet<string>>();
+            Units = new SortedDictionary<string, IUnit>();
         }
     }
 }

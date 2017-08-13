@@ -1,13 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
 using Mono.Cecil;
 using NetInject.Cecil;
-using static NetInject.Cecil.CecilHelper;
 using static NetInject.Cecil.WordHelper;
 
 namespace NetInject.Inspect
@@ -35,10 +32,7 @@ namespace NetInject.Inspect
                 if (!report.NativeRefs.TryGetValue(key, out list))
                     report.NativeRefs[key] = list = new SortedSet<string>();
                 list.Add(ass.FullName);
-
-                // PurgedAssemblies purged                
-                Process(key, types, nativeRef);
-
+                Process(key, types, nativeRef, report.Units);
                 natives++;
             }
             return natives;
@@ -68,7 +62,8 @@ namespace NetInject.Inspect
         private static string GetParamStr(IMetadataTokenProvider meth)
             => meth.ToString().Split(new[] {'('}, 2).Last().TrimEnd(')');
 
-        private static void Process(string name, IEnumerable<TypeDefinition> types, IMetadataTokenProvider invRef)
+        private static void Process(string name, IEnumerable<TypeDefinition> types,
+            IMetadataTokenProvider invRef, IDictionary<string, IUnit> units)
         {
             var nativeTypeName = Capitalize(Path.GetFileNameWithoutExtension(name));
             foreach (var meth in types.SelectMany(t => t.Methods))
@@ -79,40 +74,24 @@ namespace NetInject.Inspect
                 var nativeMethName = pinv.EntryPoint;
                 var retType = Deobfuscate(meth.ReturnType.ToString());
                 var parms = Deobfuscate(GetParamStr(meth));
-                var key = $"{nativeMethName}__{retType}__{parms}";
-                
-                
-                
-                
+                var key = $"{nativeMethName} {retType} {parms}";
+                IUnit unit;
+                if (!units.TryGetValue(name, out unit))
+                    units[name] = unit = new AssemblyUnit(nativeTypeName, new Version("0.0.0.0"));
+                IType ptype;
+                if (!unit.Types.TryGetValue(nativeTypeName, out ptype))
+                    unit.Types[nativeTypeName] = ptype = new AssemblyType(nativeTypeName);
+                IMethod pmethod;
+                if (!ptype.Methods.TryGetValue(key, out pmethod))
+                    ptype.Methods[key] = pmethod
+                        = new AssemblyMethod(nativeMethName, Deobfuscate(meth.ReturnType.FullName));
+                pmethod.Parameters.Clear();
+                foreach (var parm in meth.Parameters)
+                {
+                    var mparm = new MethodParameter(parm.Name, Deobfuscate(parm.ParameterType.FullName));
+                    pmethod.Parameters.Add(mparm);
+                }
             }
         }
     }
 }
-
-/* static void InvertNativeRef(ModuleReference invRef, PurgedAssemblies purged, IEnumerable<TypeDefinition> types)
-        {            
-            PurgedAssembly purge;
-            if (!purged.TryGetValue(invRefName, out purge))
-                purged[invRefName] = purge = new PurgedAssembly(invRefName, new Version("0.0.0.0"));
-            var ptypeName = invRefName.Split('.').First();
-            PurgedType ptype;
-            if (!purge.Types.TryGetValue(ptypeName, out ptype))
-                purge.Types[ptypeName] = ptype = new PurgedType(invRefName, ptypeName);
-            
-                
-                PurgedMethod pmethod;
-                if (!ptype.Methods.TryGetValue(nativeMethName, out pmethod))
-                    ptype.Methods[nativeMethName] = pmethod = new PurgedMethod(nativeMethName);
-                foreach (var parm in meth.Parameters)
-                {
-                    var mparm = new PurgedParam
-                    {
-                        Name = Escape(parm.Name),
-                        ParamType = parm.ParameterType.FullName
-                    };
-                    pmethod.Parameters.Add(mparm);
-                }
-                if (meth.ReturnType.FullName != typeof(void).FullName)
-                    pmethod.ReturnType = meth.ReturnType.FullName;
-                pmethod.Refs.Add(meth.FullName);
-     */

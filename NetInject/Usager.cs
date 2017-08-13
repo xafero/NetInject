@@ -1,8 +1,10 @@
 ﻿using System;
 using log4net;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Text;
 using Mono.Cecil;
 using NetInject.Inspect;
 using Newtonsoft.Json;
@@ -29,9 +31,10 @@ namespace NetInject
                 foreach (var file in files)
                     Poll(file, rparam, report, nativeInsp, managedInsp);
             }
-
-            Console.WriteLine(JsonConvert.SerializeObject(report, Formatting.Indented));
-
+            var outFile = Path.GetFullPath("report.json");
+            var json = JsonConvert.SerializeObject(report, Formatting.Indented);
+            File.WriteAllText(outFile, json, Encoding.UTF8);
+            Log.Info($"Report is in '{outFile}'.");
             return 0;
         }
 

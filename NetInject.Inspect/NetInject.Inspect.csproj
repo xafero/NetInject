@@ -48,10 +48,18 @@
     <Reference Include="System" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="AssemblyMethod.cs" />
+    <Compile Include="AssemblyType.cs" />
+    <Compile Include="AssemblyUnit.cs" />
     <Compile Include="DependencyReport.cs" />
     <Compile Include="IDependencyReport.cs" />
     <Compile Include="IInspector.cs" />
+    <Compile Include="IMethod.cs" />
+    <Compile Include="IParameter.cs" />
+    <Compile Include="IType.cs" />
+    <Compile Include="IUnit.cs" />
     <Compile Include="ManagedInspector.cs" />
+    <Compile Include="MethodParameter.cs" />
     <Compile Include="NativeInspector.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

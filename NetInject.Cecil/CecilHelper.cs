@@ -71,5 +71,14 @@ namespace NetInject.Cecil
         public static IEnumerable<TypeDefinition> GetDerivedTypes(this AssemblyDefinition ass,
             TypeReference baseType)
             => ass.GetAllTypes().Where(type => type.BaseType == baseType);
+
+        public static IEnumerable<MemberReference> GetAllMembers(this TypeDefinition typeDef)
+        {
+            var evts = typeDef.Events.Cast<MemberReference>();
+            var filds = typeDef.Fields.Cast<MemberReference>();
+            var meths = typeDef.Methods.Cast<MemberReference>();
+            var props = typeDef.Properties.Cast<MemberReference>();
+            return evts.Concat(filds).Concat(meths).Concat(props).Distinct();
+        }
     }
 }

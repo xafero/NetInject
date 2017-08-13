@@ -94,7 +94,7 @@ namespace NetInject.Inspect
             if (type.IsInStandardLib())
                 return;
             var typeDef = type.Resolve();
-            Managed.InspectType(report, type, typeDef);
+            Managed.InspectType(report, type, typeDef, null);
         }
     }
 }

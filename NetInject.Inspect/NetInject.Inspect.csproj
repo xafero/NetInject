@@ -49,12 +49,14 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="ApiExts.cs" />
+    <Compile Include="AssemblyField.cs" />
     <Compile Include="AssemblyMethod.cs" />
     <Compile Include="AssemblyType.cs" />
     <Compile Include="AssemblyUnit.cs" />
     <Compile Include="DependencyReport.cs" />
     <Compile Include="EnumValue.cs" />
     <Compile Include="IDependencyReport.cs" />
+    <Compile Include="IField.cs" />
     <Compile Include="IInspector.cs" />
     <Compile Include="IMethod.cs" />
     <Compile Include="IParameter.cs" />

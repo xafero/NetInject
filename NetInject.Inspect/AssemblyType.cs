@@ -7,6 +7,7 @@ namespace NetInject.Inspect
     {
         public TypeKind Kind { get; }
         public string Name { get; }
+        public IDictionary<string, IField> Fields { get; }
         public IDictionary<string, IMethod> Methods { get; }
         public IDictionary<string, IValue> Values { get; }
 
@@ -14,6 +15,7 @@ namespace NetInject.Inspect
         {
             Kind = kind;
             Name = name;
+            Fields = new SortedDictionary<string, IField>();
             Methods = new SortedDictionary<string, IMethod>();
             Values = new SortedDictionary<string, IValue>();
         }

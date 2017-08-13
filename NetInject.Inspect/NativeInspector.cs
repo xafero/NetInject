@@ -89,9 +89,7 @@ namespace NetInject.Inspect
     }
 }
 
-/*
-static void InvertNativeRef(ModuleReference invRef, PurgedAssemblies purged,
-            IEnumerable<TypeDefinition> types)
+/* static void InvertNativeRef(ModuleReference invRef, PurgedAssemblies purged, IEnumerable<TypeDefinition> types)
         {            
             PurgedAssembly purge;
             if (!purged.TryGetValue(invRefName, out purge))
@@ -117,7 +115,4 @@ static void InvertNativeRef(ModuleReference invRef, PurgedAssemblies purged,
                 if (meth.ReturnType.FullName != typeof(void).FullName)
                     pmethod.ReturnType = meth.ReturnType.FullName;
                 pmethod.Refs.Add(meth.FullName);
-            }
-        }
-        
-        */
+     */

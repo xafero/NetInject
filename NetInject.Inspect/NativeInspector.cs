@@ -54,7 +54,9 @@ namespace NetInject.Inspect
             foreach (var letter in text)
                 if ((letter >= 'A' && letter <= 'Z') || (letter >= 'a' && letter <= 'z')
                     || (letter >= '0' && letter <= '9') || letter == '.' || letter == '&'
-                    || letter == ' ' || letter == '/' || letter == ',')
+                    || letter == ' ' || letter == '/' || letter == ','
+                    || letter == '(' || letter == ')' || letter == ':'
+                    || letter == '[' || letter == ']' || letter == '_')
                     buff.Append(letter);
             return buff.ToString();
         }
@@ -91,6 +93,9 @@ namespace NetInject.Inspect
                     var mparm = new MethodParameter(parm.Name, Deobfuscate(parm.ParameterType.FullName));
                     pmethod.Parameters.Add(mparm);
                 }
+                const StringSplitOptions sso = StringSplitOptions.None;
+                var text = $"{meth}".Split(new[] {$"{meth.ReturnType}"}, 2, sso).Last().Trim();
+                pmethod.Aliases.Add(Deobfuscate(text));
             }
         }
     }

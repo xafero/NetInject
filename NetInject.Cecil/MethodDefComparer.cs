@@ -1,11 +1,11 @@
 ﻿using System;
-using System.Linq;
 using System.Collections.Generic;
+using System.Linq;
 using Mono.Cecil;
 
-namespace NetInject
+namespace NetInject.Cecil
 {
-    internal class MethodDefComparer : IEqualityComparer<MethodDefinition>
+    public class MethodDefComparer : IEqualityComparer<MethodDefinition>
     {
         public bool Equals(MethodDefinition x, MethodDefinition y)
             => GetId(x) == GetId(y);

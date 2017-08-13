@@ -33,6 +33,19 @@ namespace NetInject.Cecil
         public static string GetParamStr(IMetadataTokenProvider meth)
             => meth.ToString().Split(new[] {'('}, 2).Last().TrimEnd(')');
 
+        public static bool IsInStandardLib(this TypeReference type)
+        {
+            var assRef = type.Scope as AssemblyNameReference;
+            var modRef = type.Scope as ModuleDefinition;
+            return (assRef == null || IsStandardLib(assRef.Name)) && modRef == null;
+        }
+
+        public static bool ContainsType(AssemblyNameReference assRef, TypeReference typRef)
+            => assRef.FullName == (typRef.Scope as AssemblyNameReference)?.FullName;
+
+        public static bool ContainsMember(AssemblyNameReference assRef, MemberReference mbmRef)
+            => ContainsType(assRef, mbmRef.DeclaringType);
+
         public static TypeKind GetTypeKind(this TypeDefinition typeDef)
         {
             if (typeDef.IsEnum)
@@ -47,5 +60,16 @@ namespace NetInject.Cecil
                 return TypeKind.Class;
             return default(TypeKind);
         }
+
+        public static bool IsBaseCandidate(this TypeDefinition myTypeDef)
+            => !myTypeDef.IsValueType && !myTypeDef.IsSpecialName && !myTypeDef.IsSealed
+               && !myTypeDef.IsRuntimeSpecialName && !myTypeDef.IsPrimitive
+               && !myTypeDef.IsInterface && !myTypeDef.IsArray &&
+               (myTypeDef.IsPublic || myTypeDef.IsNestedPublic) &&
+               myTypeDef.IsClass;
+
+        public static IEnumerable<TypeDefinition> GetDerivedTypes(this AssemblyDefinition ass,
+            TypeReference baseType)
+            => ass.GetAllTypes().Where(type => type.BaseType == baseType);
     }
 }

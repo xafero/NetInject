@@ -61,9 +61,7 @@ namespace NetInject
         public static IEnumerable<TypeDefinition> GetDerivedTypes(this AssemblyDefinition ass,
             TypeReference baseType)
         {
-            foreach (var type in ass.GetAllTypes())
-                if (type.BaseType == baseType)
-                    yield return type;
+            return ass.GetAllTypes().Where(type => type.BaseType == baseType);
         }
     }
 }

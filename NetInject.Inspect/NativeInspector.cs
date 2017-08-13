@@ -15,10 +15,12 @@ namespace NetInject.Inspect
         private static readonly StringComparer Comp = StringComparer.InvariantCultureIgnoreCase;
 
         public IList<string> Filters { get; }
+        private ManagedInspector Managed { get; }
 
         public NativeInspector(IEnumerable<string> filters)
         {
             Filters = filters.ToList();
+            Managed = new ManagedInspector(new string[0]);
         }
 
         public int Inspect(AssemblyDefinition ass, IDependencyReport report)
@@ -49,7 +51,7 @@ namespace NetInject.Inspect
             return name;
         }
 
-        private static void Process(string name, IEnumerable<TypeDefinition> types,
+        private void Process(string name, IEnumerable<TypeDefinition> types,
             IMetadataTokenProvider invRef, IDictionary<string, IUnit> units)
         {
             var nativeTypeName = Capitalize(Path.GetFileNameWithoutExtension(name));
@@ -86,15 +88,12 @@ namespace NetInject.Inspect
             }
         }
 
-        private static void CheckAndInclude(TypeReference type)
+        private void CheckAndInclude(TypeReference type)
         {
-            var assRef = type.Scope as AssemblyNameReference;
-            var modRef = type.Scope as ModuleDefinition;
-            if ((assRef == null || IsStandardLib(assRef.Name)) && modRef == null)
+            if (type.IsInStandardLib())
                 return;
             var typeDef = type.Resolve();
-            var kind = typeDef.GetTypeKind();
-            Console.WriteLine(kind + " " + Deobfuscate(typeDef + "")); // TODO: Include used types recursively!
+            Managed.InspectType(type, typeDef);
         }
     }
 }

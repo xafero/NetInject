@@ -67,6 +67,7 @@
     <Compile Include="MethodParameter.cs" />
     <Compile Include="NativeInspector.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Units.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

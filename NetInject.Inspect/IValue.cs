@@ -2,6 +2,6 @@
 {
     public interface IValue
     {
-        
+        string Name { get; }
     }
 }

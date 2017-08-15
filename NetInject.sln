@@ -15,8 +15,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NetInject.Autofac", "NetInj
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NetInject.IoC", "NetInject.IoC\NetInject.IoC.csproj", "{A203A10A-C409-4112-9437-AFB577BF9493}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NetInject.Purge", "NetInject.Purge\NetInject.Purge.csproj", "{B06F4E26-1CDD-4814-9982-6877C23E3DAD}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NetInject.Inspect", "NetInject.Inspect\NetInject.Inspect.csproj", "{40F65F07-9DFA-4B3C-8945-087AC4EE8CBD}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NetInject.Cecil", "NetInject.Cecil\NetInject.Cecil.csproj", "{7D9F6684-1213-489D-857C-05F655AEB89C}"
@@ -51,10 +49,6 @@ Global
 		{A203A10A-C409-4112-9437-AFB577BF9493}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A203A10A-C409-4112-9437-AFB577BF9493}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A203A10A-C409-4112-9437-AFB577BF9493}.Release|Any CPU.Build.0 = Release|Any CPU
-		{B06F4E26-1CDD-4814-9982-6877C23E3DAD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{B06F4E26-1CDD-4814-9982-6877C23E3DAD}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{B06F4E26-1CDD-4814-9982-6877C23E3DAD}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{B06F4E26-1CDD-4814-9982-6877C23E3DAD}.Release|Any CPU.Build.0 = Release|Any CPU
 		{40F65F07-9DFA-4B3C-8945-087AC4EE8CBD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{40F65F07-9DFA-4B3C-8945-087AC4EE8CBD}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{40F65F07-9DFA-4B3C-8945-087AC4EE8CBD}.Release|Any CPU.ActiveCfg = Release|Any CPU

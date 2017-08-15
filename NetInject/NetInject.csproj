@@ -121,10 +121,6 @@
       <Project>{29506E22-97AA-4550-847C-D2E7764B3DE1}</Project>
       <Name>NetInject.Moq</Name>
     </ProjectReference>
-    <ProjectReference Include="..\NetInject.Purge\NetInject.Purge.csproj">
-      <Project>{B06F4E26-1CDD-4814-9982-6877C23E3DAD}</Project>
-      <Name>NetInject.Purge</Name>
-    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

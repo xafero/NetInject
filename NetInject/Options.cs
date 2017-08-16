@@ -82,8 +82,15 @@ namespace NetInject
         public string Binary { get; set; }
     }
 
+    interface IUsageOpts
+    {
+        string WorkDir { get; }
+
+        IEnumerable<string> Assemblies { get; }
+    }
+
     [Verb("invert", HelpText = "Apply inversion of control.")]
-    class InvertOptions
+    class InvertOptions : IUsageOpts
     {
         [Value(0, MetaName = "work", HelpText = "Directory to work in")]
         public string WorkDir { get; set; }
@@ -96,7 +103,7 @@ namespace NetInject
     }
 
     [Verb("usages", HelpText = "Poll assemblies for detailed usages.")]
-    class UsagesOptions
+    class UsagesOptions : IUsageOpts
     {
         [Value(0, MetaName = "work", HelpText = "Directory to work in")]
         public string WorkDir { get; set; }

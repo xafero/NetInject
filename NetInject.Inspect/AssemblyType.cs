@@ -21,7 +21,7 @@ namespace NetInject.Inspect
             Values = new SortedDictionary<string, IValue>();
         }
 
-        public string Namespace => _name.Substring(0, _name.LastIndexOf('.'));
+        public string Namespace => _name.Substring(0, _name.LastIndexOf('.').BeNonNegative(_name.Length));
 
         public string Name => _name.Substring(_name.LastIndexOf('.') + 1);
     }

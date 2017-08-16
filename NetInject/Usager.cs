@@ -1,8 +1,5 @@
-﻿using System;
-using log4net;
+﻿using log4net;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -19,20 +16,10 @@ namespace NetInject
     {
         private static readonly ILog Log = LogManager.GetLogger(typeof(Usager));
 
-        public static int Poll(UsagesOptions opts)
+        internal static int Poll(IUsageOpts opts)
         {
             var report = new DependencyReport();
-            var files = GetAssemblyFiles(opts.WorkDir).ToArray();
-            Log.Info($"Found {files.Length} file(s)!");
-            using (var resolv = new DefaultAssemblyResolver())
-            {
-                resolv.AddSearchDirectory(opts.WorkDir);
-                var rparam = new ReaderParameters {AssemblyResolver = resolv};
-                var nativeInsp = new NativeInspector(opts.Assemblies);
-                var managedInsp = new ManagedInspector(opts.Assemblies);
-                foreach (var file in files)
-                    Poll(file, rparam, report, nativeInsp, managedInsp);
-            }
+            Poll(opts, report);
             var outFile = Path.GetFullPath("report.json");
             var jopts = new JsonSerializerSettings
             {
@@ -45,6 +32,21 @@ namespace NetInject
             File.WriteAllText(outFile, json, Encoding.UTF8);
             Log.Info($"Report is in '{outFile}'.");
             return 0;
+        }
+
+        internal static void Poll(IUsageOpts opts, DependencyReport report)
+        {
+            var files = GetAssemblyFiles(opts.WorkDir).ToArray();
+            Log.Info($"Found {files.Length} file(s)!");
+            using (var resolv = new DefaultAssemblyResolver())
+            {
+                resolv.AddSearchDirectory(opts.WorkDir);
+                var rparam = new ReaderParameters {AssemblyResolver = resolv};
+                var nativeInsp = new NativeInspector(opts.Assemblies);
+                var managedInsp = new ManagedInspector(opts.Assemblies);
+                foreach (var file in files)
+                    Poll(file, rparam, report, nativeInsp, managedInsp);
+            }
         }
 
         private static void Poll(string file, ReaderParameters rparam,

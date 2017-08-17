@@ -109,6 +109,10 @@
       <Project>{FD8DBA49-7F01-437B-B7EC-5B308AD999B5}</Project>
       <Name>NetInject.Basic</Name>
     </ProjectReference>
+    <ProjectReference Include="..\NetInject.Cecil\NetInject.Cecil.csproj">
+      <Project>{7D9F6684-1213-489D-857C-05F655AEB89C}</Project>
+      <Name>NetInject.Cecil</Name>
+    </ProjectReference>
     <ProjectReference Include="..\NetInject.Inspect\NetInject.Inspect.csproj">
       <Project>{40F65F07-9DFA-4B3C-8945-087AC4EE8CBD}</Project>
       <Name>NetInject.Inspect</Name>

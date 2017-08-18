@@ -9,6 +9,7 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using static NetInject.IOHelper;
 using static NetInject.AssHelper;
+using static NetInject.Cecil.CecilHelper;
 
 namespace NetInject
 {
@@ -54,7 +55,7 @@ namespace NetInject
         {
             using (var ass = ReadAssembly(null, rparam, file))
             {
-                if (ass == null)
+                if (ass == null || IsStandardLib(ass.Name.Name))
                     return;
                 var founds = new Dictionary<string, int>();
                 foreach (var inspector in inspectors)

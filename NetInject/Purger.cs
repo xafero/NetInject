@@ -61,33 +61,18 @@ namespace NetInject
                 Log.Info($"'{ToRelativePath(tempDir, filePath)}' [{nsps.Length} namespace(s)]");
                 File.WriteAllText(filePath, code, Encoding.UTF8);
             }
-            Log.Info($"Done.");
-
-            
-
-            /*var purged = new PurgedAssemblies();
-            var filesToWatch = new HashSet<string>();
-            using (var resolv = new DefaultAssemblyResolver())
+            var workDir = Path.GetFullPath(opts.WorkDir);
+            Log.Info($"Ensuring dependencies in '{workDir}'...");
+            if (report.Files.Count >= 1 && files.Length >= 1)
             {
-                resolv.AddSearchDirectory(opts.WorkDir);
-                var rparam = new ReaderParameters { AssemblyResolver = resolv };
-                var wparam = new WriterParameters();
-                var files = GetAssemblyFiles(opts.WorkDir).ToArray();
-                log.Info($"Found {files.Length} file(s)!");
-                foreach (var file in files)
-                    using (var stream = new MemoryStream(File.ReadAllBytes(file)))
-                    using (var ass = ReadAssembly(stream, rparam, file))
-                    {
-                        if (ass == null)
-                            continue;
-                        log.Info($"'{ass.FullName}'");
-                        var isFileDirty = false;
-                        Invert(ass, opts, wparam, file, ref isFileDirty, purged);
-                        if (!isFileDirty)
-                            continue;
-                        filesToWatch.Add(file);
-                    }
-                if (filesToWatch.Count >= 1 && purged.Count >= 1)
+                Log.InfoFormat(" added '{0}'!", CopyTypeRef<IVessel>(workDir));
+                Log.InfoFormat(" added '{0}'!", CopyTypeRef<DefaultVessel>(workDir));
+                Log.InfoFormat(" added '{0}'!", CopyTypeRef<MoqContainer>(workDir));
+                Log.InfoFormat(" added '{0}'!", CopyTypeRef<AutofacContainer>(workDir));
+            }
+            Log.Info("Done.");
+
+            /* if (filesToWatch.Count >= 1 && purged.Count >= 1)
                 {
                     var gens = GenerateCode(purged, opts.TempDir, opts.WorkDir, rparam)
                         .ToDictionary(k => k.Name.Name, v => v);
@@ -101,15 +86,7 @@ namespace NetInject
                             ass.Write(file, wparam);
                             log.InfoFormat($"Replaced something in '{ass}'!");
                         }
-                }
-            }
-            if (filesToWatch.Count >= 1 && purged.Count >= 1)
-            {
-                log.InfoFormat("Added '{0}'!", CopyTypeRef<IVessel>(opts.WorkDir));
-                log.InfoFormat("Added '{0}'!", CopyTypeRef<AutofacContainer>(opts.WorkDir));
-                log.InfoFormat("Added '{0}'!", CopyTypeRef<MoqContainer>(opts.WorkDir));
-                log.InfoFormat("Added '{0}'!", CopyTypeRef<DefaultVessel>(opts.WorkDir));
-            }*/
+                } */
             return 0;
         }
 

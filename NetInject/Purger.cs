@@ -50,47 +50,19 @@ namespace NetInject
             var tempDir = Path.GetFullPath(opts.TempDir);
             Directory.CreateDirectory(tempDir);
             Log.Info($"Temporary directory is '{tempDir}'.");
-            foreach (var pair in report.Units)
+            var generated = GenerateNamespaces(report);
+            var files = generated.GroupBy(g => g.Key).ToArray();
+            Log.Info($"Generating {files.Length} packages...");
+            foreach (var file in files)
             {
-                var ass = pair.Value;
-                var fileName = Path.Combine(tempDir, $"{ass.Name}.cs");
-                var outputs = new List<INamespace>();
-                var groups = pair.Value.Types.GroupBy(u => u.Value.Namespace);
-                foreach (var group in groups)
-                {
-                    var nspName = group.Key;
-                    var nsp = Noast.Create<INamespace>(nspName);
-                    nsp.AddUsing("System");
-                    foreach (var twik in group)
-                    {
-                        var type = twik.Value;
-                        switch (type.Kind)
-                        {
-                            case TypeKind.Interface:
-                                Noast.Create<IInterface>(type.Name, nsp);
-                                break;
-                            case TypeKind.Class:
-                                Noast.Create<IClass>(type.Name, nsp);
-                                break;
-                            case TypeKind.Delegate:
-                                Noast.Create<IDelegate>(type.Name, nsp);
-                                break;
-                            case TypeKind.Enum:
-                                Noast.Create<IEnum>(type.Name, nsp);
-                                break;
-                            case TypeKind.Struct:
-                                Noast.Create<IStruct>(type.Name, nsp);
-                                break;
-                        }
-                    }
-                    outputs.Add(nsp);
-                }
-                var code = string.Join(Environment.NewLine, outputs);
-                File.WriteAllText(fileName, code, Encoding.UTF8);
+                var nsps = file.ToArray();
+                var code = string.Join(Environment.NewLine, nsps);
+                var filePath = Path.Combine(tempDir, file.Key);
+                Log.Info($"'{ToRelativePath(tempDir, filePath)}' [{nsps.Length} namespace(s)]");
+                File.WriteAllText(filePath, code, Encoding.UTF8);
             }
+            Log.Info($"Done.");
 
-            
-            
             
 
             /*var purged = new PurgedAssemblies();
@@ -139,6 +111,45 @@ namespace NetInject
                 log.InfoFormat("Added '{0}'!", CopyTypeRef<DefaultVessel>(opts.WorkDir));
             }*/
             return 0;
+        }
+
+        private static IEnumerable<KeyValuePair<string, INamespace>> GenerateNamespaces(IDependencyReport report)
+        {
+            foreach (var pair in report.Units)
+            {
+                var ass = pair.Value;
+                var fileName = $"{ass.Name}.cs";
+                var groups = pair.Value.Types.GroupBy(u => u.Value.Namespace);
+                foreach (var group in groups)
+                {
+                    var nspName = group.Key;
+                    var nsp = Noast.Create<INamespace>(nspName);
+                    nsp.AddUsing("System");
+                    foreach (var twik in group)
+                    {
+                        var type = twik.Value;
+                        switch (type.Kind)
+                        {
+                            case TypeKind.Interface:
+                                Noast.Create<IInterface>(type.Name, nsp);
+                                break;
+                            case TypeKind.Class:
+                                Noast.Create<IClass>(type.Name, nsp);
+                                break;
+                            case TypeKind.Delegate:
+                                Noast.Create<IDelegate>(type.Name, nsp);
+                                break;
+                            case TypeKind.Enum:
+                                Noast.Create<IEnum>(type.Name, nsp);
+                                break;
+                            case TypeKind.Struct:
+                                Noast.Create<IStruct>(type.Name, nsp);
+                                break;
+                        }
+                    }
+                    yield return new KeyValuePair<string, INamespace>(fileName, nsp);
+                }
+            }
         }
 
         /*      static void Invert(AssemblyDefinition ass, InvertOptions opts,

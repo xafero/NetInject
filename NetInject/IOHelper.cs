@@ -63,7 +63,14 @@ namespace NetInject
 
         internal static T GetIndex<T>(this T[] array, int index)
         {
-            try { return array[index]; } catch (IndexOutOfRangeException) { return default(T); }
+            try
+            {
+                return array[index];
+            }
+            catch (IndexOutOfRangeException)
+            {
+                return default(T);
+            }
         }
 
         internal static MemoryStream IntoMemory(string file) => new MemoryStream(File.ReadAllBytes(file));
@@ -94,5 +101,9 @@ namespace NetInject
                 dict[pair.Key] = pair.Value;
             return dict;
         }
+
+        public static string ToRelativePath(string root, string path)
+            => Path.GetFullPath(path).Replace(Path.GetFullPath(root), string.Empty)
+                .TrimStart(Path.DirectorySeparatorChar);
     }
 }

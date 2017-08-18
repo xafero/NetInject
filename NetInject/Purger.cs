@@ -55,8 +55,8 @@ namespace NetInject
             Log.Info($"Generating {files.Length} packages...");
             foreach (var file in files)
             {
-                var nsps = file.ToArray();
-                var code = string.Join(Environment.NewLine, nsps);
+                var nsps = file.Select(f => f.Value).ToArray();
+                var code = string.Join(Environment.NewLine, nsps.Select(n => n.ToString()));
                 var filePath = Path.Combine(tempDir, file.Key);
                 Log.Info($"'{ToRelativePath(tempDir, filePath)}' [{nsps.Length} namespace(s)]");
                 File.WriteAllText(filePath, code, Encoding.UTF8);

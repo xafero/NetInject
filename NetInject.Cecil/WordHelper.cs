@@ -22,7 +22,7 @@ namespace NetInject.Cecil
             }
             return bld.ToString();
         }
-        
+
         public static string Deobfuscate(string text)
         {
             var buff = new StringBuilder();
@@ -33,6 +33,8 @@ namespace NetInject.Cecil
                     || letter == '(' || letter == ')' || letter == ':'
                     || letter == '[' || letter == ']' || letter == '_')
                     buff.Append(letter);
+            if (buff.Length < 1 || !char.IsLetter(buff[0]))
+                buff.Insert(0, '_');
             return buff.ToString();
         }
     }

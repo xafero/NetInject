@@ -138,7 +138,7 @@ namespace NetInject
                 var groups = pair.Value.Types.GroupBy(u => u.Value.Namespace);
                 foreach (var group in groups)
                 {
-                    var nspName = group.Key;
+                    var nspName = Deobfuscate(group.Key);
                     var nsp = Noast.Create<INamespace>(nspName);
                     nsp.AddUsing("System");
                     foreach (var twik in group)

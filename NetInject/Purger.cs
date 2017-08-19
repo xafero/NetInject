@@ -63,11 +63,13 @@ namespace NetInject
             var generated = GenerateNamespaces(report);
             var files = generated.GroupBy(g => g.Key).ToArray();
             Log.Info($"Generating {files.Length} packages...");
+            var newLine = Environment.NewLine + Environment.NewLine;
             var toCompile = new List<string>();
             foreach (var file in files)
             {
-                var nsps = file.Select(f => f.Value).ToArray();
-                var code = string.Join(Environment.NewLine, nsps.Select(n => n.ToString()));
+                var meta = CreateMetadata(file.Key);
+                var nsps = new object[] { meta }.Concat(file.Select(f => f.Value)).ToArray();
+                var code = string.Join(newLine, nsps.Select(n => n.ToString()));
                 var filePath = Path.Combine(tempDir, file.Key);
                 Log.Info($"'{ToRelativePath(tempDir, filePath)}' [{nsps.Length} namespace(s)]");
                 File.WriteAllText(filePath, code, Encoding.UTF8);
@@ -105,6 +107,16 @@ namespace NetInject
             }
             Log.Info("Done.");
             return 0;
+        }
+
+        private static IMetadata CreateMetadata(string file)
+        {
+            var name = Path.GetFileNameWithoutExtension(file);
+            var meta = Noast.Create<IMetadata>(name);
+            meta.AddUsing("System.Runtime.Versioning");
+            meta.TargetFramework = "4.5";
+            meta.Metadata["Creator"] = typeof(Purger).Namespace;
+            return meta;
         }
 
         private static void ProcessMarkedFiles(string workDir, IDependencyReport report)

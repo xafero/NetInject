@@ -7,7 +7,7 @@ using Mono.Cecil.Cil;
 
 namespace NetInject
 {
-    static class CecilHelper
+    internal static class CecilHelper
     {
         public static IEnumerable<TypeDefinition> GetAllTypes(this AssemblyDefinition ass)
             => ass.Modules.SelectMany(m => m.GetAllTypes());

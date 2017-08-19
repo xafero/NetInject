@@ -5,7 +5,7 @@ using Mono.Cecil.Cil;
 
 namespace NetInject
 {
-    class Captivator : IParser
+    internal class Captivator : IParser
     {
         public IList<IMetadataTokenProvider> MembersToDelete { get; } = new List<IMetadataTokenProvider>();
 
@@ -35,14 +35,14 @@ namespace NetInject
             return null;
         }
 
-        class Resolved : IResolved
+        private class Resolved : IResolved
         {
             public MethodDefinition NewMethod { get; set; }
             public TypeDefinition NewType { get; set; }
         }
     }
 
-    interface IParser
+    internal interface IParser
     {
         IList<IMetadataTokenProvider> MembersToDelete { get; }
 
@@ -50,7 +50,7 @@ namespace NetInject
             IDictionary<string, string> myMappings, IDictionary<string, AssemblyDefinition> gens);
     }
 
-    interface IResolved
+    internal interface IResolved
     {
         MethodDefinition NewMethod { get; set; }
         TypeDefinition NewType { get; set; }

@@ -12,9 +12,9 @@ using static NetInject.IOHelper;
 
 namespace NetInject
 {
-    static class Searcher
+    internal static class Searcher
     {
-        static readonly ILog log = LogManager.GetLogger(typeof(Searcher));
+        private static readonly ILog log = LogManager.GetLogger(typeof(Searcher));
 
         internal static int Find(SipOptions opts)
         {

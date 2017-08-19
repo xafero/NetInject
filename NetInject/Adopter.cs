@@ -8,9 +8,9 @@ using static NetInject.IOHelper;
 
 namespace NetInject
 {
-    static class Adopter
+    internal static class Adopter
     {
-        static readonly ILog log = LogManager.GetLogger(typeof(Adopter));
+        private static readonly ILog log = LogManager.GetLogger(typeof(Adopter));
 
         internal static int Force(AdoptOptions opts)
         {
@@ -57,9 +57,9 @@ namespace NetInject
             return 0;
         }
 
-        static string ToShort(Assembly assembly) => ToShort(assembly.FullName);
+        private static string ToShort(Assembly assembly) => ToShort(assembly.FullName);
 
-        static string ToShort(string fullName) => fullName.Replace("Culture=neutral, ", "")
+        private static string ToShort(string fullName) => fullName.Replace("Culture=neutral, ", "")
             .Replace(", PublicKeyToken=null", "");
     }
 }

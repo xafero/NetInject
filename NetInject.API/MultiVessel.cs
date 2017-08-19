@@ -5,7 +5,7 @@ namespace NetInject.API
 {
     public class MultiVessel : IVessel
     {
-        IVessel[] Vessels { get; set; }
+        private IVessel[] Vessels { get; set; }
 
         public MultiVessel(params IVessel[] vessels)
         {

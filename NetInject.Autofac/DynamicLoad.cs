@@ -18,7 +18,7 @@ namespace NetInject.Autofac
             }
         }
 
-        static Assembly LoadAssembly(string file)
+        private static Assembly LoadAssembly(string file)
         {
             try
             {

@@ -13,7 +13,7 @@ namespace NetInject.Basic
             return ConvertTo<T>(raw);
         }
 
-        T ConvertTo<T>(string raw)
+        private T ConvertTo<T>(string raw)
         {
             if (typeof(T) == typeof(long?))
                 return (T)(object)long.Parse(raw);

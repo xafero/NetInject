@@ -8,9 +8,9 @@ using static NetInject.AssHelper;
 
 namespace NetInject
 {
-    static class Signer
+    internal static class Signer
     {
-        static readonly ILog log = LogManager.GetLogger(typeof(Signer));
+        private static readonly ILog log = LogManager.GetLogger(typeof(Signer));
 
         internal static int Unsign(UnsignOptions opts)
         {

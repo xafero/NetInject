@@ -3,7 +3,7 @@ using Mono.Cecil;
 
 namespace NetInject
 {
-    class AssemblyNameComparer : IEqualityComparer<AssemblyNameReference>
+    internal class AssemblyNameComparer : IEqualityComparer<AssemblyNameReference>
     {
         public bool Equals(AssemblyNameReference x, AssemblyNameReference y)
             => x.Name == y.Name && x.Version == y.Version;

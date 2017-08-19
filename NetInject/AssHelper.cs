@@ -9,9 +9,9 @@ using log4net;
 
 namespace NetInject
 {
-    static class AssHelper
+    internal static class AssHelper
     {
-        static readonly ILog log = LogManager.GetLogger(typeof(AssHelper));
+        private static readonly ILog log = LogManager.GetLogger(typeof(AssHelper));
 
         internal static void RemoveSigning(AssemblyDefinition ass, IEnumerable<string> keys)
         {
@@ -66,7 +66,7 @@ namespace NetInject
             il?.Invoke(body);
         }
 
-        static string[] CSharpKeyWords = {"object"};
+        private static string[] CSharpKeyWords = {"object"};
 
         internal static string Escape(string name)
             => CSharpKeyWords.Contains(name) ? $"@{name}" : name;

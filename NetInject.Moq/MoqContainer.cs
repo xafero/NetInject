@@ -7,10 +7,10 @@ namespace NetInject.Moq
     public class MoqContainer : IVessel
     {
 #pragma warning disable CS0169
-        static readonly Microsoft.Practices.Unity.GenericParameter dummy;
+        private static readonly Microsoft.Practices.Unity.GenericParameter dummy;
 #pragma warning restore CS0169
 
-        AutoMoqer Container { get; set; }
+        private AutoMoqer Container { get; set; }
 
         public MoqContainer()
         {

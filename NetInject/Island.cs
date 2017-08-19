@@ -8,9 +8,9 @@ using static NetInject.Searcher;
 
 namespace NetInject
 {
-    static class Island
+    internal static class Island
     {
-        static readonly ILog log = LogManager.GetLogger(typeof(Island));
+        private static readonly ILog log = LogManager.GetLogger(typeof(Island));
 
         internal static int Replace(IsleOptions opts)
         {
@@ -58,7 +58,7 @@ namespace NetInject
             return 0;
         }
 
-        static Instruction CreateOperation(ILProcessor proc, string patch, out Type type)
+        private static Instruction CreateOperation(ILProcessor proc, string patch, out Type type)
         {
             var parts = patch.Split(':');
             var opcode = parts.First();

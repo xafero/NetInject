@@ -13,9 +13,9 @@ using static NetInject.IOHelper;
 
 namespace NetInject
 {
-    static class Patcher
+    internal static class Patcher
     {
-        static readonly ILog log = LogManager.GetLogger(typeof(Patcher));
+        private static readonly ILog log = LogManager.GetLogger(typeof(Patcher));
 
         internal static int Modify(PatchOptions opts)
         {
@@ -60,9 +60,9 @@ namespace NetInject
             }
         }
 
-        const StringComparison cmp = StringComparison.InvariantCultureIgnoreCase;
-        const string patcherFieldName = "__patcher__";
-        const FieldAttributes patcherFieldAttr = FieldAttributes.Private | FieldAttributes.Static;
+        private const StringComparison cmp = StringComparison.InvariantCultureIgnoreCase;
+        private const string patcherFieldName = "__patcher__";
+        private const FieldAttributes patcherFieldAttr = FieldAttributes.Private | FieldAttributes.Static;
 
         internal static void PatchCalls(TypeReference pRef, MethodReference invoke,
             AssemblyDefinition ass, IEnumerable<TypeDefinition> types,

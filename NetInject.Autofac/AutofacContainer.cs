@@ -12,7 +12,7 @@ namespace NetInject.Autofac
 {
     public class AutofacContainer : IVessel
     {
-        IContainer Container { get; }
+        private IContainer Container { get; }
 
         public AutofacContainer()
         {

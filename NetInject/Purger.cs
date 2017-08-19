@@ -8,6 +8,7 @@ using NetInject.IoC;
 using Mono.Cecil;
 using static NetInject.IOHelper;
 using static NetInject.Cecil.WordHelper;
+using static NetInject.Compiler;
 using MethodAttr = Mono.Cecil.MethodAttributes;
 using TypeAttr = Mono.Cecil.TypeAttributes;
 using FieldAttr = Mono.Cecil.FieldAttributes;
@@ -24,20 +25,20 @@ using Noast = Noaster.Dist.Noaster;
 
 namespace NetInject
 {
-    static class Purger
+    internal static class Purger
     {
-        static readonly ILog Log = LogManager.GetLogger(typeof(Purger));
+        private static readonly ILog Log = LogManager.GetLogger(typeof(Purger));
 
-        static readonly string ctorName = ".ctor";
+        private static readonly string ctorName = ".ctor";
 
         public static readonly string apiSuffix = ".API";
         public static readonly string apiPrefix = "Purge.";
 
-        static readonly StringComparison cmpa = StringComparison.InvariantCulture;
-        static readonly StringComparer comp = StringComparer.InvariantCultureIgnoreCase;
+        private static readonly StringComparison cmpa = StringComparison.InvariantCulture;
+        private static readonly StringComparer comp = StringComparer.InvariantCultureIgnoreCase;
 
-        static readonly IParser nativeParser = new Captivator();
-        static readonly MethodDefComparer methCmp = new MethodDefComparer();
+        private static readonly IParser nativeParser = new Captivator();
+        private static readonly MethodDefComparer methCmp = new MethodDefComparer();
 
         internal static int Invert(InvertOptions opts)
         {
@@ -62,6 +63,7 @@ namespace NetInject
             var generated = GenerateNamespaces(report);
             var files = generated.GroupBy(g => g.Key).ToArray();
             Log.Info($"Generating {files.Length} packages...");
+            var toCompile = new List<string>();
             foreach (var file in files)
             {
                 var nsps = file.Select(f => f.Value).ToArray();
@@ -69,6 +71,22 @@ namespace NetInject
                 var filePath = Path.Combine(tempDir, file.Key);
                 Log.Info($"'{ToRelativePath(tempDir, filePath)}' [{nsps.Length} namespace(s)]");
                 File.WriteAllText(filePath, code, Encoding.UTF8);
+                toCompile.Add(filePath);
+            }
+            Log.Info($"Compiling {toCompile.Count} packages...");
+            foreach (var package in toCompile)
+            {
+                var bytes = (new FileInfo(package)).Length;
+                Log.Info($"'{ToRelativePath(tempDir, package)}' [{bytes} bytes]");
+                var name = Path.GetFileNameWithoutExtension(package);
+                var ass = CreateAssembly(tempDir, name, new[] {package});
+                if (ass == null)
+                {
+                    Log.Error("Sorry, I could not compile everything ;-(");
+                    return -1;
+                }
+                Log.Info($"  --> '{ass.FullName}'");
+                // TODO: Inject ass?
             }
             var workDir = Path.GetFullPath(opts.WorkDir);
             var oneFileOrMore = report.Files.Count >= 1 && files.Length >= 1;

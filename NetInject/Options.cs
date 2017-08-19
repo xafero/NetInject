@@ -4,7 +4,7 @@ using System.Collections.Generic;
 namespace NetInject
 {
     [Verb("unsign", HelpText = "Remove signing of assemblies.")]
-    class UnsignOptions
+    internal class UnsignOptions
     {
         [Value(0, MetaName = "input", HelpText = "Directory to copy")]
         public string InputDir { get; set; }
@@ -17,7 +17,7 @@ namespace NetInject
     }
 
     [Verb("patch", HelpText = "Patch members to new values.")]
-    class PatchOptions
+    internal class PatchOptions
     {
         [Value(0, MetaName = "work", HelpText = "Directory to work in")]
         public string WorkDir { get; set; }
@@ -27,7 +27,7 @@ namespace NetInject
     }
 
     [Verb("purify", HelpText = "Clean platform-dependent assemblies.")]
-    class PurifyOptions
+    internal class PurifyOptions
     {
         [Value(0, MetaName = "work", HelpText = "Directory to work in")]
         public string WorkDir { get; set; }
@@ -37,7 +37,7 @@ namespace NetInject
     }
 
     [Verb("sip", HelpText = "Search an instruction and print.")]
-    class SipOptions
+    internal class SipOptions
     {
         [Value(0, MetaName = "work", HelpText = "Directory to work in")]
         public string WorkDir { get; set; }
@@ -47,7 +47,7 @@ namespace NetInject
     }
 
     [Verb("isle", HelpText = "IL stream list and edit.")]
-    class IsleOptions
+    internal class IsleOptions
     {
         [Value(0, MetaName = "work", HelpText = "Directory to work in")]
         public string WorkDir { get; set; }
@@ -60,7 +60,7 @@ namespace NetInject
     }
 
     [Verb("adopt", HelpText = "Give up an assembly for adoption.")]
-    class AdoptOptions
+    internal class AdoptOptions
     {
         [Value(0, MetaName = "work", HelpText = "Directory to work in")]
         public string WorkDir { get; set; }
@@ -73,7 +73,7 @@ namespace NetInject
     }
 
     [Verb("weave", HelpText = "Interweave new code into binary.")]
-    class WeaveOptions
+    internal class WeaveOptions
     {
         [Value(0, MetaName = "work", HelpText = "Directory to work in")]
         public string WorkDir { get; set; }
@@ -82,7 +82,7 @@ namespace NetInject
         public string Binary { get; set; }
     }
 
-    interface IUsageOpts
+    internal interface IUsageOpts
     {
         string WorkDir { get; }
 
@@ -90,7 +90,7 @@ namespace NetInject
     }
 
     [Verb("invert", HelpText = "Apply inversion of control.")]
-    class InvertOptions : IUsageOpts
+    internal class InvertOptions : IUsageOpts
     {
         [Value(0, MetaName = "work", HelpText = "Directory to work in")]
         public string WorkDir { get; set; }
@@ -103,7 +103,7 @@ namespace NetInject
     }
 
     [Verb("usages", HelpText = "Poll assemblies for detailed usages.")]
-    class UsagesOptions : IUsageOpts
+    internal class UsagesOptions : IUsageOpts
     {
         [Value(0, MetaName = "work", HelpText = "Directory to work in")]
         public string WorkDir { get; set; }

@@ -7,9 +7,9 @@ using Mono.Cecil.Cil;
 
 namespace NetInject
 {
-    static class Weaver
+    internal static class Weaver
     {
-        static readonly ILog log = LogManager.GetLogger(typeof(Weaver));
+        private static readonly ILog log = LogManager.GetLogger(typeof(Weaver));
 
         internal static int Web(WeaveOptions opts)
         {
@@ -55,7 +55,7 @@ namespace NetInject
             }
         }
 
-        static void ReplaceBody(MethodDefinition dest, MethodDefinition source)
+        private static void ReplaceBody(MethodDefinition dest, MethodDefinition source)
         {
             var mod = dest.Body.Method.Module;
             var proc = dest.Body.GetILProcessor();

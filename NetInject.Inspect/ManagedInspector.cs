@@ -69,6 +69,8 @@ namespace NetInject.Inspect
         internal void InspectType(IDependencyReport report, TypeReference typeRef,
             TypeDefinition typeDef, MemberReference[] myMembers)
         {
+            if (typeDef == null)
+                return;
             var purged = report.Units;
             var invRef = typeDef.Module.Assembly;
             IUnit purge;

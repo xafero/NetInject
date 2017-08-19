@@ -17,11 +17,11 @@ using static NetInject.CodeConvert;
 
 namespace NetInject
 {
-    static class Purifier
+    internal static class Purifier
     {
-        const string prefix = "dll_";
+        private const string prefix = "dll_";
 
-        static readonly ILog log = LogManager.GetLogger(typeof(Patcher));
+        private static readonly ILog log = LogManager.GetLogger(typeof(Patcher));
 
         internal static int Clean(PurifyOptions opts)
         {
@@ -58,7 +58,7 @@ namespace NetInject
                         pinvoke.Write(nsp);
                     }
                     string f;
-                    var apiCSAss = Compiler.CreateAssembly(apiName, new[] { apiCS });
+                    var apiCSAss = Compiler.CreateAssembly(string.Empty, apiName, new[] { apiCS });
                     File.Copy(apiCSAss.Location, f = Path.Combine(halDir, apiName + ".dll"), true);
                     log.Info($"   --> '{Path.GetFileName(apiCS)}' ({Path.GetFileName(f)})");
                     var apiAssDef = AssemblyDefinition.ReadAssembly(f, rparam);
@@ -81,7 +81,7 @@ namespace NetInject
                         cla.Methods.Add(CreateSwitchMethod());
                         pinvoke.Write(nsp);
                     }
-                    var implCSAss = Compiler.CreateAssembly(implName, new[] { implCS }, new[] { f });
+                    var implCSAss = Compiler.CreateAssembly(string.Empty, implName, new[] { implCS }, new[] { f });
                     File.Copy(implCSAss.Location, f = Path.Combine(halDir, implName + ".dll"), true);
                     log.Info($"   --> '{Path.GetFileName(implCS)}' ({Path.GetFileName(f)})");
                     var implAssDef = AssemblyDefinition.ReadAssembly(f, rparam);
@@ -97,7 +97,7 @@ namespace NetInject
             return 0;
         }
 
-        static void PurifyCalls(IEnumerable<MethodDefinition> meths, MethodDefinition platGet, TypeDefinition iplat)
+        private static void PurifyCalls(IEnumerable<MethodDefinition> meths, MethodDefinition platGet, TypeDefinition iplat)
         {
             foreach (var meth in meths)
             {
@@ -121,7 +121,7 @@ namespace NetInject
             }
         }
 
-        static IMethod CreateSwitchMethod()
+        private static IMethod CreateSwitchMethod()
         {
             var meth = Noast.Create<IMethod>("GetInstance").With(Visibility.Public).With(Modifier.Static);
             meth.ReturnType = "Api.IPlatform";
@@ -129,7 +129,7 @@ namespace NetInject
             return meth;
         }
 
-        static IEnumerable<IMethod> ImplementInterface(IMethod externMeth)
+        private static IEnumerable<IMethod> ImplementInterface(IMethod externMeth)
         {
             var meth = Noast.Create<IMethod>(externMeth.Name).With(Visibility.Public);
             meth.ReturnType = externMeth.ReturnType;
@@ -143,7 +143,7 @@ namespace NetInject
             yield return meth;
         }
 
-        static IEnumerable<IMethod> DelegateInterface(IMethod externMeth)
+        private static IEnumerable<IMethod> DelegateInterface(IMethod externMeth)
         {
             var meth = Noast.Create<IMethod>($"{prefix}{externMeth.Name}");   // TODO: method cloning?! externMeth
             yield return meth;
@@ -157,7 +157,7 @@ namespace NetInject
             yield return meth;
         }
 
-        static IEnumerable<Tuple<IMethod, MethodDefinition>> CollectPInvokes(AssemblyDefinition ass)
+        private static IEnumerable<Tuple<IMethod, MethodDefinition>> CollectPInvokes(AssemblyDefinition ass)
         {
             var methodSigs = new List<string>();
             foreach (var type in ass.GetAllTypes())
@@ -193,7 +193,7 @@ namespace NetInject
                     }
         }
 
-        static void AddParam(ParameterDefinition parm, IMethod gen)
+        private static void AddParam(ParameterDefinition parm, IMethod gen)
         {
             var name = parm.Name;
             if (!Enumerable.Range('A', 26).Contains(name.FirstOrDefault()))

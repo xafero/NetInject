@@ -5,11 +5,11 @@ using CommandLine;
 
 namespace NetInject
 {
-    static class Program
+    internal static class Program
     {
-        static readonly ILog log = LogManager.GetLogger(typeof(Program).Namespace);
+        private static readonly ILog log = LogManager.GetLogger(typeof(Program).Namespace);
 
-        static int Main(string[] args)
+        private static int Main(string[] args)
         {
             BasicConfigurator.Configure();
             var cfg = ConfigurationManager.AppSettings;

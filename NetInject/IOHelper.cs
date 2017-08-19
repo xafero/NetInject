@@ -8,9 +8,9 @@ using System.Text;
 
 namespace NetInject
 {
-    static class IOHelper
+    internal static class IOHelper
     {
-        static readonly IEqualityComparer<AssemblyNameReference> assNameComp
+        private static readonly IEqualityComparer<AssemblyNameReference> assNameComp
             = new AssemblyNameComparer();
 
         internal static IEnumerable<string> GetAssemblyFiles(string root)

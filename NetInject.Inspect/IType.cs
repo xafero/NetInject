@@ -6,10 +6,12 @@ namespace NetInject.Inspect
     public interface IType
     {
         string Namespace { get; }
-        
+
         string Name { get; }
-        
+
         TypeKind Kind { get; }
+
+        ICollection<string> Bases { get; }
 
         IDictionary<string, IField> Fields { get; }
 

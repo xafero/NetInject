@@ -6,6 +6,7 @@ namespace NetInject.Inspect
     internal class AssemblyType : IType
     {
         public TypeKind Kind { get; }
+        public ICollection<string> Bases { get; }
         public IDictionary<string, IField> Fields { get; }
         public IDictionary<string, IMethod> Methods { get; }
         public IDictionary<string, IValue> Values { get; }
@@ -16,6 +17,7 @@ namespace NetInject.Inspect
         {
             _name = name;
             Kind = kind;
+            Bases = new SortedSet<string>();
             Fields = new SortedDictionary<string, IField>();
             Methods = new SortedDictionary<string, IMethod>();
             Values = new SortedDictionary<string, IValue>();

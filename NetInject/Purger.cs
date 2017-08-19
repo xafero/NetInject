@@ -21,6 +21,8 @@ using System.Runtime.CompilerServices;
 using System.Runtime.Remoting.Messaging;
 using System.Text;
 using NetInject.Cecil;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
 using Noaster.Api;
 using Noaster.Dist;
 using Noast = Noaster.Dist.Noaster;
@@ -46,6 +48,18 @@ namespace NetInject
         {
             var report = new DependencyReport();
             Usager.Poll(opts, report);
+
+            // debug
+            var jopts = new JsonSerializerSettings
+            {
+                Formatting = Formatting.Indented,
+                Converters = {new StringEnumConverter()},
+                NullValueHandling = NullValueHandling.Ignore,
+                DefaultValueHandling = DefaultValueHandling.Ignore
+            };
+            var json = JsonConvert.SerializeObject(report, jopts);
+            File.WriteAllText("report.json", json, Encoding.UTF8);
+
             Log.Info($"{report.Files.Count} files read for metadata.");
             var tempDir = Path.GetFullPath(opts.TempDir);
             Directory.CreateDirectory(tempDir);

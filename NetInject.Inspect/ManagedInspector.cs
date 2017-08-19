@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using Mono.Cecil;
+using Mono.Cecil.Rocks;
 using NetInject.Cecil;
 using static NetInject.Cecil.CecilHelper;
 using static NetInject.Cecil.WordHelper;
@@ -84,13 +85,13 @@ namespace NetInject.Inspect
                     InspectDelegate(ptype, typeDef);
                     break;
                 case TypeKind.Struct:
-                    InspectMembers(ptype, members);
+                    InspectMembers(ptype, members); // intf ? 
                     break;
                 case TypeKind.Interface:
-                    InspectMembers(ptype, members);
+                    InspectMembers(ptype, members); // intf ?
                     break;
                 case TypeKind.Class:
-                    InspectClass(ptype, typeRef, typeDef, members);
+                    InspectClass(ptype, typeRef, typeDef, members); // base, intf ?
                     break;
             }
         }
@@ -188,6 +189,9 @@ namespace NetInject.Inspect
 
         private static void InspectEnum(IType type, TypeDefinition typeDef)
         {
+            var underType = typeDef.GetEnumUnderlyingType();
+            if (underType != null && underType.FullName != typeof(int).FullName)
+                type.Bases.Add(underType.FullName);
             foreach (var enumFld in typeDef.Fields.Where(f => !f.Name.EndsWith("__", Cmpa)).ToArray())
                 type.Values[enumFld.Name] = new EnumValue(enumFld.Name);
         }

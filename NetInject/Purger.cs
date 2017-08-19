@@ -31,8 +31,6 @@ namespace NetInject
     {
         static readonly ILog Log = LogManager.GetLogger(typeof(Purger));
 
-        static readonly string iocName = "IoC";
-        static readonly string cctorName = ".cctor";
         static readonly string ctorName = ".ctor";
 
         public static readonly string apiSuffix = ".API";
@@ -96,6 +94,7 @@ namespace NetInject
                     using (var ass = AssemblyDefinition.ReadAssembly(stream, rparam))
                     {
                         Log.Info($"... '{ass.FullName}'");
+                        // Inject container initializer ::: AddOrReplaceModuleSetup(ass, AddOrReplaceIoc);
                         // ReplaceCalls(ass, gens, mappings);
                         // ass.Write(file, wparam);
                         Log.InfoFormat($" inverted code in '{ToRelativePath(workDir, file)}'!");
@@ -144,206 +143,7 @@ namespace NetInject
             }
         }
 
-        /*      static void Invert(AssemblyDefinition ass, InvertOptions opts,
-                  WriterParameters wparam, string file, ref bool isOneDirty,
-                  PurgedAssemblies purged)
-              {
-                  var assRefs = ass.GetAllExternalRefs().ToArray();
-                  var assTypes = ass.Modules.SelectMany(m => m.GetTypeReferences()).ToArray();
-                  var assMembs = ass.Modules.SelectMany(m => m.GetMemberReferences()).ToArray();
-                  var isDirty = false;
-                  foreach (var invRef in assRefs.Where(r => opts.Assemblies.Contains(r.Name, comp)))
-                  {
-                      var assRef = invRef as AssemblyNameReference;
-                      if (assRef != null)
-                          InvertAssemblyRef(assRef, purged, assTypes, assMembs);
-                      var modRef = invRef as ModuleReference;
-                      if (modRef != null)
-                          InvertNativeRef(modRef, purged, ass.GetAllTypes());
-                      // Inject container initializer
-                      AddOrReplaceModuleSetup(ass, AddOrReplaceIoc);
-                      // Set dirty flag
-                      isDirty = true;
-                      isOneDirty = true;
-                  }
-                  if (!isDirty)
-                      return;
-                  ass.Write(file, wparam);
-                  log.InfoFormat($"Purged something in '{ass}'!");
-              }
-      
-              static void InvertAssemblyRef(AssemblyNameReference invRef, PurgedAssemblies purged,
-                  TypeReference[] assTypes, MemberReference[] assMembs)
-              {
-                  log.Info($" - '{invRef.FullName}'");
-                  PurgedAssembly purge;
-                  if (!purged.TryGetValue(invRef.FullName, out purge))
-                      purged[invRef.FullName] = purge = new PurgedAssembly(invRef.Name, invRef.Version);
-                  var myTypes = assTypes.Where(t => ContainsType(invRef, t)).ToArray();
-                  var myMembers = assMembs.Where(m => ContainsMember(invRef, m)).GroupBy(m => m.DeclaringType).ToArray();
-                  foreach (var myType in myTypes)
-                  {
-                      PurgedType ptype;
-                      if (!purge.Types.TryGetValue(myType.FullName, out ptype))
-                          purge.Types[myType.FullName] = ptype = new PurgedType(myType.Namespace, myType.Name);
-                      var myTypeDef = myType.Resolve();
-                      if (myTypeDef.IsEnum)
-                      {
-                          foreach (var enumFld in myTypeDef.Fields.Where(f => !f.Name.EndsWith("__", cmpa)).ToArray())
-                              ptype.Values[enumFld.Name] = new PurgedEnumVal(enumFld.Name);
-                      }
-                      if (myTypeDef.IsClass && myTypeDef.BaseType.FullName == typeof(MulticastDelegate).FullName)
-                      {
-                          var dlgtSig = myTypeDef.Methods.First(m => m.Name == "Invoke");
-                          var dlgtMeth = new PurgedMethod(dlgtSig.Name)
-                          {
-                              ReturnType = dlgtSig.ReturnType.FullName
-                          };
-                          foreach (var dlgtParm in dlgtSig.Parameters)
-                              dlgtMeth.Parameters.Add(new PurgedParam
-                              {
-                                  Name = Escape(dlgtParm.Name),
-                                  ParamType = dlgtParm.ParameterType.FullName
-                              });
-                          ptype.Methods[dlgtMeth.Name] = dlgtMeth;
-                      }
-                      if (!myTypeDef.IsValueType && !myTypeDef.IsSpecialName && !myTypeDef.IsSealed
-                          && !myTypeDef.IsRuntimeSpecialName && !myTypeDef.IsPrimitive
-                          && !myTypeDef.IsInterface && !myTypeDef.IsArray && (myTypeDef.IsPublic
-                          || myTypeDef.IsNestedPublic) && myTypeDef.IsClass)
-                      {
-                          var virtuals = myTypeDef.Methods.Where(m => m.IsVirtual || m.IsAbstract).ToArray();
-                          if (virtuals.Any())
-                          {
-                              var derived = myType.Module.Assembly.GetDerivedTypes(myType).ToArray();
-                              if (derived.Any())
-                              {
-                                  var overrides = virtuals.Intersect(derived.SelectMany(d => d.Methods)
-                                      .Where(m => m.IsAbstract || m.IsVirtual), methCmp).ToArray();
-                                  if (overrides.Any())
-                                  {
-                                      var otypeName = myType.Name;
-                                      var otypeFqn = myType.FullName;
-                                      PurgedType otype;
-                                      if (!purge.Types.TryGetValue(otypeFqn, out otype))
-                                          purge.Types[otypeFqn] = otype = new PurgedType(myType.Namespace, otypeName);
-                                      HandleAbstractClass(otype, overrides);
-                                  }
-                              }
-                          }
-                      }
-                  }
-                  foreach (var myPair in myMembers)
-                  {
-                      var myType = myPair.Key;
-                      PurgedType ptype;
-                      if (!purge.Types.TryGetValue(myType.FullName, out ptype))
-                          purge.Types[myType.FullName] = ptype = new PurgedType(myType.Namespace, myType.Name);
-                      foreach (var myMember in myPair)
-                      {
-                          PurgedMethod pmethod;
-                          if (!ptype.Methods.TryGetValue(myMember.FullName, out pmethod))
-                              ptype.Methods[myMember.FullName] = pmethod = new PurgedMethod(myMember.Name);
-                          var pmd = (MethodDefinition)myMember.Resolve();
-                          if (pmethod.Parameters.Count == 0)
-                              foreach (var parm in pmd.Parameters)
-                              {
-                                  var pparm = new PurgedParam
-                                  {
-                                      Name = Escape(parm.Name),
-                                      ParamType = parm.ParameterType.FullName
-                                  };
-                                  pmethod.Parameters.Add(pparm);
-                              }
-                          if (pmd.ReturnType.FullName != typeof(void).FullName)
-                              pmethod.ReturnType = pmd.ReturnType.FullName;
-                      }
-                  }
-              }
-      
-              static void InvertNativeRef(ModuleReference invRef, PurgedAssemblies purged,
-                  IEnumerable<TypeDefinition> types)
-              {
-                  log.Info($" - '{invRef}'");
-                  var invRefName = Capitalize(Path.GetFileNameWithoutExtension(invRef.Name));
-                  PurgedAssembly purge;
-                  if (!purged.TryGetValue(invRefName, out purge))
-                      purged[invRefName] = purge = new PurgedAssembly(invRefName, new Version("0.0.0.0"));
-                  var ptypeName = invRefName.Split('.').First();
-                  PurgedType ptype;
-                  if (!purge.Types.TryGetValue(ptypeName, out ptype))
-                      purge.Types[ptypeName] = ptype = new PurgedType(invRefName, ptypeName);
-                  foreach (var type in types)
-                      foreach (var meth in type.Methods)
-                      {
-                          PInvokeInfo pinv;
-                          if (!meth.HasPInvokeInfo || invRef != (pinv = meth.PInvokeInfo).Module)
-                              continue;
-                          var nativeTypeName = invRefName;
-                          var nativeMethName = pinv.EntryPoint;
-                          PurgedMethod pmethod;
-                          if (!ptype.Methods.TryGetValue(nativeMethName, out pmethod))
-                              ptype.Methods[nativeMethName] = pmethod = new PurgedMethod(nativeMethName);
-                          foreach (var parm in meth.Parameters)
-                          {
-                              var mparm = new PurgedParam
-                              {
-                                  Name = Escape(parm.Name),
-                                  ParamType = parm.ParameterType.FullName
-                              };
-                              pmethod.Parameters.Add(mparm);
-                          }
-                          if (meth.ReturnType.FullName != typeof(void).FullName)
-                              pmethod.ReturnType = meth.ReturnType.FullName;
-                          pmethod.Refs.Add(meth.FullName);
-                      }
-              }
-      
-              static bool ContainsType(AssemblyNameReference assRef, TypeReference typRef)
-                => assRef.FullName == (typRef.Scope as AssemblyNameReference)?.FullName;
-      
-              static bool ContainsMember(AssemblyNameReference assRef, MemberReference mbmRef)
-                => ContainsType(assRef, mbmRef.DeclaringType);
-      
-              static void AddOrReplaceIoc(ILProcessor il)
-              {
-                  var mod = il.Body.Method.DeclaringType.Module;
-                  var myNamespace = mod.Types.Select(t => t.Namespace)
-                      .Where(n => !string.IsNullOrWhiteSpace(n)).OrderBy(n => n.Length).First();
-                  var attr = TypeAttr.Class | TypeAttr.Public | TypeAttr.Sealed | TypeAttr.Abstract | TypeAttr.BeforeFieldInit;
-                  var objBase = mod.ImportReference(typeof(object));
-                  var type = new TypeDefinition(myNamespace, iocName, attr, objBase);
-                  var oldType = mod.Types.FirstOrDefault(t => t.FullName == type.FullName);
-                  if (oldType != null)
-                      mod.Types.Remove(oldType);
-                  mod.Types.Add(type);
-                  var vesselRef = mod.ImportReference(typeof(IVessel));
-                  var fieldAttr = FieldAttr.Static | FieldAttr.Private;
-                  var contField = new FieldDefinition("scope", fieldAttr, vesselRef);
-                  type.Fields.Add(contField);
-                  var getAttrs = MethodAttr.Static | MethodAttr.Public | MethodAttr.SpecialName | MethodAttr.HideBySig;
-                  var getMethod = new MethodDefinition($"GetScope", getAttrs, vesselRef);
-                  type.Methods.Add(getMethod);
-                  var gmil = getMethod.Body.GetILProcessor();
-                  gmil.Append(gmil.Create(OpCodes.Ldsfld, contField));
-                  gmil.Append(gmil.Create(OpCodes.Ret));
-                  var voidRef = mod.ImportReference(typeof(void));
-                  var constrAttrs = MethodAttr.Static | MethodAttr.SpecialName | MethodAttr.RTSpecialName
-                      | MethodAttr.Private | MethodAttr.HideBySig;
-                  var constr = new MethodDefinition(cctorName, constrAttrs, voidRef);
-                  type.Methods.Add(constr);
-                  var cil = constr.Body.GetILProcessor();
-                  var multiMeth = typeof(DefaultVessel).GetConstructors().First();
-                  var multiRef = mod.ImportReference(multiMeth);
-                  cil.Append(cil.Create(OpCodes.Newobj, multiRef));
-                  cil.Append(cil.Create(OpCodes.Stsfld, contField));
-                  cil.Append(cil.Create(OpCodes.Ret));
-                  il.Append(il.Create(OpCodes.Call, getMethod));
-                  il.Append(il.Create(OpCodes.Pop));
-                  il.Append(il.Create(OpCodes.Ret));
-              }
-      
-              static IEnumerable<AssemblyDefinition> GenerateCode(PurgedAssemblies purged, string tempDir,
+        /*    static IEnumerable<AssemblyDefinition> GenerateCode(PurgedAssemblies purged, string tempDir,
                   string workDir, ReaderParameters rparam)
               {
                   foreach (var purge in purged)

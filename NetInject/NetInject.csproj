@@ -78,6 +78,7 @@
     <Compile Include="CecilHelper.cs" />
     <Compile Include="CodeConvert.cs" />
     <Compile Include="Compiler.cs" />
+    <Compile Include="IocProcessor.cs" />
     <Compile Include="IOHelper.cs" />
     <Compile Include="MethodDefComparer.cs" />
     <Compile Include="Options.cs" />

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using Mono.Cecil;
 using Mono.Cecil.Rocks;
@@ -88,11 +89,12 @@ namespace NetInject.Inspect
                     break;
                 case TypeKind.Struct:
                 case TypeKind.Interface:
-                    InspectMembers(ptype, members); // intf ?
+                    InspectMembers(ptype, members);
                     ExtractGenerics(ptype, typeDef);
+                    ExtractBases(ptype, typeDef);
                     break;
                 case TypeKind.Class:
-                    InspectClass(ptype, typeRef, typeDef, members); // base, intf ?
+                    InspectClass(ptype, typeRef, typeDef, members);
                     break;
             }
         }
@@ -112,6 +114,7 @@ namespace NetInject.Inspect
                 members = members.Concat(overrides).Distinct();
             InspectMembers(type, members);
             ExtractGenerics(type, typeDef);
+            ExtractBases(type, typeDef);
         }
 
         private static void ExtractGenerics(IType type, TypeDefinition typeDef)
@@ -125,6 +128,17 @@ namespace NetInject.Inspect
                 var myParm = new AssemblyConstraint(name, clauses);
                 type.Constraints.Add(myParm);
             }
+        }
+
+        private static void ExtractBases(IType type, TypeDefinition typeDef)
+        {
+            var myBase = typeDef.BaseType?.FullName;
+            var myIntfs = typeDef.Interfaces.Select(i => i.InterfaceType.FullName);
+            if (type.Kind == TypeKind.Class && !string.IsNullOrWhiteSpace(myBase))
+                type.Bases.Add(myBase);
+            foreach (var myIntf in myIntfs)
+                if (!string.IsNullOrWhiteSpace(myIntf))
+                    type.Bases.Add(myIntf);
         }
 
         private static void InspectMembers(IType type, IEnumerable<MemberReference> members)

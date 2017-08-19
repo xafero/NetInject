@@ -9,6 +9,7 @@ using Mono.Cecil;
 using static NetInject.IOHelper;
 using static NetInject.Cecil.WordHelper;
 using static NetInject.Compiler;
+using static NetInject.CodeConvert;
 using MethodAttr = Mono.Cecil.MethodAttributes;
 using TypeAttr = Mono.Cecil.TypeAttributes;
 using FieldAttr = Mono.Cecil.FieldAttributes;
@@ -21,6 +22,10 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using Noaster.Api;
 using Noaster.Dist;
+using IType = NetInject.Inspect.IType;
+using IMethod = Noaster.Api.IMethod;
+using IField = Noaster.Api.IField;
+using AType = Noaster.Api.IType;
 using Noast = Noaster.Dist.Noaster;
 
 namespace NetInject
@@ -68,7 +73,7 @@ namespace NetInject
             foreach (var file in files)
             {
                 var meta = CreateMetadata(file.Key);
-                var nsps = new object[] { meta }.Concat(file.Select(f => f.Value)).ToArray();
+                var nsps = new object[] {meta}.Concat(file.Select(f => f.Value)).ToArray();
                 var code = string.Join(newLine, nsps.Select(n => n.ToString()));
                 var filePath = Path.Combine(tempDir, file.Key);
                 Log.Info($"'{ToRelativePath(tempDir, filePath)}' [{nsps.Length} namespace(s)]");
@@ -161,10 +166,16 @@ namespace NetInject
                         switch (type.Kind)
                         {
                             case TypeKind.Interface:
-                                Noast.Create<IInterface>(name, nsp);
+                                var intf = Noast.Create<IInterface>(name, nsp);
+                                GenerateMembers(intf, type);
+                                break;
+                            case TypeKind.Struct:
+                                var stru = Noast.Create<IStruct>(name, nsp);
+                                GenerateMembers(stru, type);
                                 break;
                             case TypeKind.Class:
-                                Noast.Create<IClass>(name, nsp);
+                                var clas = Noast.Create<IClass>(name, nsp);
+                                GenerateMembers(clas, type);
                                 break;
                             case TypeKind.Delegate:
                                 var dlgt = Noast.Create<IDelegate>(name, nsp);
@@ -177,14 +188,31 @@ namespace NetInject
                                 foreach (var val in type.Values)
                                     enm.AddValue(val.Value.Name);
                                 break;
-                            case TypeKind.Struct:
-                                Noast.Create<IStruct>(name, nsp);
-                                break;
                         }
                     }
                     yield return new KeyValuePair<string, INamespace>(fileName, nsp);
                 }
             }
+        }
+
+        private static void GenerateMembers(AType holder, IType type)
+        {
+            var fldHolder = holder as IHasFields;
+            if (fldHolder != null)
+                foreach (var fld in type.Fields.Values)
+                {
+                    var myFld = Noast.Create<IField>(fld.Name);
+                    myFld.Type = Simplify(fld.Type);
+                    fldHolder.Fields.Add(myFld);
+                }
+            var methHolder = holder as IHasMethods;
+            if (methHolder != null)
+                foreach (var meth in type.Methods.Values)
+                {
+                    var myMeth = Noast.Create<IMethod>(meth.Name);
+                    myMeth.ReturnType = Simplify(meth.ReturnType);
+                    methHolder.Methods.Add(myMeth);
+                }
         }
 
         /*    static IEnumerable<AssemblyDefinition> GenerateCode(PurgedAssemblies purged, string tempDir,

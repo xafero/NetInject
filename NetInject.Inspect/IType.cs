@@ -3,7 +3,7 @@ using NetInject.Cecil;
 
 namespace NetInject.Inspect
 {
-    public interface IType
+    public interface IType : IHasConstraints
     {
         string Namespace { get; }
 

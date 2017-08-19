@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
 using Mono.Cecil;
 using NetInject.Cecil;
 using static NetInject.Cecil.WordHelper;

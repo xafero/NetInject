@@ -6,6 +6,8 @@ using Mono.Cecil.Rocks;
 using NetInject.Cecil;
 using static NetInject.Cecil.CecilHelper;
 using static NetInject.Cecil.WordHelper;
+using static NetInject.Inspect.ApiExts;
+using GenParmAttr = Mono.Cecil.GenericParameterAttributes;
 
 namespace NetInject.Inspect
 {
@@ -85,10 +87,9 @@ namespace NetInject.Inspect
                     InspectDelegate(ptype, typeDef);
                     break;
                 case TypeKind.Struct:
-                    InspectMembers(ptype, members); // intf ? 
-                    break;
                 case TypeKind.Interface:
                     InspectMembers(ptype, members); // intf ?
+                    ExtractGenerics(ptype, typeDef);
                     break;
                 case TypeKind.Class:
                     InspectClass(ptype, typeRef, typeDef, members); // base, intf ?
@@ -110,6 +111,20 @@ namespace NetInject.Inspect
             if (isBase)
                 members = members.Concat(overrides).Distinct();
             InspectMembers(type, members);
+            ExtractGenerics(type, typeDef);
+        }
+
+        private static void ExtractGenerics(IType type, TypeDefinition typeDef)
+        {
+            if (!typeDef.HasGenericParameters)
+                return;
+            foreach (var parm in typeDef.GenericParameters)
+            {
+                var name = parm.FullName;
+                var clauses = ToClauses(parm);
+                var myParm = new AssemblyConstraint(name, clauses);
+                type.Constraints.Add(myParm);
+            }
         }
 
         private static void InspectMembers(IType type, IEnumerable<MemberReference> members)

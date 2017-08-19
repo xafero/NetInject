@@ -18,6 +18,7 @@ using System.Collections.Generic;
 using System;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
+using System.Runtime.Remoting.Messaging;
 using System.Text;
 using NetInject.Cecil;
 using Noaster.Api;
@@ -63,8 +64,14 @@ namespace NetInject
                 File.WriteAllText(filePath, code, Encoding.UTF8);
             }
             var workDir = Path.GetFullPath(opts.WorkDir);
+            var oneFileOrMore = report.Files.Count >= 1 && files.Length >= 1;
+            if (oneFileOrMore)
+            {
+                Log.Info($"Processing {report.Files.Count} files...");
+                ProcessMarkedFiles(workDir, report);
+            }
             Log.Info($"Ensuring dependencies in '{workDir}'...");
-            if (report.Files.Count >= 1 && files.Length >= 1)
+            if (oneFileOrMore)
             {
                 Log.InfoFormat(" added '{0}'!", CopyTypeRef<IVessel>(workDir));
                 Log.InfoFormat(" added '{0}'!", CopyTypeRef<DefaultVessel>(workDir));
@@ -72,23 +79,28 @@ namespace NetInject
                 Log.InfoFormat(" added '{0}'!", CopyTypeRef<AutofacContainer>(workDir));
             }
             Log.Info("Done.");
-
-            /* if (filesToWatch.Count >= 1 && purged.Count >= 1)
-                {
-                    var gens = GenerateCode(purged, opts.TempDir, opts.WorkDir, rparam)
-                        .ToDictionary(k => k.Name.Name, v => v);
-                    var mappings = purged.GetNativeMappings(apiPrefix).ToArray();
-                    foreach (var file in filesToWatch)
-                        using (var stream = new MemoryStream(File.ReadAllBytes(file)))
-                        using (var ass = AssemblyDefinition.ReadAssembly(stream, rparam))
-                        {
-                            log.Info($"... '{ass.FullName}'");
-                            ReplaceCalls(ass, gens, mappings);
-                            ass.Write(file, wparam);
-                            log.InfoFormat($"Replaced something in '{ass}'!");
-                        }
-                } */
             return 0;
+        }
+
+        private static void ProcessMarkedFiles(string workDir, IDependencyReport report)
+        {
+            /* var gens = GenerateCode(purged, opts.TempDir, opts.WorkDir, rparam)
+                .ToDictionary(k => k.Name.Name, v => v);
+                var mappings = purged.GetNativeMappings(apiPrefix).ToArray(); */
+            using (var resolv = new DefaultAssemblyResolver())
+            {
+                resolv.AddSearchDirectory(workDir);
+                var rparam = new ReaderParameters {AssemblyResolver = resolv};
+                foreach (var file in report.Files)
+                    using (var stream = new MemoryStream(File.ReadAllBytes(file)))
+                    using (var ass = AssemblyDefinition.ReadAssembly(stream, rparam))
+                    {
+                        Log.Info($"... '{ass.FullName}'");
+                        // ReplaceCalls(ass, gens, mappings);
+                        // ass.Write(file, wparam);
+                        Log.InfoFormat($" inverted code in '{ToRelativePath(workDir, file)}'!");
+                    }
+            }
         }
 
         private static IEnumerable<KeyValuePair<string, INamespace>> GenerateNamespaces(IDependencyReport report)

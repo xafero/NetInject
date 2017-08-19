@@ -9,6 +9,7 @@ using Mono.Cecil;
 using Mono.Cecil.Cil;
 using static NetInject.IOHelper;
 using static NetInject.AssHelper;
+using static NetInject.Cecil.WordHelper;
 using MethodAttr = Mono.Cecil.MethodAttributes;
 using TypeAttr = Mono.Cecil.TypeAttributes;
 using FieldAttr = Mono.Cecil.FieldAttributes;
@@ -105,22 +106,24 @@ namespace NetInject
                     foreach (var twik in group)
                     {
                         var type = twik.Value;
+                        var rawName = type.Name.Replace('/', '_');
+                        var name = Deobfuscate(rawName);
                         switch (type.Kind)
                         {
                             case TypeKind.Interface:
-                                Noast.Create<IInterface>(type.Name, nsp);
+                                Noast.Create<IInterface>(name, nsp);
                                 break;
                             case TypeKind.Class:
-                                Noast.Create<IClass>(type.Name, nsp);
+                                Noast.Create<IClass>(name, nsp);
                                 break;
                             case TypeKind.Delegate:
-                                Noast.Create<IDelegate>(type.Name, nsp);
+                                Noast.Create<IDelegate>(name, nsp);
                                 break;
                             case TypeKind.Enum:
-                                Noast.Create<IEnum>(type.Name, nsp);
+                                Noast.Create<IEnum>(name, nsp);
                                 break;
                             case TypeKind.Struct:
-                                Noast.Create<IStruct>(type.Name, nsp);
+                                Noast.Create<IStruct>(name, nsp);
                                 break;
                         }
                     }

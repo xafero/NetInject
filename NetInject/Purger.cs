@@ -137,10 +137,15 @@ namespace NetInject
                                 Noast.Create<IClass>(name, nsp);
                                 break;
                             case TypeKind.Delegate:
-                                Noast.Create<IDelegate>(name, nsp);
+                                var dlgt = Noast.Create<IDelegate>(name, nsp);
+                                var invoke = type.Methods.Single();
+                                foreach (var parm in invoke.Value.Parameters)
+                                    dlgt.AddParameter(parm.Name, parm.Type);
                                 break;
                             case TypeKind.Enum:
-                                Noast.Create<IEnum>(name, nsp);
+                                var enm = Noast.Create<IEnum>(name, nsp);
+                                foreach (var val in type.Values)
+                                    enm.AddValue(val.Value.Name);
                                 break;
                             case TypeKind.Struct:
                                 Noast.Create<IStruct>(name, nsp);

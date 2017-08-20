@@ -18,7 +18,7 @@ namespace NetInject
                 IncludeDebugInformation = true,
                 ReferencedAssemblies = {"System.dll", "System.Drawing.dll"},
                 GenerateInMemory = false,
-                TreatWarningsAsErrors = true,
+                TreatWarningsAsErrors = false,
                 OutputAssembly = Path.Combine(dir, name + ".dll")
             };
             if (refs?.Length >= 1)

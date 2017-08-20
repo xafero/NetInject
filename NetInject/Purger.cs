@@ -161,8 +161,7 @@ namespace NetInject
                     foreach (var twik in group)
                     {
                         var type = twik.Value;
-                        var rawName = type.Name.Replace('/', '_');
-                        var name = Deobfuscate(rawName);
+                        var name = DerivedClassDeobfuscate(type.Name);
                         switch (type.Kind)
                         {
                             case TypeKind.Interface:
@@ -181,7 +180,7 @@ namespace NetInject
                                 var dlgt = Noast.Create<IDelegate>(name, nsp);
                                 var invoke = type.Methods.Single();
                                 foreach (var parm in invoke.Value.Parameters)
-                                    dlgt.AddParameter(parm.Name, parm.Type);
+                                    dlgt.AddParameter(parm.Name, Simplify(parm.Type));
                                 break;
                             case TypeKind.Enum:
                                 var enm = Noast.Create<IEnum>(name, nsp);
@@ -202,7 +201,7 @@ namespace NetInject
                 foreach (var fld in type.Fields.Values)
                 {
                     var myFld = Noast.Create<IField>(fld.Name);
-                    myFld.Type = Simplify(fld.Type);
+                    myFld.Type = Simplify(DerivedClassDeobfuscate(fld.Type));
                     fldHolder.Fields.Add(myFld);
                 }
             var methHolder = holder as IHasMethods;
@@ -210,7 +209,17 @@ namespace NetInject
                 foreach (var meth in type.Methods.Values)
                 {
                     var myMeth = Noast.Create<IMethod>(meth.Name);
-                    myMeth.ReturnType = Simplify(meth.ReturnType);
+                    var parmIndex = 0;
+                    foreach (var parm in meth.Parameters)
+                    {
+                        var parmName = parm.Name;
+                        if (string.IsNullOrWhiteSpace(parmName))
+                            parmName = $"parm{parmIndex++}";
+                        parmName = ToName(Deobfuscate(parmName));
+                        var parmType = Simplify(DerivedClassDeobfuscate(parm.Type));
+                        myMeth.AddParameter(parmName, parmType);
+                    }
+                    myMeth.ReturnType = Simplify(DerivedClassDeobfuscate(meth.ReturnType));
                     methHolder.Methods.Add(myMeth);
                 }
         }

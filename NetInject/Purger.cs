@@ -158,11 +158,18 @@ namespace NetInject
                     var nspName = Deobfuscate(group.Key);
                     var nsp = Noast.Create<INamespace>(nspName);
                     nsp.AddUsing("System");
+                    nsp.AddUsing("System.Text");
                     foreach (var twik in group)
                     {
                         var type = twik.Value;
+                        var kind = type.Kind;
                         var name = DerivedClassDeobfuscate(type.Name);
-                        switch (type.Kind)
+                        if (type.Methods.Any(m => m.Value.Aliases.Any()))
+                        {
+                            kind = TypeKind.Interface;
+                            name = $"I{name}";
+                        }
+                        switch (kind)
                         {
                             case TypeKind.Interface:
                                 var intf = Noast.Create<IInterface>(name, nsp);

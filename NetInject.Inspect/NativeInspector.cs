@@ -70,17 +70,22 @@ namespace NetInject.Inspect
                 IType ptype;
                 if (!unit.Types.TryGetValue(nativeTypeName, out ptype))
                     unit.Types[nativeTypeName] = ptype = new AssemblyType(nativeTypeName, TypeKind.Class);
+                var nameArgStrategy = new NativeArgNameStrategy(ptype);
+                CheckAndInclude(report, meth.ReturnType, nameArgStrategy);
+                var methRetType = Deobfuscate(meth.ReturnType.FullName);
                 IMethod pmethod;
                 if (!ptype.Methods.TryGetValue(key, out pmethod))
-                    ptype.Methods[key] = pmethod
-                        = new AssemblyMethod(nativeMethName, Deobfuscate(meth.ReturnType.FullName));
-                CheckAndInclude(report, meth.ReturnType);
+                    ptype.Methods[key] = pmethod = new AssemblyMethod(nativeMethName, methRetType);
                 pmethod.Parameters.Clear();
                 foreach (var parm in meth.Parameters)
                 {
-                    var mparm = new MethodParameter(parm.Name, Deobfuscate(parm.ParameterType.FullName));
+                    CheckAndInclude(report, parm.ParameterType, nameArgStrategy);
+                    var newParmType = nameArgStrategy.GetName(parm.ParameterType);
+                    var mparmType = Deobfuscate(parm.ParameterType.FullName);
+                    if (newParmType != null)
+                        mparmType = newParmType;
+                    var mparm = new MethodParameter(parm.Name, mparmType);
                     pmethod.Parameters.Add(mparm);
-                    CheckAndInclude(report, parm.ParameterType);
                 }
                 const StringSplitOptions sso = StringSplitOptions.None;
                 var text = $"{meth}".Split(new[] {$"{meth.ReturnType}"}, 2, sso).Last().Trim();
@@ -88,12 +93,30 @@ namespace NetInject.Inspect
             }
         }
 
-        private void CheckAndInclude(IDependencyReport report, TypeReference type)
+        private void CheckAndInclude(IDependencyReport report, TypeReference type, INamingStrategy strategy)
         {
             if (type.IsInStandardLib())
                 return;
             var typeDef = type.Resolve();
-            Managed.InspectType(report, type, typeDef, null);
+            Managed.InspectType(report, type, typeDef, null, strategy);
+        }
+
+        private class NativeArgNameStrategy : INamingStrategy
+        {
+            private readonly IType _type;
+
+            public NativeArgNameStrategy(IType type)
+            {
+                _type = type;
+            }
+
+            public string GetName(AssemblyDefinition ass) => _type.Namespace;
+
+            public string GetName(TypeDefinition type) =>
+                type.IsInStandardLib() ? null : $"{_type.Namespace}.{type.Name}";
+
+            public string GetName(TypeReference type) =>
+                type.IsInStandardLib() ? null : $"{_type.Namespace}.{type.Name}";
         }
     }
 }

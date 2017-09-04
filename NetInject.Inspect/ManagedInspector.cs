@@ -18,10 +18,12 @@ namespace NetInject.Inspect
         private static readonly MethodDefComparer MethCmp = new MethodDefComparer();
 
         public IList<string> Filters { get; }
+        private INamingStrategy NamingStrategy { get; }
 
         public ManagedInspector(IEnumerable<string> filters)
         {
             Filters = filters.ToList();
+            NamingStrategy = new DefaultNamingStrategy();
         }
 
         public int Inspect(AssemblyDefinition ass, IDependencyReport report)
@@ -54,31 +56,33 @@ namespace NetInject.Inspect
             foreach (var myType in myTypes)
             {
                 var myTypeDef = myType.Resolve();
-                InspectType(report, myType, myTypeDef, mbmFlter);
+                InspectType(report, myType, myTypeDef, mbmFlter, NamingStrategy);
             }
             foreach (var myPair in myMembers)
             {
                 var myType = myPair.Key;
                 var myMembs = myPair.ToArray();
                 var myTypeDef = myType.Resolve();
-                InspectType(report, myType, myTypeDef, myMembs);
+                InspectType(report, myType, myTypeDef, myMembs, NamingStrategy);
             }
         }
 
         internal void InspectType(IDependencyReport report, TypeReference typeRef,
-            TypeDefinition typeDef, MemberReference[] myMembers)
+            TypeDefinition typeDef, MemberReference[] myMembers, INamingStrategy strategy)
         {
             if (typeDef == null)
                 return;
             var purged = report.Units;
             var invRef = typeDef.Module.Assembly;
+            var invRefName = strategy.GetName(invRef);
             IUnit purge;
-            if (!purged.TryGetValue(invRef.Name.Name, out purge))
-                purged[invRef.Name.Name] = purge = new AssemblyUnit(invRef.Name.Name, new Version(0, 0, 0, 0));
+            if (!purged.TryGetValue(invRefName, out purge))
+                purged[invRefName] = purge = new AssemblyUnit(invRefName, new Version(0, 0, 0, 0));
             var kind = typeDef.GetTypeKind();
+            var typeDefName = strategy.GetName(typeDef);
             IType ptype;
-            if (!purge.Types.TryGetValue(typeDef.FullName, out ptype))
-                purge.Types[typeDef.FullName] = ptype = new AssemblyType(typeDef.FullName, kind);
+            if (!purge.Types.TryGetValue(typeDefName, out ptype))
+                purge.Types[typeDefName] = ptype = new AssemblyType(typeDefName, kind);
             var members = myMembers ?? typeDef.GetAllMembers();
             switch (kind)
             {

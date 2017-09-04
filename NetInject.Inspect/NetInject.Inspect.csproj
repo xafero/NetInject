@@ -54,6 +54,7 @@
     <Compile Include="AssemblyMethod.cs" />
     <Compile Include="AssemblyType.cs" />
     <Compile Include="AssemblyUnit.cs" />
+    <Compile Include="DefaultNamingStrategy.cs" />
     <Compile Include="DependencyReport.cs" />
     <Compile Include="EnumValue.cs" />
     <Compile Include="IConstraint.cs" />
@@ -62,6 +63,7 @@
     <Compile Include="IHasConstraints.cs" />
     <Compile Include="IInspector.cs" />
     <Compile Include="IMethod.cs" />
+    <Compile Include="INamingStrategy.cs" />
     <Compile Include="IParameter.cs" />
     <Compile Include="IType.cs" />
     <Compile Include="IUnit.cs" />

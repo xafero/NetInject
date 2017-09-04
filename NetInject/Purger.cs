@@ -172,25 +172,25 @@ namespace NetInject
                         switch (kind)
                         {
                             case TypeKind.Interface:
-                                var intf = Noast.Create<IInterface>(name, nsp);
+                                var intf = Noast.Create<IInterface>(name, nsp).With(Visibility.Public);
                                 GenerateMembers(intf, type);
                                 break;
                             case TypeKind.Struct:
-                                var stru = Noast.Create<IStruct>(name, nsp);
+                                var stru = Noast.Create<IStruct>(name, nsp).With(Visibility.Public);
                                 GenerateMembers(stru, type);
                                 break;
                             case TypeKind.Class:
-                                var clas = Noast.Create<IClass>(name, nsp);
+                                var clas = Noast.Create<IClass>(name, nsp).With(Visibility.Public);
                                 GenerateMembers(clas, type);
                                 break;
                             case TypeKind.Delegate:
-                                var dlgt = Noast.Create<IDelegate>(name, nsp);
+                                var dlgt = Noast.Create<IDelegate>(name, nsp).With(Visibility.Public);
                                 var invoke = type.Methods.Single();
                                 foreach (var parm in invoke.Value.Parameters)
                                     dlgt.AddParameter(parm.Name, Simplify(parm.Type));
                                 break;
                             case TypeKind.Enum:
-                                var enm = Noast.Create<IEnum>(name, nsp);
+                                var enm = Noast.Create<IEnum>(name, nsp).With(Visibility.Public);
                                 foreach (var val in type.Values)
                                     enm.AddValue(val.Value.Name);
                                 break;

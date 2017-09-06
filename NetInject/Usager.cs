@@ -55,7 +55,7 @@ namespace NetInject
         {
             using (var ass = ReadAssembly(null, rparam, file))
             {
-                if (ass == null || IsStandardLib(ass.Name.Name))
+                if (ass == null || IsStandardLib(ass.Name.Name) || IsGenerated(ass))
                     return;
                 var founds = new Dictionary<string, int>();
                 foreach (var inspector in inspectors)

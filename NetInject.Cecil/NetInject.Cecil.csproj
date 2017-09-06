@@ -48,6 +48,7 @@
     <Reference Include="System" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="AssHelper.cs" />
     <Compile Include="CecilHelper.cs" />
     <Compile Include="MethodDefComparer.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

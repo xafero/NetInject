@@ -4,6 +4,7 @@ using Mono.Cecil;
 using System.IO;
 using NetInject.API;
 using Mono.Cecil.Cil;
+using NetInject.Cecil;
 
 namespace NetInject
 {

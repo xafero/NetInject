@@ -6,6 +6,7 @@ using System.Linq;
 using MethodAttr = Mono.Cecil.MethodAttributes;
 using System.IO;
 using log4net;
+using Mono.Collections.Generic;
 
 namespace NetInject
 {
@@ -34,11 +35,6 @@ namespace NetInject
                 assRef.PublicKey = new byte[0];
             }
         }
-
-        internal static IEnumerable<T> GetAttribute<T>(this TypeDefinition type) where T : Attribute
-            => type.CustomAttributes.Where(a => a.AttributeType.FullName == typeof(T).FullName)
-                .Select(a => a.ConstructorArguments.Select(c => c.Value).ToArray())
-                .Select(a => (T) typeof(T).GetConstructors().First().Invoke(a));
 
         internal static void RemovePInvoke(this MethodDefinition meth)
         {

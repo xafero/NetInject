@@ -1,11 +1,15 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using Mono.Cecil;
+using System.Reflection;
+using System;
 
 namespace NetInject.Cecil
 {
     public static class CecilHelper
     {
+        private static readonly StringComparison ignoreCase = StringComparison.InvariantCultureIgnoreCase;
+
         public static IEnumerable<TypeDefinition> GetAllTypes(this AssemblyDefinition ass)
             => ass.Modules.SelectMany(m => m.GetAllTypes());
 
@@ -24,6 +28,9 @@ namespace NetInject.Cecil
         public static bool IsStandardLib(string key)
             => key == "mscorlib" || key == "System" ||
                key == "System.Core" || key == "Microsoft.CSharp";
+
+        public static bool IsGenerated(AssemblyDefinition ass)
+            => ass.GetAttribute<AssemblyMetadataAttribute>().Any(a => a.Value.Equals(nameof(NetInject), ignoreCase));
 
         public static bool IsDelegate(this TypeDefinition type)
             => type?.BaseType?.FullName == typeof(System.MulticastDelegate).FullName

@@ -55,13 +55,15 @@ namespace NetInject
             var files = generated.GroupBy(g => g.Key).ToArray();
             Log.Info($"Generating {files.Length} package(s)...");
             var newLine = Environment.NewLine + Environment.NewLine;
+            var names = report.ManagedRefs.Keys.Concat(report.NativeRefs.Keys).Distinct().ToArray();
             var toCompile = new List<string>();
             foreach (var file in files)
             {
-                var meta = CreateMetadata(file.Key);
+                var key = file.Key;
+                var meta = CreateMetadata(key, names.First(n => Compare(n, key)));
                 var nsps = new object[] { meta }.Concat(file.Select(f => f.Value)).ToArray();
                 var code = string.Join(newLine, nsps.Select(n => n.ToString()));
-                var filePath = Path.Combine(tempDir, file.Key);
+                var filePath = Path.Combine(tempDir, key);
                 Log.Info($"'{ToRelativePath(tempDir, filePath)}' [{nsps.Length} namespace(s)]");
                 File.WriteAllText(filePath, code, Encoding.UTF8);
                 toCompile.Add(filePath);
@@ -103,13 +105,14 @@ namespace NetInject
             return 0;
         }
 
-        private static IMetadata CreateMetadata(string file)
+        private static IMetadata CreateMetadata(string file, string replaces)
         {
             var name = Path.GetFileNameWithoutExtension(file);
             var meta = Noast.Create<IMetadata>(name);
             meta.AddUsing("System.Runtime.Versioning");
             meta.TargetFramework = "4.5";
             meta.Metadata["Creator"] = typeof(Purger).Namespace;
+            meta.Metadata["Replaces"] = replaces;
             return meta;
         }
 

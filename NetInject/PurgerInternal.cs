@@ -17,6 +17,7 @@ namespace NetInject
         public void Rewrite(AssemblyDefinition ass, AssemblyDefinition[] inserts)
         {
             // throw new System.NotImplementedException();
+
         }
     }
 

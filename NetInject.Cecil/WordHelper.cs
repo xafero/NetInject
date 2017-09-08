@@ -1,4 +1,6 @@
-﻿using System.Text;
+﻿using System;
+using System.IO;
+using System.Text;
 
 namespace NetInject.Cecil
 {
@@ -52,6 +54,21 @@ namespace NetInject.Cecil
             foreach (var part in text.Split(dot))
                 builder.Append(SingleDeobfuscate(part)).Append(dot);
             return builder.ToString().TrimEnd(dot);
+        }
+
+        public static bool Compare(string first, string second)
+        {
+            var tmpFirst = RemoveCodeFileExt(first.ToLowerInvariant());
+            var tmpSecond = RemoveCodeFileExt(second.ToLowerInvariant());
+            return tmpFirst.Equals(tmpSecond);
+        }
+
+        private static string RemoveCodeFileExt(string file)
+        {
+            var ext = Path.GetExtension(file).ToLowerInvariant();
+            if (ext == ".cs" || ext == ".vb" || ext == ".dll")
+                return file.Substring(0, file.Length - ext.Length);
+            return file;
         }
     }
 }

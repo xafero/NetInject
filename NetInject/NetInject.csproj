@@ -79,6 +79,7 @@
     <Compile Include="CecilHelper.cs" />
     <Compile Include="CodeConvert.cs" />
     <Compile Include="Compiler.cs" />
+    <Compile Include="Defaults.cs" />
     <Compile Include="FileCopier.cs" />
     <Compile Include="IocProcessor.cs" />
     <Compile Include="IOHelper.cs" />

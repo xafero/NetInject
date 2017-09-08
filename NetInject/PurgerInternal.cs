@@ -1,8 +1,12 @@
 ﻿using Mono.Cecil;
+using NetInject.Cecil;
 using NetInject.Inspect;
 using Noaster.Api;
 using System.Collections.Generic;
 using System.Linq;
+
+using AMA = System.Reflection.AssemblyMetadataAttribute;
+using System;
 
 namespace NetInject
 {
@@ -13,11 +17,40 @@ namespace NetInject
 
     internal class PurgeRewriter : IRewiring
     {
-        // TODO ?! // TODO: Inject ass?
         public void Rewrite(AssemblyDefinition ass, AssemblyDefinition[] inserts)
         {
-            // throw new System.NotImplementedException();
+            var ins = inserts.ToDictionary(k => k.GetAttribute<AMA>().First(
+                a => a.Key == Defaults.Replaces).Value.ToLowerInvariant(), v => v);
+            foreach (var myRef in ass.GetAllExternalRefs().ToArray())
+            {
+                AssemblyDefinition insAss;
+                var assName = myRef as AssemblyNameReference;
+                if (assName != null && ins.TryGetValue(assName.Name.ToLowerInvariant(), out insAss))
+                    Rewrite(ass, assName, insAss);
+                var modName = myRef as ModuleReference;
+                if (modName != null && ins.TryGetValue(modName.Name.ToLowerInvariant(), out insAss))
+                    Rewrite(ass, modName, insAss);
+            }
+        }
 
+        private void Rewrite(AssemblyDefinition ass, ModuleReference modRef, AssemblyDefinition insAss)
+        {
+            // TODO: Inject natives?
+            var pinvokes = ass.GetAllTypes().SelectMany(t => t.Methods).Where(
+                m => m.HasPInvokeInfo && m.PInvokeInfo.Module == modRef).ToArray();
+            foreach (var pinvoke in pinvokes)
+            {
+                // var type = pinvoke.DeclaringType;
+                // type.Methods.Remove(pinvoke);
+                pinvoke.RemovePInvoke();
+            }
+            ass.Remove(modRef);
+        }
+
+        private void Rewrite(AssemblyDefinition ass, AssemblyNameReference assRef, AssemblyDefinition insAss)
+        {
+            // TODO: Inject manageds?
+            ass.Remove(assRef);
         }
     }
 

@@ -111,12 +111,12 @@ namespace NetInject
             var meta = Noast.Create<IMetadata>(name);
             meta.AddUsing("System.Runtime.Versioning");
             meta.TargetFramework = "4.5";
-            meta.Metadata["Creator"] = typeof(Purger).Namespace;
-            meta.Metadata["Replaces"] = replaces;
+            meta.Metadata[Defaults.Creator] = typeof(Purger).Namespace;
+            meta.Metadata[Defaults.Replaces] = replaces;
             return meta;
         }
 
-        private static void ProcessMarkedFiles(string workDir, IDependencyReport report, 
+        private static void ProcessMarkedFiles(string workDir, IDependencyReport report,
             ICollection<string> injectables, string outDir)
         {
             IRewiring rewriter = new PurgeRewriter();

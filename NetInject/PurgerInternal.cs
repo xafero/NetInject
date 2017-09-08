@@ -6,6 +6,20 @@ using System.Linq;
 
 namespace NetInject
 {
+    internal interface IRewiring
+    {
+        void Rewrite(AssemblyDefinition ass, AssemblyDefinition[] inserts);
+    }
+
+    internal class PurgeRewriter : IRewiring
+    {
+        // TODO ?! // TODO: Inject ass?
+        public void Rewrite(AssemblyDefinition ass, AssemblyDefinition[] inserts)
+        {
+            // throw new System.NotImplementedException();
+        }
+    }
+
     internal static class PurgerInternal
     {
         private static void ProcessMarkedFiles(string workDir, IDependencyReport report)

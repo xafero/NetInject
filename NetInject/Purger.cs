@@ -15,8 +15,6 @@ using System.Collections.Generic;
 using System;
 using System.Text;
 using NetInject.Cecil;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Converters;
 using Noaster.Api;
 using Noaster.Dist;
 using IType = NetInject.Inspect.IType;
@@ -46,66 +44,60 @@ namespace NetInject
         {
             var report = new DependencyReport();
             Usager.Poll(opts, report);
-
-            // debug
-            var jopts = new JsonSerializerSettings
-            {
-                Formatting = Formatting.Indented,
-                Converters = {new StringEnumConverter()},
-                NullValueHandling = NullValueHandling.Ignore,
-                DefaultValueHandling = DefaultValueHandling.Ignore
-            };
-            var json = JsonConvert.SerializeObject(report, jopts);
-            File.WriteAllText("report.json", json, Encoding.UTF8);
-
-            Log.Info($"{report.Files.Count} files read for metadata.");
+            Log.Info($"{report.Files.Count} file(s) read for metadata.");
             var tempDir = Path.GetFullPath(opts.TempDir);
             Directory.CreateDirectory(tempDir);
             Log.Info($"Temporary directory is '{tempDir}'.");
+            var outDir = Path.GetFullPath(opts.OutputDir);
+            Directory.CreateDirectory(outDir);
+            Log.Info($"Output directory is '{outDir}'.");
             var generated = GenerateNamespaces(report);
             var files = generated.GroupBy(g => g.Key).ToArray();
-            Log.Info($"Generating {files.Length} packages...");
+            Log.Info($"Generating {files.Length} package(s)...");
             var newLine = Environment.NewLine + Environment.NewLine;
             var toCompile = new List<string>();
             foreach (var file in files)
             {
                 var meta = CreateMetadata(file.Key);
-                var nsps = new object[] {meta}.Concat(file.Select(f => f.Value)).ToArray();
+                var nsps = new object[] { meta }.Concat(file.Select(f => f.Value)).ToArray();
                 var code = string.Join(newLine, nsps.Select(n => n.ToString()));
                 var filePath = Path.Combine(tempDir, file.Key);
                 Log.Info($"'{ToRelativePath(tempDir, filePath)}' [{nsps.Length} namespace(s)]");
                 File.WriteAllText(filePath, code, Encoding.UTF8);
                 toCompile.Add(filePath);
             }
-            Log.Info($"Compiling {toCompile.Count} packages...");
+            IFileCopier copier = new FileCopier();
+            var workDir = Path.GetFullPath(opts.WorkDir);
+            copier.CopyFolder(workDir, outDir);
+            Log.Info($"Compiling {toCompile.Count} package(s)...");
+            var toInject = new List<string>();
             foreach (var package in toCompile)
             {
                 var bytes = (new FileInfo(package)).Length;
                 Log.Info($"'{ToRelativePath(tempDir, package)}' [{bytes} bytes]");
                 var name = Path.GetFileNameWithoutExtension(package);
-                var ass = CreateAssembly(tempDir, name, new[] {package});
+                var ass = CreateAssembly(tempDir, name, new[] { package });
                 if (ass == null)
                 {
                     Log.Error("Sorry, I could not compile everything ;-(");
                     return -1;
                 }
                 Log.Info($"  --> '{ass.FullName}'");
-                // TODO: Inject ass?
+                toInject.Add(copier.CopyFile(ass.Location, outDir));
             }
-            var workDir = Path.GetFullPath(opts.WorkDir);
             var oneFileOrMore = report.Files.Count >= 1 && files.Length >= 1;
             if (oneFileOrMore)
             {
                 Log.Info($"Processing {report.Files.Count} files...");
-                ProcessMarkedFiles(workDir, report);
+                ProcessMarkedFiles(workDir, report, toInject, outDir);
             }
-            Log.Info($"Ensuring dependencies in '{workDir}'...");
+            Log.Info($"Ensuring dependencies in '{outDir}'...");
             if (oneFileOrMore)
             {
-                Log.InfoFormat(" added '{0}'!", CopyTypeRef<IVessel>(workDir));
-                Log.InfoFormat(" added '{0}'!", CopyTypeRef<DefaultVessel>(workDir));
-                Log.InfoFormat(" added '{0}'!", CopyTypeRef<MoqContainer>(workDir));
-                Log.InfoFormat(" added '{0}'!", CopyTypeRef<AutofacContainer>(workDir));
+                Log.InfoFormat(" added '{0}'!", CopyTypeRef<IVessel>(outDir));
+                Log.InfoFormat(" added '{0}'!", CopyTypeRef<DefaultVessel>(outDir));
+                Log.InfoFormat(" added '{0}'!", CopyTypeRef<MoqContainer>(outDir));
+                Log.InfoFormat(" added '{0}'!", CopyTypeRef<AutofacContainer>(outDir));
             }
             Log.Info("Done.");
             return 0;
@@ -121,20 +113,27 @@ namespace NetInject
             return meta;
         }
 
-        private static void ProcessMarkedFiles(string workDir, IDependencyReport report)
+        private static void ProcessMarkedFiles(string workDir, IDependencyReport report, 
+            ICollection<string> injectables, string outDir)
         {
+            IRewiring rewriter = new PurgeRewriter();
             using (var resolv = new DefaultAssemblyResolver())
             {
                 resolv.AddSearchDirectory(workDir);
-                var rparam = new ReaderParameters {AssemblyResolver = resolv};
+                var rparam = new ReaderParameters { AssemblyResolver = resolv };
+                var wparam = new WriterParameters();
+                var injected = injectables.Select(i => AssemblyDefinition.ReadAssembly(i, rparam)).ToArray();
                 foreach (var file in report.Files)
                     using (var stream = new MemoryStream(File.ReadAllBytes(file)))
                     using (var ass = AssemblyDefinition.ReadAssembly(stream, rparam))
                     {
                         Log.Info($"... '{ass.FullName}'");
-                        // TODO ?!
+                        rewriter.Rewrite(ass, injected);
+                        var outFile = Path.Combine(outDir, Path.GetFileName(file));
+                        ass.Write(outFile, wparam);
                         Log.InfoFormat($" inverted code in '{ToRelativePath(workDir, file)}'!");
                     }
+                Array.ForEach(injected, i => i.Dispose());
             }
         }
 

@@ -5,6 +5,9 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text;
+using NetInject.Inspect;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
 
 namespace NetInject
 {
@@ -49,6 +52,19 @@ namespace NetInject
                 if (!refAss.GlobalAssemblyCache && !string.IsNullOrWhiteSpace(refAss.Location))
                     CopyTypeRef(refAss, workDir);
             return CopyTypeRef(ass, workDir);
+        }
+
+        internal static void WriteToFile(IDependencyReport report, string fileName = "report.json")
+        {
+            var jopts = new JsonSerializerSettings
+            {
+                Formatting = Formatting.Indented,
+                Converters = { new StringEnumConverter() },
+                NullValueHandling = NullValueHandling.Ignore,
+                DefaultValueHandling = DefaultValueHandling.Ignore
+            };
+            var json = JsonConvert.SerializeObject(report, jopts);
+            File.WriteAllText(fileName, json, Encoding.UTF8);
         }
 
         internal static Assembly CopyTypeRef(Assembly ass, string workDir)

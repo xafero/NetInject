@@ -6,7 +6,6 @@ using System.Linq;
 using MethodAttr = Mono.Cecil.MethodAttributes;
 using System.IO;
 using log4net;
-using Mono.Collections.Generic;
 
 namespace NetInject
 {

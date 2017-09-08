@@ -7,7 +7,6 @@ using NetInject.Cecil;
 using static NetInject.Cecil.CecilHelper;
 using static NetInject.Cecil.WordHelper;
 using static NetInject.Inspect.ApiExts;
-using GenParmAttr = Mono.Cecil.GenericParameterAttributes;
 
 namespace NetInject.Inspect
 {

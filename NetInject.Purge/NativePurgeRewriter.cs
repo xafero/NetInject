@@ -6,6 +6,7 @@ using System.Linq;
 using System.ComponentModel;
 
 using static NetInject.Cecil.CecilHelper;
+using System;
 
 namespace NetInject.Purge
 {
@@ -35,7 +36,7 @@ namespace NetInject.Purge
                     var methRef = instr.Operand as MethodReference;
                     if (methRef == null || !pinvokes.Contains(methRef))
                         continue;
-                    PatchCall(ioc, instr, methRef, insAss);
+                    PatchCall(meth.Body, ioc, instr, methRef, insAss);
                 }
             foreach (var oldType in oldTypes.OfType<TypeDefinition>())
             {
@@ -49,21 +50,23 @@ namespace NetInject.Purge
             ass.Remove(modRef);
         }
 
-        private void PatchCall(IIocProcessor ioc, Instruction instr,
+        private void PatchCall(MethodBody body, IIocProcessor ioc, Instruction instr,
             MethodReference meth, AssemblyDefinition insAss)
         {
             var scopeMeth = ioc.ScopeMethod;
             var oldMeth = meth.Resolve();
             var oldAttr = oldMeth.GetAttribute<DescriptionAttribute>().SingleOrDefault()?.Description;
             var newMeth = FindMethodByStr(insAss, oldAttr);
-            if (oldAttr == null || newMeth == null)
+            if (newMeth == null)
+                newMeth = FindMethodByOld(insAss, oldMeth);
+            if (newMeth == null)
             {
                 instr.OpCode = OpCodes.Nop;
                 instr.Operand = null;
                 // TODO: Handle error?!
                 return;
             }
-            instr.Operand = newMeth;
+            instr.Operand = Import(body, newMeth);
         }
     }
 }

@@ -1,8 +1,10 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using Mono.Cecil;
-using System.Reflection;
 using System;
+using System.Reflection;
+
+using MethodBody = Mono.Cecil.Cil.MethodBody;
 
 namespace NetInject.Cecil
 {
@@ -51,10 +53,6 @@ namespace NetInject.Cecil
 
         public static bool ContainsMember(AssemblyNameReference assRef, MemberReference mbmRef)
             => ContainsType(assRef, mbmRef.DeclaringType);
-
-        public static MethodDefinition FindMethodByStr(AssemblyDefinition ass, string methodStr)
-            => string.IsNullOrWhiteSpace(methodStr) ? null : ass.GetAllTypes().SelectMany(
-                t => t.Methods).SingleOrDefault(m => m.ToString().Equals(methodStr));
 
         public static TypeKind GetTypeKind(this TypeDefinition typeDef)
         {
@@ -123,6 +121,9 @@ namespace NetInject.Cecil
         private static TypeReference Import(MethodDefinition meth, TypeDefinition newType)
             => meth.DeclaringType.Module.ImportReference(newType);
 
+        public static MethodReference Import(MethodBody body, MethodReference newMeth)
+            => body.Method.DeclaringType.Module.ImportReference(newMeth);
+
         public static IEnumerable<IMetadataScope> GetAllExternalRefs(this AssemblyDefinition ass)
             => ass.Modules.SelectMany(m => m.GetAllExternalRefs());
 
@@ -139,6 +140,29 @@ namespace NetInject.Cecil
         {
             foreach (var mod in ass.Modules)
                 mod.AssemblyReferences.Remove(assembly);
+        }
+
+        public static MethodDefinition FindMethodByStr(AssemblyDefinition ass, string methodStr)
+            => string.IsNullOrWhiteSpace(methodStr) ? null : ass.GetAllTypes().SelectMany(
+                t => t.Methods).SingleOrDefault(m => m.ToString().Contains(methodStr));
+
+        public static MethodDefinition FindMethodByOld(AssemblyDefinition ass, MethodDefinition oldMeth,
+            bool ignoreParamPassing = true)
+        {
+            Func<MethodReference, string> simplify = m => m.ToString().Split(new[] { ':' }, 3).Last();
+            foreach (var newMeth in ass.GetAllTypes().SelectMany(t => t.Methods))
+            {
+                var oldMethKey = simplify(oldMeth);
+                var newMethKey = simplify(newMeth);
+                if (ignoreParamPassing)
+                {
+                    oldMethKey = oldMethKey.Replace("&", "");
+                    newMethKey = newMethKey.Replace("&", "");
+                }
+                if (oldMethKey.Contains(newMethKey))
+                    return newMeth;
+            }
+            return null;
         }
     }
 }

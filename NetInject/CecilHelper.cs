@@ -31,14 +31,6 @@ namespace NetInject
         public static IEnumerable<string> GetAllNatives(this ModuleDefinition mod)
             => mod.ModuleReferences.Select(m => m.Name);
 
-        public static Instruction GoBack(this Instruction il, int steps)
-        {
-            var previous = il;
-            for (var i = 0; i < steps; i++)
-                previous = previous.Previous;
-            return previous;
-        }
-
         public static IEnumerable<TypeDefinition> GetDerivedTypes(this AssemblyDefinition ass,
             TypeReference baseType)
         {

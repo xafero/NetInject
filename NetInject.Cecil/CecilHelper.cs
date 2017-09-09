@@ -5,6 +5,7 @@ using System;
 using System.Reflection;
 
 using MethodBody = Mono.Cecil.Cil.MethodBody;
+using Mono.Cecil.Cil;
 
 namespace NetInject.Cecil
 {
@@ -163,6 +164,14 @@ namespace NetInject.Cecil
                     return newMeth;
             }
             return null;
+        }
+
+        public static Instruction GoBack(this Instruction il, int steps)
+        {
+            var previous = il;
+            for (var i = 0; i < steps; i++)
+                previous = previous.Previous;
+            return previous;
         }
     }
 }

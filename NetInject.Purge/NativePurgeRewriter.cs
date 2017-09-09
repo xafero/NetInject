@@ -53,8 +53,6 @@ namespace NetInject.Purge
         private void PatchCall(MethodBody body, IIocProcessor ioc, Instruction instr,
             MethodReference meth, AssemblyDefinition insAss)
         {
-            var scopeMeth = ioc.ScopeMethod;
-            var scopeType = ioc.IocType;
             var oldMeth = meth.Resolve();
             var oldAttr = oldMeth.GetAttribute<DescriptionAttribute>().SingleOrDefault()?.Description;
             var newMeth = FindMethodByStr(insAss, oldAttr);
@@ -67,10 +65,19 @@ namespace NetInject.Purge
                 // TODO: Handle error?!
                 return;
             }
+            PatchCalls(body, ioc, instr, newMeth);
+        }
+
+        private void PatchCalls(MethodBody body, IIocProcessor ioc, Instruction instr,
+            MethodDefinition newMeth)
+        {
+            var scopeMeth = ioc.ScopeMethod;
             var resolveMeth = ioc.GetResolveMethod(newMeth.DeclaringType);
+            var stepsBack = newMeth.Parameters.Count;
+            var ilStart = instr.GoBack(stepsBack);
             var il = body.GetILProcessor();
-            il.InsertBefore(instr, il.Create(OpCodes.Call, scopeMeth));
-            il.InsertBefore(instr, il.Create(OpCodes.Callvirt, resolveMeth));
+            il.InsertBefore(ilStart, il.Create(OpCodes.Call, scopeMeth));
+            il.InsertBefore(ilStart, il.Create(OpCodes.Callvirt, resolveMeth));
             instr.OpCode = OpCodes.Callvirt;
             instr.Operand = Import(body, newMeth);
         }

@@ -12,9 +12,6 @@ namespace NetInject
 {
     internal static class PurgerInternal
     {
-        /* var gens = GenerateCode(purged, opts.TempDir, opts.WorkDir, rparam)
-            .ToDictionary(k => k.Name.Name, v => v);      // ReplaceCalls(ass, gens, mappings); */
-
         private static IEnumerable<AssemblyDefinition> GenerateCode(
             /*PurgedAssemblies*/object purged, string tempDir,
             string workDir, ReaderParameters rparam)

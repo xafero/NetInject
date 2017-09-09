@@ -13,6 +13,8 @@ namespace NetInject.Purge
     internal static class IocProcessor
     {
         private const string IocName = "IoC";
+        private const string IocField = "scope";
+        private const string IocMethod = "GetScope";
         private const string CctorName = ".cctor";
 
         internal static void AddOrReplaceIoc(ILProcessor il)
@@ -30,11 +32,11 @@ namespace NetInject.Purge
             mod.Types.Add(type);
             var vesselRef = mod.ImportReference(typeof(IVessel));
             const FAttr fieldAttr = FAttr.Static | FAttr.Private;
-            var contField = new FieldDefinition("scope", fieldAttr, vesselRef);
+            var contField = new FieldDefinition(IocField, fieldAttr, vesselRef);
             type.Fields.Add(contField);
             const MAttr getAttrs = MAttr.Static | MAttr.Public
                                               | MAttr.SpecialName | MAttr.HideBySig;
-            var getMethod = new MethodDefinition("GetScope", getAttrs, vesselRef);
+            var getMethod = new MethodDefinition(IocMethod, getAttrs, vesselRef);
             type.Methods.Add(getMethod);
             var gmil = getMethod.Body.GetILProcessor();
             gmil.Append(gmil.Create(OpCodes.Ldsfld, contField));

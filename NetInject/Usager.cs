@@ -37,11 +37,12 @@ namespace NetInject
 
         internal static void Poll(IUsageOpts opts, DependencyReport report)
         {
-            var files = GetAssemblyFiles(opts.WorkDir).ToArray();
-            Log.Info($"Found {files.Length} file(s)!");
+            var workDir = Path.GetFullPath(opts.WorkDir);
+            var files = GetAssemblyFiles(workDir).ToArray();
+            Log.Info($"Found {files.Length} file(s) in '{workDir}'!");
             using (var resolv = new DefaultAssemblyResolver())
             {
-                resolv.AddSearchDirectory(opts.WorkDir);
+                resolv.AddSearchDirectory(workDir);
                 var rparam = new ReaderParameters {AssemblyResolver = resolv};
                 var nativeInsp = new NativeInspector(opts.Assemblies);
                 var managedInsp = new ManagedInspector(opts.Assemblies);

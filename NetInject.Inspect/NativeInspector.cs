@@ -72,7 +72,10 @@ namespace NetInject.Inspect
                     unit.Types[nativeTypeName] = ptype = new AssemblyType(nativeTypeName, TypeKind.Class);
                 var nameArgStrategy = new NativeArgNameStrategy(ptype);
                 CheckAndInclude(report, meth.ReturnType, nameArgStrategy);
+                var newRetType = nameArgStrategy.GetName(meth.ReturnType);
                 var methRetType = Deobfuscate(meth.ReturnType.FullName);
+                if (newRetType != null)
+                    methRetType = newRetType;
                 IMethod pmethod;
                 if (!ptype.Methods.TryGetValue(key, out pmethod))
                     ptype.Methods[key] = pmethod = new AssemblyMethod(nativeMethName, methRetType);
@@ -88,7 +91,7 @@ namespace NetInject.Inspect
                     pmethod.Parameters.Add(mparm);
                 }
                 const StringSplitOptions sso = StringSplitOptions.None;
-                var text = $"{meth}".Split(new[] {$"{meth.ReturnType}"}, 2, sso).Last().Trim();
+                var text = $"{meth}".Split(new[] { $"{meth.ReturnType}" }, 2, sso).Last().Trim();
                 pmethod.Aliases.Add(Deobfuscate(text));
             }
         }

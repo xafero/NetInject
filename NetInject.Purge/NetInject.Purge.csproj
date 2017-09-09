@@ -42,16 +42,25 @@
     <Reference Include="Mono.Cecil.Rocks, Version=0.10.0.0, Culture=neutral, PublicKeyToken=50cebf1cceb9d05e, processorArchitecture=MSIL">
       <HintPath>..\packages\Mono.Cecil.0.10.0-beta6\lib\net40\Mono.Cecil.Rocks.dll</HintPath>
     </Reference>
+    <Reference Include="Noaster">
+      <HintPath>..\lib\Noaster.dll</HintPath>
+    </Reference>
+    <Reference Include="Noaster.Api">
+      <HintPath>..\lib\Noaster.Api.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="ICodeValidator.cs" />
     <Compile Include="IIocProcessor.cs" />
     <Compile Include="IocProcessor.cs" />
     <Compile Include="IRewiring.cs" />
     <Compile Include="ManagedPurgeRewriter.cs" />
+    <Compile Include="MethodDeduper.cs" />
     <Compile Include="NativePurgeRewriter.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="PurgeRewriter.cs" />
+    <Compile Include="TypeAbbreviations.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

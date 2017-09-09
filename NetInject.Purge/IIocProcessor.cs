@@ -1,5 +1,4 @@
 ﻿using Mono.Cecil;
-using System;
 
 namespace NetInject.Purge
 {

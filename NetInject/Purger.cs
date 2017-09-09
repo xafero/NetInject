@@ -143,6 +143,7 @@ namespace NetInject
 
         private static IEnumerable<KeyValuePair<string, INamespace>> GenerateNamespaces(IDependencyReport report)
         {
+            ICodeValidator validator = new MethodDeduper();
             foreach (var pair in report.Units)
             {
                 var ass = pair.Value;
@@ -169,6 +170,7 @@ namespace NetInject
                             case TypeKind.Interface:
                                 var intf = Noast.Create<IInterface>(name, nsp).With(Visibility.Public);
                                 GenerateMembers(intf, type);
+                                validator.Validate(intf);
                                 break;
                             case TypeKind.Struct:
                                 var stru = Noast.Create<IStruct>(name, nsp).With(Visibility.Public);

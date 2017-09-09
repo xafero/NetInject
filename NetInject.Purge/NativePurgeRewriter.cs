@@ -6,7 +6,6 @@ using System.Linq;
 using System.ComponentModel;
 
 using static NetInject.Cecil.CecilHelper;
-using System;
 
 namespace NetInject.Purge
 {

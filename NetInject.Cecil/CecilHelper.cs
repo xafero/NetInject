@@ -118,5 +118,23 @@ namespace NetInject.Cecil
 
         private static TypeReference Import(MethodDefinition meth, TypeDefinition newType)
             => meth.DeclaringType.Module.ImportReference(newType);
+
+        public static IEnumerable<IMetadataScope> GetAllExternalRefs(this AssemblyDefinition ass)
+            => ass.Modules.SelectMany(m => m.GetAllExternalRefs());
+
+        public static IEnumerable<IMetadataScope> GetAllExternalRefs(this ModuleDefinition mod)
+            => mod.AssemblyReferences.OfType<IMetadataScope>().Concat(mod.ModuleReferences);
+
+        public static void Remove(this AssemblyDefinition ass, ModuleReference native)
+        {
+            foreach (var mod in ass.Modules)
+                mod.ModuleReferences.Remove(native);
+        }
+
+        public static void Remove(this AssemblyDefinition ass, AssemblyNameReference assembly)
+        {
+            foreach (var mod in ass.Modules)
+                mod.AssemblyReferences.Remove(assembly);
+        }
     }
 }

@@ -22,6 +22,7 @@ using IMethod = Noaster.Api.IMethod;
 using IField = Noaster.Api.IField;
 using AType = Noaster.Api.IType;
 using Noast = Noaster.Dist.Noaster;
+using NetInject.Purge;
 
 namespace NetInject
 {

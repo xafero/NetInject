@@ -31,24 +31,6 @@ namespace NetInject
         public static IEnumerable<string> GetAllNatives(this ModuleDefinition mod)
             => mod.ModuleReferences.Select(m => m.Name);
 
-        public static IEnumerable<IMetadataScope> GetAllExternalRefs(this AssemblyDefinition ass)
-            => ass.Modules.SelectMany(m => m.GetAllExternalRefs());
-
-        public static IEnumerable<IMetadataScope> GetAllExternalRefs(this ModuleDefinition mod)
-            => mod.AssemblyReferences.OfType<IMetadataScope>().Concat(mod.ModuleReferences);
-
-        public static void Remove(this AssemblyDefinition ass, ModuleReference native)
-        {
-            foreach (var mod in ass.Modules)
-                mod.ModuleReferences.Remove(native);
-        }
-
-        public static void Remove(this AssemblyDefinition ass, AssemblyNameReference assembly)
-        {
-            foreach (var mod in ass.Modules)
-                mod.AssemblyReferences.Remove(assembly);
-        }
-
         public static Instruction GoBack(this Instruction il, int steps)
         {
             var previous = il;

@@ -1,6 +1,6 @@
-﻿namespace NetInject
+﻿namespace NetInject.Cecil
 {
-    internal static class Defaults
+    public static class Defaults
     {
         public static readonly string Creator = "Creator";
 

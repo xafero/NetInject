@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 14
-VisualStudioVersion = 14.0.25420.1
+# Visual Studio 15
+VisualStudioVersion = 15.0.26730.12
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NetInject", "NetInject\NetInject.csproj", "{E5F14DA5-06D0-4B2E-9C48-93028CBA73E5}"
 EndProject
@@ -18,6 +18,8 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NetInject.Inspect", "NetInject.Inspect\NetInject.Inspect.csproj", "{40F65F07-9DFA-4B3C-8945-087AC4EE8CBD}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NetInject.Cecil", "NetInject.Cecil\NetInject.Cecil.csproj", "{7D9F6684-1213-489D-857C-05F655AEB89C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NetInject.Purge", "NetInject.Purge\NetInject.Purge.csproj", "{C2B0191F-A962-4490-B766-47824A21DB48}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -57,8 +59,15 @@ Global
 		{7D9F6684-1213-489D-857C-05F655AEB89C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{7D9F6684-1213-489D-857C-05F655AEB89C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{7D9F6684-1213-489D-857C-05F655AEB89C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C2B0191F-A962-4490-B766-47824A21DB48}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C2B0191F-A962-4490-B766-47824A21DB48}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C2B0191F-A962-4490-B766-47824A21DB48}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C2B0191F-A962-4490-B766-47824A21DB48}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {30CA6272-7429-43F0-B723-3533D7C7B88E}
 	EndGlobalSection
 EndGlobal

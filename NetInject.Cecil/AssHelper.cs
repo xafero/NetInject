@@ -3,6 +3,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
+using MethodAttr = Mono.Cecil.MethodAttributes;
+
 namespace NetInject.Cecil
 {
     public static class AssHelper
@@ -14,5 +16,11 @@ namespace NetInject.Cecil
             => attributes.Where(a => a.AttributeType.FullName == typeof(T).FullName)
                 .Select(a => a.ConstructorArguments.Select(c => c.Value).ToArray())
                 .Select(a => (T)typeof(T).GetConstructors().First().Invoke(a));
+
+        public static void RemovePInvoke(this MethodDefinition meth)
+        {
+            meth.Attributes &= ~MethodAttr.PInvokeImpl;
+            meth.IsPreserveSig = false;
+        }
     }
 }

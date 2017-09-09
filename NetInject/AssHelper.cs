@@ -3,9 +3,10 @@ using Mono.Cecil.Cil;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using MethodAttr = Mono.Cecil.MethodAttributes;
 using System.IO;
 using log4net;
+
+using MethodAttr = Mono.Cecil.MethodAttributes;
 
 namespace NetInject
 {
@@ -33,12 +34,6 @@ namespace NetInject
                 assRef.HasPublicKey = false;
                 assRef.PublicKey = new byte[0];
             }
-        }
-
-        internal static void RemovePInvoke(this MethodDefinition meth)
-        {
-            meth.Attributes &= ~MethodAttr.PInvokeImpl;
-            meth.IsPreserveSig = false;
         }
 
         internal static void AddOrReplaceModuleSetup(AssemblyDefinition ass, Action<ILProcessor> il = null)

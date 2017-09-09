@@ -79,7 +79,6 @@
     <Compile Include="CecilHelper.cs" />
     <Compile Include="CodeConvert.cs" />
     <Compile Include="Compiler.cs" />
-    <Compile Include="Defaults.cs" />
     <Compile Include="FileCopier.cs" />
     <Compile Include="IocProcessor.cs" />
     <Compile Include="IOHelper.cs" />
@@ -129,6 +128,10 @@
     <ProjectReference Include="..\NetInject.Moq\NetInject.Moq.csproj">
       <Project>{29506E22-97AA-4550-847C-D2E7764B3DE1}</Project>
       <Name>NetInject.Moq</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\NetInject.Purge\NetInject.Purge.csproj">
+      <Project>{C2B0191F-A962-4490-B766-47824A21DB48}</Project>
+      <Name>NetInject.Purge</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

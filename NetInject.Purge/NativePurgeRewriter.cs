@@ -3,6 +3,9 @@ using Mono.Cecil.Cil;
 using NetInject.Cecil;
 using System.Collections.Generic;
 using System.Linq;
+using System.ComponentModel;
+
+using static NetInject.Cecil.CecilHelper;
 
 namespace NetInject.Purge
 {
@@ -32,10 +35,7 @@ namespace NetInject.Purge
                     var methRef = instr.Operand as MethodReference;
                     if (methRef == null || !pinvokes.Contains(methRef))
                         continue;
-                    var scopeMeth = ioc.ScopeMethod;
-                    // TODO: Replace correctly!
-                    instr.OpCode = OpCodes.Nop;
-                    instr.Operand = null;
+                    PatchCall(ioc, instr, methRef, insAss);
                 }
             foreach (var oldType in oldTypes.OfType<TypeDefinition>())
             {
@@ -47,6 +47,23 @@ namespace NetInject.Purge
                 module.Types.Remove(oldType);
             }
             ass.Remove(modRef);
+        }
+
+        private void PatchCall(IIocProcessor ioc, Instruction instr,
+            MethodReference meth, AssemblyDefinition insAss)
+        {
+            var scopeMeth = ioc.ScopeMethod;
+            var oldMeth = meth.Resolve();
+            var oldAttr = oldMeth.GetAttribute<DescriptionAttribute>().SingleOrDefault()?.Description;
+            var newMeth = FindMethodByStr(insAss, oldAttr);
+            if (oldAttr == null || newMeth == null)
+            {
+                instr.OpCode = OpCodes.Nop;
+                instr.Operand = null;
+                // TODO: Handle error?!
+                return;
+            }
+            instr.Operand = newMeth;
         }
     }
 }

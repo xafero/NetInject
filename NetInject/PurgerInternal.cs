@@ -12,17 +12,13 @@ namespace NetInject
 {
     internal static class PurgerInternal
     {
-        private static void ProcessMarkedFiles(string workDir, IDependencyReport report)
-        {
-            /* var gens = GenerateCode(purged, opts.TempDir, opts.WorkDir, rparam)
-                .ToDictionary(k => k.Name.Name, v => v);
-                var mappings = purged.GetNativeMappings(apiPrefix).ToArray(); */
-            // Inject container initializer ::: 
-            // ReplaceCalls(ass, gens, mappings);
-            // ass.Write(file, wparam);
-        }
+        /* var gens = GenerateCode(purged, opts.TempDir, opts.WorkDir, rparam)
+            .ToDictionary(k => k.Name.Name, v => v);
+            var mappings = purged.GetNativeMappings(apiPrefix).ToArray(); */
+        // ReplaceCalls(ass, gens, mappings);
 
-        private static IEnumerable<AssemblyDefinition> GenerateCode(/*PurgedAssemblies*/object purged, string tempDir,
+        private static IEnumerable<AssemblyDefinition> GenerateCode(
+            /*PurgedAssemblies*/object purged, string tempDir,
             string workDir, ReaderParameters rparam)
         {
             yield break;

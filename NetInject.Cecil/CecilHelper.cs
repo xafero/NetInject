@@ -52,6 +52,10 @@ namespace NetInject.Cecil
         public static bool ContainsMember(AssemblyNameReference assRef, MemberReference mbmRef)
             => ContainsType(assRef, mbmRef.DeclaringType);
 
+        public static MethodDefinition FindMethodByStr(AssemblyDefinition ass, string methodStr)
+            => string.IsNullOrWhiteSpace(methodStr) ? null : ass.GetAllTypes().SelectMany(
+                t => t.Methods).SingleOrDefault(m => m.ToString().Equals(methodStr));
+
         public static TypeKind GetTypeKind(this TypeDefinition typeDef)
         {
             if (typeDef.IsEnum)

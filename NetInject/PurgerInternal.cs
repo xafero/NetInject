@@ -6,8 +6,6 @@ using System.Collections.Generic;
 using System.Linq;
 
 using AMA = System.Reflection.AssemblyMetadataAttribute;
-using System;
-using System.Diagnostics;
 using Mono.Cecil.Cil;
 
 namespace NetInject
@@ -17,8 +15,22 @@ namespace NetInject
         void Rewrite(AssemblyDefinition ass, AssemblyDefinition[] inserts);
     }
 
+    internal interface IRewiring<T> where T : IMetadataScope
+    {
+        void Rewrite(AssemblyDefinition ass, T myRef, AssemblyDefinition insAss);
+    }
+
     internal class PurgeRewriter : IRewiring
     {
+        private readonly IRewiring<AssemblyNameReference> assWire;
+        private readonly IRewiring<ModuleReference> modWire;
+
+        public PurgeRewriter()
+        {
+            assWire = new ManagedPurgeRewriter();
+            modWire = new NativePurgeRewriter();
+        }
+
         public void Rewrite(AssemblyDefinition ass, AssemblyDefinition[] inserts)
         {
             var ins = inserts.ToDictionary(k => k.GetAttribute<AMA>().First(
@@ -28,14 +40,17 @@ namespace NetInject
                 AssemblyDefinition insAss;
                 var assName = myRef as AssemblyNameReference;
                 if (assName != null && ins.TryGetValue(assName.Name.ToLowerInvariant(), out insAss))
-                    Rewrite(ass, assName, insAss);
+                    assWire.Rewrite(ass, assName, insAss);
                 var modName = myRef as ModuleReference;
                 if (modName != null && ins.TryGetValue(modName.Name.ToLowerInvariant(), out insAss))
-                    Rewrite(ass, modName, insAss);
+                    modWire.Rewrite(ass, modName, insAss);
             }
         }
+    }
 
-        private void Rewrite(AssemblyDefinition ass, ModuleReference modRef, AssemblyDefinition insAss)
+    internal class NativePurgeRewriter : IRewiring<ModuleReference>
+    {
+        public void Rewrite(AssemblyDefinition ass, ModuleReference modRef, AssemblyDefinition insAss)
         {
             var pinvokes = ass.GetAllTypes().SelectMany(t => t.Methods).Where(
                 m => m.HasPInvokeInfo && m.PInvokeInfo.Module == modRef).ToArray();
@@ -73,8 +88,11 @@ namespace NetInject
             }
             ass.Remove(modRef);
         }
+    }
 
-        private void Rewrite(AssemblyDefinition ass, AssemblyNameReference assRef, AssemblyDefinition insAss)
+    internal class ManagedPurgeRewriter : IRewiring<AssemblyNameReference>
+    {
+        public void Rewrite(AssemblyDefinition ass, AssemblyNameReference assRef, AssemblyDefinition insAss)
         {
             // TODO: Inject manageds?
             ass.Remove(assRef);

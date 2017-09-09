@@ -4,7 +4,6 @@ using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using Mono.Cecil.Cil;
-using System;
 
 namespace NetInject
 {

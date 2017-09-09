@@ -7,6 +7,8 @@ using NetInject.IoC;
 using MAttr = Mono.Cecil.MethodAttributes;
 using TAttr = Mono.Cecil.TypeAttributes;
 using FAttr = Mono.Cecil.FieldAttributes;
+using System;
+using System.Reflection;
 
 namespace NetInject.Purge
 {
@@ -18,6 +20,7 @@ namespace NetInject.Purge
         private const string CctorName = ".cctor";
 
         public MethodDefinition ScopeMethod { get; private set; }
+        public TypeDefinition IocType { get; private set; }
 
         internal void AddOrReplaceIoc(ILProcessor il)
         {
@@ -41,6 +44,7 @@ namespace NetInject.Purge
             var getMethod = new MethodDefinition(IocMethod, getAttrs, vesselRef);
             type.Methods.Add(getMethod);
             ScopeMethod = getMethod;
+            IocType = type;
             var gmil = getMethod.Body.GetILProcessor();
             gmil.Append(gmil.Create(OpCodes.Ldsfld, contField));
             gmil.Append(gmil.Create(OpCodes.Ret));
@@ -58,6 +62,17 @@ namespace NetInject.Purge
             il.Append(il.Create(OpCodes.Call, getMethod));
             il.Append(il.Create(OpCodes.Pop));
             il.Append(il.Create(OpCodes.Ret));
+        }
+
+        private static readonly MethodInfo resolv = typeof(IVessel).GetMethod(nameof(IVessel.Resolve))
+            .MakeGenericMethod(typeof(IDisposable));
+
+        public GenericInstanceMethod GetResolveMethod(Type forType)
+        {
+            var type = IocType;
+            var impResolv = (GenericInstanceMethod)type.Module.ImportReference(resolv);
+            impResolv.GenericArguments[0] = type.Module.ImportReference(forType);
+            return impResolv;
         }
     }
 }

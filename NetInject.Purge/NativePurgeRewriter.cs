@@ -54,6 +54,7 @@ namespace NetInject.Purge
             MethodReference meth, AssemblyDefinition insAss)
         {
             var scopeMeth = ioc.ScopeMethod;
+            var scopeType = ioc.IocType;
             var oldMeth = meth.Resolve();
             var oldAttr = oldMeth.GetAttribute<DescriptionAttribute>().SingleOrDefault()?.Description;
             var newMeth = FindMethodByStr(insAss, oldAttr);
@@ -66,6 +67,12 @@ namespace NetInject.Purge
                 // TODO: Handle error?!
                 return;
             }
+            var resolveMethod = ioc.GetResolveMethod(typeof(String));
+
+
+
+
+
             instr.Operand = Import(body, newMeth);
         }
     }

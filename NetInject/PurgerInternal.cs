@@ -13,9 +13,7 @@ namespace NetInject
     internal static class PurgerInternal
     {
         /* var gens = GenerateCode(purged, opts.TempDir, opts.WorkDir, rparam)
-            .ToDictionary(k => k.Name.Name, v => v);
-            var mappings = purged.GetNativeMappings(apiPrefix).ToArray(); */
-        // ReplaceCalls(ass, gens, mappings);
+            .ToDictionary(k => k.Name.Name, v => v);      // ReplaceCalls(ass, gens, mappings); */
 
         private static IEnumerable<AssemblyDefinition> GenerateCode(
             /*PurgedAssemblies*/object purged, string tempDir,
@@ -106,10 +104,7 @@ namespace NetInject
         {
             /* var membersToDelete = new HashSet<IMetadataTokenProvider>();
             var myMappings = ToSafeDict(mappings);
-            var types = ass.GetAllTypes().ToArray();
-            var iocType = types.First(t => t.Name == iocName);
-            var iocMeth = iocType.Methods.First(m => m.Name == "GetScope");
-            var resolv = typeof(IVessel).GetMethod("Resolve").MakeGenericMethod(typeof(IDisposable));
+            var types = ass.GetAllTypes().ToArray();           
             foreach (var type in types)
             {
                 foreach (var field in type.Fields)

@@ -4,6 +4,8 @@ namespace NetInject.Purge
 {
     public interface ICodeValidator
     {
-        void Validate(IInterface intf);
+        void Validate(IInterface type);
+
+        void Validate(IStruct type);
     }
 }

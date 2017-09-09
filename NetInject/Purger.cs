@@ -175,6 +175,7 @@ namespace NetInject
                             case TypeKind.Struct:
                                 var stru = Noast.Create<IStruct>(name, nsp).With(Visibility.Public);
                                 GenerateMembers(stru, type);
+                                validator.Validate(stru);
                                 break;
                             case TypeKind.Class:
                                 var clas = Noast.Create<IClass>(name, nsp).With(Visibility.Public);

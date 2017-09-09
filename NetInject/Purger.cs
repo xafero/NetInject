@@ -219,7 +219,10 @@ namespace NetInject
                             parmName = $"parm{parmIndex++}";
                         parmName = ToName(Deobfuscate(parmName));
                         var parmType = Simplify(DerivedClassDeobfuscate(parm.Type));
-                        myMeth.AddParameter(parmName, parmType);
+                        var parmMod = default(ParamModifier?);
+                        if (parm.Type.EndsWith("&"))
+                            parmMod = ParamModifier.Ref;
+                        myMeth.AddParameter(parmName, parmType, parmMod);
                     }
                     myMeth.ReturnType = Simplify(DerivedClassDeobfuscate(meth.ReturnType));
                     methHolder.Methods.Add(myMeth);

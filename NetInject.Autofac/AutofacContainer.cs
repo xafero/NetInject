@@ -37,7 +37,8 @@ namespace NetInject.Autofac
                 }
                 catch (ReflectionTypeLoadException)
                 {
-                    Console.Error.WriteLine($"Could not reflect types from '{ass.Location}!");
+                    if (!ass.FullName.StartsWith("Microsoft."))
+                        Console.Error.WriteLine($"Could not reflect types from '{ass.Location}!");
                 }
             Container = builder.Build();
         }

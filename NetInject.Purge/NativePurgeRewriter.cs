@@ -57,7 +57,7 @@ namespace NetInject.Purge
             var oldAttr = oldMeth.GetAttribute<DescriptionAttribute>().SingleOrDefault()?.Description;
             var newMeth = FindMethodByStr(insAss, oldAttr);
             if (newMeth == null)
-                newMeth = FindMethodByOld(insAss, oldMeth);
+                newMeth = FindMethodByOld(insAss, oldMeth, false);
             if (newMeth == null)
             {
                 instr.OpCode = OpCodes.Nop;

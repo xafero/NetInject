@@ -9,6 +9,6 @@ namespace NetInject.Purge
 
         TypeDefinition IocType { get; }
 
-        GenericInstanceMethod GetResolveMethod(Type forType);
+        GenericInstanceMethod GetResolveMethod(TypeReference forType);
     }
 }

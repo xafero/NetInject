@@ -67,7 +67,7 @@ namespace NetInject.Purge
         private static readonly MethodInfo resolv = typeof(IVessel).GetMethod(nameof(IVessel.Resolve))
             .MakeGenericMethod(typeof(IDisposable));
 
-        public GenericInstanceMethod GetResolveMethod(Type forType)
+        public GenericInstanceMethod GetResolveMethod(TypeReference forType)
         {
             var type = IocType;
             var impResolv = (GenericInstanceMethod)type.Module.ImportReference(resolv);

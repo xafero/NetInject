@@ -29,7 +29,7 @@ namespace NetInject.Purge
             }
             foreach (var meth in ass.GetAllTypes().SelectMany(t => t.Methods).Where(
                 m => !m.HasPInvokeInfo && m.HasBody))
-                foreach (var instr in meth.Body.Instructions)
+                foreach (var instr in meth.Body.Instructions.ToArray())
                 {
                     if (instr.OpCode != OpCodes.Call)
                         continue;
@@ -67,12 +67,11 @@ namespace NetInject.Purge
                 // TODO: Handle error?!
                 return;
             }
-            var resolveMethod = ioc.GetResolveMethod(typeof(String));
-
-
-
-
-
+            var resolveMeth = ioc.GetResolveMethod(newMeth.DeclaringType);
+            var il = body.GetILProcessor();
+            il.InsertBefore(instr, il.Create(OpCodes.Call, scopeMeth));
+            il.InsertBefore(instr, il.Create(OpCodes.Callvirt, resolveMeth));
+            instr.OpCode = OpCodes.Callvirt;
             instr.Operand = Import(body, newMeth);
         }
     }

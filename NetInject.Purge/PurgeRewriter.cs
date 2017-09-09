@@ -21,6 +21,7 @@ namespace NetInject.Purge
         {
             var ins = inserts.ToDictionary(k => k.GetAttribute<AMA>().First(
                 a => a.Key == Defaults.Replaces).Value.ToLowerInvariant(), v => v);
+            ass.AddOrReplaceModuleSetup(IocProcessor.AddOrReplaceIoc);
             foreach (var myRef in ass.GetAllExternalRefs().ToArray())
             {
                 AssemblyDefinition insAss;

@@ -45,6 +45,7 @@
     <Reference Include="System" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="IocProcessor.cs" />
     <Compile Include="IRewiring.cs" />
     <Compile Include="ManagedPurgeRewriter.cs" />
     <Compile Include="NativePurgeRewriter.cs" />
@@ -55,9 +56,17 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\NetInject.API\NetInject.API.csproj">
+      <Project>{519AFFCF-4C69-4E1E-A2E4-A0E4C4D9ED34}</Project>
+      <Name>NetInject.API</Name>
+    </ProjectReference>
     <ProjectReference Include="..\NetInject.Cecil\NetInject.Cecil.csproj">
       <Project>{7D9F6684-1213-489D-857C-05F655AEB89C}</Project>
       <Name>NetInject.Cecil</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\NetInject.IoC\NetInject.IoC.csproj">
+      <Project>{A203A10A-C409-4112-9437-AFB577BF9493}</Project>
+      <Name>NetInject.IoC</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

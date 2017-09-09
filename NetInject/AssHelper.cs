@@ -34,27 +34,7 @@ namespace NetInject
                 assRef.HasPublicKey = false;
                 assRef.PublicKey = new byte[0];
             }
-        }
-
-        internal static void AddOrReplaceModuleSetup(AssemblyDefinition ass, Action<ILProcessor> il = null)
-        {
-            var mod = ass.MainModule;
-            var voidRef = mod.ImportReference(typeof(void));
-            var attrs = MethodAttr.Static | MethodAttr.SpecialName | MethodAttr.RTSpecialName;
-            var cctor = new MethodDefinition(".cctor", attrs, voidRef);
-            var modClass = mod.Types.First(t => t.Name == "<Module>");
-            var oldMeth = modClass.Methods.FirstOrDefault(m => m.Name == cctor.Name);
-            if (oldMeth != null)
-                modClass.Methods.Remove(oldMeth);
-            modClass.Methods.Add(cctor);
-            var body = cctor.Body.GetILProcessor();
-            if (il == null)
-            {
-                body.Append(body.Create(OpCodes.Nop));
-                body.Append(body.Create(OpCodes.Ret));
-            }
-            il?.Invoke(body);
-        }
+        }        
 
         private static string[] CSharpKeyWords = {"object"};
 

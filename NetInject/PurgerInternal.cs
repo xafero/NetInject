@@ -17,7 +17,7 @@ namespace NetInject
             /* var gens = GenerateCode(purged, opts.TempDir, opts.WorkDir, rparam)
                 .ToDictionary(k => k.Name.Name, v => v);
                 var mappings = purged.GetNativeMappings(apiPrefix).ToArray(); */
-            // Inject container initializer ::: AddOrReplaceModuleSetup(ass, AddOrReplaceIoc);
+            // Inject container initializer ::: 
             // ReplaceCalls(ass, gens, mappings);
             // ass.Write(file, wparam);
         }

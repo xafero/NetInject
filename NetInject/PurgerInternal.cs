@@ -1,12 +1,7 @@
 ﻿using Mono.Cecil;
-using NetInject.Cecil;
-using NetInject.Inspect;
 using Noaster.Api;
 using System.Collections.Generic;
 using System.Linq;
-
-using AMA = System.Reflection.AssemblyMetadataAttribute;
-using Mono.Cecil.Cil;
 
 namespace NetInject
 {

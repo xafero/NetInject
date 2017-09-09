@@ -45,6 +45,7 @@
     <Reference Include="System" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="IIocProcessor.cs" />
     <Compile Include="IocProcessor.cs" />
     <Compile Include="IRewiring.cs" />
     <Compile Include="ManagedPurgeRewriter.cs" />

@@ -8,7 +8,8 @@ namespace NetInject.Purge
 {
     internal class NativePurgeRewriter : IRewiring<ModuleReference>
     {
-        public void Rewrite(AssemblyDefinition ass, ModuleReference modRef, AssemblyDefinition insAss)
+        public void Rewrite(AssemblyDefinition ass, ModuleReference modRef,
+            AssemblyDefinition insAss, IIocProcessor ioc)
         {
             var pinvokes = ass.GetAllTypes().SelectMany(t => t.Methods).Where(
                 m => m.HasPInvokeInfo && m.PInvokeInfo.Module == modRef).ToArray();
@@ -31,6 +32,7 @@ namespace NetInject.Purge
                     var methRef = instr.Operand as MethodReference;
                     if (methRef == null || !pinvokes.Contains(methRef))
                         continue;
+                    var scopeMeth = ioc.ScopeMethod;
                     // TODO: Replace correctly!
                     instr.OpCode = OpCodes.Nop;
                     instr.Operand = null;

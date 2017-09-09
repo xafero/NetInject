@@ -21,16 +21,17 @@ namespace NetInject.Purge
         {
             var ins = inserts.ToDictionary(k => k.GetAttribute<AMA>().First(
                 a => a.Key == Defaults.Replaces).Value.ToLowerInvariant(), v => v);
-            ass.AddOrReplaceModuleSetup(IocProcessor.AddOrReplaceIoc);
+            var iocProc = new IocProcessor();
+            ass.AddOrReplaceModuleSetup(iocProc.AddOrReplaceIoc);
             foreach (var myRef in ass.GetAllExternalRefs().ToArray())
             {
                 AssemblyDefinition insAss;
                 var assName = myRef as AssemblyNameReference;
                 if (assName != null && ins.TryGetValue(assName.Name.ToLowerInvariant(), out insAss))
-                    assWire.Rewrite(ass, assName, insAss);
+                    assWire.Rewrite(ass, assName, insAss, iocProc);
                 var modName = myRef as ModuleReference;
                 if (modName != null && ins.TryGetValue(modName.Name.ToLowerInvariant(), out insAss))
-                    modWire.Rewrite(ass, modName, insAss);
+                    modWire.Rewrite(ass, modName, insAss, iocProc);
             }
         }
     }

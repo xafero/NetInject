@@ -9,6 +9,6 @@ namespace NetInject.Purge
 
     public interface IRewiring<T> where T : IMetadataScope
     {
-        void Rewrite(AssemblyDefinition ass, T myRef, AssemblyDefinition insAss);
+        void Rewrite(AssemblyDefinition ass, T myRef, AssemblyDefinition insAss, IIocProcessor ioc);
     }
 }

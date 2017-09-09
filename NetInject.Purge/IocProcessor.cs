@@ -10,14 +10,16 @@ using FAttr = Mono.Cecil.FieldAttributes;
 
 namespace NetInject.Purge
 {
-    internal static class IocProcessor
+    internal class IocProcessor : IIocProcessor
     {
         private const string IocName = "IoC";
         private const string IocField = "scope";
         private const string IocMethod = "GetScope";
         private const string CctorName = ".cctor";
 
-        internal static void AddOrReplaceIoc(ILProcessor il)
+        public MethodDefinition ScopeMethod { get; private set; }
+
+        internal void AddOrReplaceIoc(ILProcessor il)
         {
             var mod = il.Body.Method.DeclaringType.Module;
             var myNamespace = mod.Types.Select(t => t.Namespace)
@@ -38,6 +40,7 @@ namespace NetInject.Purge
                                               | MAttr.SpecialName | MAttr.HideBySig;
             var getMethod = new MethodDefinition(IocMethod, getAttrs, vesselRef);
             type.Methods.Add(getMethod);
+            ScopeMethod = getMethod;
             var gmil = getMethod.Body.GetILProcessor();
             gmil.Append(gmil.Create(OpCodes.Ldsfld, contField));
             gmil.Append(gmil.Create(OpCodes.Ret));

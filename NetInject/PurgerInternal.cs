@@ -7,6 +7,7 @@ using System.Linq;
 
 using AMA = System.Reflection.AssemblyMetadataAttribute;
 using System;
+using System.Diagnostics;
 
 namespace NetInject
 {
@@ -38,11 +39,23 @@ namespace NetInject
             // TODO: Inject natives?
             var pinvokes = ass.GetAllTypes().SelectMany(t => t.Methods).Where(
                 m => m.HasPInvokeInfo && m.PInvokeInfo.Module == modRef).ToArray();
+            var oldTypes = new HashSet<TypeReference>();
             foreach (var pinvoke in pinvokes)
             {
-                // var type = pinvoke.DeclaringType;
-                // type.Methods.Remove(pinvoke);
+                var typRefs = pinvoke.GetDistinctTypes().ToDictionary(k => k,
+                    v => insAss.GetAllTypes().FirstOrDefault(t => t.Match(v)));
+                pinvoke.PatchTypes(typRefs, t => oldTypes.Add(t));
+                // var type = pinvoke.DeclaringType; type.Methods.Remove(pinvoke);
                 pinvoke.RemovePInvoke();
+            }
+            foreach (var oldType in oldTypes.OfType<TypeDefinition>())
+            {
+                var module = oldType.Module;
+                if (module.Assembly != ass)
+                    continue;
+                var owner = oldType.DeclaringType;
+                owner?.NestedTypes?.Remove(oldType);
+                module.Types.Remove(oldType);
             }
             ass.Remove(modRef);
         }

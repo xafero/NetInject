@@ -17,7 +17,7 @@ namespace NetInject.Cecil
             => mod.Types.SelectMany(t => t.GetAllTypes());
 
         public static IEnumerable<TypeDefinition> GetAllTypes(this TypeDefinition type)
-            => (new[] {type}).Concat(type.NestedTypes.SelectMany(t => t.GetAllTypes()));
+            => (new[] { type }).Concat(type.NestedTypes.SelectMany(t => t.GetAllTypes()));
 
         public static IEnumerable<TypeReference> GetAllTypeRefs(this AssemblyDefinition ass)
             => ass.Modules.SelectMany(m => m.GetTypeReferences());
@@ -37,7 +37,7 @@ namespace NetInject.Cecil
                || type?.BaseType?.FullName == typeof(System.Delegate).FullName;
 
         public static string GetParamStr(IMetadataTokenProvider meth)
-            => meth.ToString().Split(new[] {'('}, 2).Last().TrimEnd(')');
+            => meth.ToString().Split(new[] { '(' }, 2).Last().TrimEnd(')');
 
         public static bool IsInStandardLib(this TypeReference type)
         {
@@ -86,5 +86,37 @@ namespace NetInject.Cecil
             var props = typeDef.Properties.Cast<MemberReference>();
             return evts.Concat(filds).Concat(meths).Concat(props).Distinct();
         }
+
+        public static TypeReference[] GetDistinctTypes(this MethodDefinition meth)
+            => new[] { meth.ReturnType }.Concat(meth.Parameters.Select(p => p.ParameterType))
+            .Distinct().Where(t => !t.IsInStandardLib()).ToArray();
+
+        public static bool Match(this TypeReference first, TypeReference second)
+        {
+            var firstKey = first.Name.ToLowerInvariant();
+            var secondKey = second.Name.ToLowerInvariant();
+            return firstKey == secondKey;
+        }
+
+        public static void PatchTypes(this MethodDefinition meth,
+            IDictionary<TypeReference, TypeDefinition> replaces,
+            Action<TypeReference> onReplace)
+        {
+            TypeDefinition newType;
+            if (replaces.TryGetValue(meth.ReturnType, out newType))
+            {
+                onReplace(meth.ReturnType);
+                meth.ReturnType = Import(meth, newType);
+            }
+            foreach (var ptype in meth.Parameters)
+                if (replaces.TryGetValue(ptype.ParameterType, out newType))
+                {
+                    onReplace(ptype.ParameterType);
+                    ptype.ParameterType = Import(meth, newType);
+                }
+        }
+
+        private static TypeReference Import(MethodDefinition meth, TypeDefinition newType)
+            => meth.DeclaringType.Module.ImportReference(newType);
     }
 }

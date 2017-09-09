@@ -90,7 +90,7 @@ namespace NetInject
             var oneFileOrMore = report.Files.Count >= 1 && files.Length >= 1;
             if (oneFileOrMore)
             {
-                Log.Info($"Processing {report.Files.Count} files...");
+                Log.Info($"Processing {report.Files.Count} file(s)...");
                 ProcessMarkedFiles(workDir, report, toInject, outDir);
             }
             Log.Info($"Ensuring dependencies in '{outDir}'...");

@@ -7,5 +7,7 @@ namespace NetInject.Purge
         void Validate(IInterface type);
 
         void Validate(IStruct type);
+
+        void Validate(IClass type);
     }
 }

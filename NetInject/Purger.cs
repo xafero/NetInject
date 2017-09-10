@@ -180,6 +180,7 @@ namespace NetInject
                             case TypeKind.Class:
                                 var clas = Noast.Create<IClass>(name, nsp).With(Visibility.Public);
                                 GenerateMembers(clas, type);
+                                validator.Validate(clas);
                                 break;
                             case TypeKind.Delegate:
                                 var dlgt = Noast.Create<IDelegate>(name, nsp).With(Visibility.Public);

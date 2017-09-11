@@ -49,7 +49,8 @@ namespace NetInject.Purge
         private void Validate(IHasFields holder, IList<IField> fields)
         {
             foreach (var fiel in fields.ToArray())
-                if (fiel.Name.Contains("__BackingField") || fiel.Name.Contains("<>"))
+                if (fiel.Name.Contains("__BackingField") || fiel.Name.Contains("<>")
+                    || fiel.Type.Contains("Dictionary2"))
                     holder.Fields.Remove(fiel);
         }
 
@@ -68,7 +69,9 @@ namespace NetInject.Purge
                     meth.Rename(meth.Name.Replace("#", "Hash"));
                 else if (meth.Name.Equals("Equals") || meth.Name.Equals("GetHashCode")
                          || meth.Name.Equals("Finalize") || meth.Name.Equals("ToString") 
-                         || meth.Name.StartsWith("_<"))
+                         || meth.Name.StartsWith("_<") 
+                         || meth.ReturnType.Contains("Dictionary2")
+                         || meth.ReturnType.Contains("Func2"))
                     holder.Methods.Remove(meth);
         }
 

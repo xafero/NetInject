@@ -17,11 +17,13 @@ namespace NetInject.Purge
             var pinvokes = ass.GetAllTypes().SelectMany(t => t.Methods).Where(
                 m => m.HasPInvokeInfo && m.PInvokeInfo.Module == modRef).ToArray();
             var oldTypes = new HashSet<TypeReference>();
+            var shittyTypes = pinvokes.SelectMany(p => p.GetDistinctTypes()).Distinct();
+            var typRefs = shittyTypes.ToDictionary(k => k,
+                v => insAss.GetAllTypes().FirstOrDefault(t => t.Match(v)));
+            var patcher = new TypePatcher(typRefs);
+            patcher.Patch(ass, t => oldTypes.Add(t));
             foreach (var pinvoke in pinvokes)
             {
-                var typRefs = pinvoke.GetDistinctTypes().ToDictionary(k => k,
-                    v => insAss.GetAllTypes().FirstOrDefault(t => t.Match(v)));
-                pinvoke.PatchTypes(typRefs, t => oldTypes.Add(t));
                 pinvoke.RemovePInvoke();
                 var type = pinvoke.DeclaringType;
                 type.Methods.Remove(pinvoke);

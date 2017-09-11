@@ -101,27 +101,6 @@ namespace NetInject.Cecil
             return firstKey == secondKey;
         }
 
-        public static void PatchTypes(this MethodDefinition meth,
-            IDictionary<TypeReference, TypeDefinition> replaces,
-            Action<TypeReference> onReplace)
-        {
-            TypeDefinition newType;
-            if (replaces.TryGetValue(meth.ReturnType, out newType))
-            {
-                onReplace(meth.ReturnType);
-                meth.ReturnType = Import(meth, newType);
-            }
-            foreach (var ptype in meth.Parameters)
-                if (replaces.TryGetValue(ptype.ParameterType, out newType))
-                {
-                    onReplace(ptype.ParameterType);
-                    ptype.ParameterType = Import(meth, newType);
-                }
-        }
-
-        private static TypeReference Import(MethodDefinition meth, TypeDefinition newType)
-            => meth.DeclaringType.Module.ImportReference(newType);
-
         public static MethodReference Import(MethodBody body, MethodReference newMeth)
             => body.Method.DeclaringType.Module.ImportReference(newMeth);
 

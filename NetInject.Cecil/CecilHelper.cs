@@ -113,13 +113,15 @@ namespace NetInject.Cecil
         public static void Remove(this AssemblyDefinition ass, ModuleReference native)
         {
             foreach (var mod in ass.Modules)
-                mod.ModuleReferences.Remove(native);
+                if (!mod.ModuleReferences.Remove(native))
+                    throw new InvalidOperationException(mod.Name);
         }
 
         public static void Remove(this AssemblyDefinition ass, AssemblyNameReference assembly)
         {
             foreach (var mod in ass.Modules)
-                mod.AssemblyReferences.Remove(assembly);
+                if (!mod.AssemblyReferences.Remove(assembly))
+                    throw new InvalidOperationException(mod.Name);
         }
 
         public static MethodDefinition FindMethodByStr(AssemblyDefinition ass, string methodStr)

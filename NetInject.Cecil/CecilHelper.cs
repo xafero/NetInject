@@ -104,6 +104,18 @@ namespace NetInject.Cecil
         public static MethodReference Import(MethodBody body, MethodReference newMeth)
             => body.Method.DeclaringType.Module.ImportReference(newMeth);
 
+        public static IEnumerable<TypeReference> FindDistinctRefs(TypeDefinition typeDef)
+            => new[] { typeDef.BaseType }.Concat(typeDef.Interfaces.Select(i => i.InterfaceType))
+            .Concat(typeDef.Events.Select(e => e.EventType))
+            .Concat(typeDef.Properties.Select(p => p.PropertyType))
+            .Concat(typeDef.Fields.Select(f => f.FieldType))
+            .Concat(typeDef.Methods.Select(m => m.ReturnType))
+            .Concat(typeDef.Methods.SelectMany(m => m.Parameters)
+                .Concat(typeDef.Properties.SelectMany(p => p.Parameters))
+                .Select(p => p.ParameterType))
+            .Concat(typeDef.NestedTypes)
+            .Distinct().Where(t => !(t?.IsInStandardLib() ?? true));
+
         public static IEnumerable<IMetadataScope> GetAllExternalRefs(this AssemblyDefinition ass)
             => ass.Modules.SelectMany(m => m.GetAllExternalRefs());
 

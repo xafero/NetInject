@@ -55,6 +55,8 @@ namespace NetInject.Inspect
         {
             var units = report.Units;
             var nativeTypeName = Capitalize(Path.GetFileNameWithoutExtension(name));
+            var collot = new TypeCollector();
+            INamingStrategy nameArgStrategy = null;
             foreach (var meth in types.SelectMany(t => t.Methods))
             {
                 PInvokeInfo pinv;
@@ -70,9 +72,8 @@ namespace NetInject.Inspect
                 IType ptype;
                 if (!unit.Types.TryGetValue(nativeTypeName, out ptype))
                     unit.Types[nativeTypeName] = ptype = new AssemblyType(nativeTypeName, TypeKind.Class);
-                var remotes = new HashSet<TypeReference>();
-                var nameArgStrategy = new NativeArgNameStrategy(ptype);
-                CheckAndInclude(report, meth.ReturnType, nameArgStrategy, remotes);
+                nameArgStrategy = new NativeArgNameStrategy(ptype);
+                collot.Collect(meth);
                 var newRetType = nameArgStrategy.GetName(meth.ReturnType);
                 var methRetType = Deobfuscate(meth.ReturnType.FullName);
                 if (newRetType != null)
@@ -83,7 +84,6 @@ namespace NetInject.Inspect
                 pmethod.Parameters.Clear();
                 foreach (var parm in meth.Parameters)
                 {
-                    CheckAndInclude(report, parm.ParameterType, nameArgStrategy, remotes);
                     var newParmType = nameArgStrategy.GetName(parm.ParameterType);
                     var mparmType = Deobfuscate(parm.ParameterType.FullName);
                     if (newParmType != null)
@@ -94,20 +94,18 @@ namespace NetInject.Inspect
                 const StringSplitOptions sso = StringSplitOptions.None;
                 var text = $"{meth}".Split(new[] { $"{meth.ReturnType}" }, 2, sso).Last().Trim();
                 pmethod.Aliases.Add(Deobfuscate(text));
-                foreach (var remote in remotes)
-                    CheckAndInclude(report, remote, nameArgStrategy, null);
             }
+            if (nameArgStrategy != null)
+                foreach (var type in collot.Types)
+                    CheckAndInclude(report, type, nameArgStrategy);
         }
 
-        private void CheckAndInclude(IDependencyReport report, TypeReference type, INamingStrategy strategy,
-            ICollection<TypeReference> otherTypes)
+        private void CheckAndInclude(IDependencyReport report, TypeReference type, INamingStrategy strategy)
         {
             if (type?.IsInStandardLib() ?? true)
                 return;
             var typeDef = type.Resolve();
             Managed.InspectType(report, type, typeDef, null, strategy);
-            foreach (var other in FindDistinctRefs(typeDef))
-                otherTypes?.Add(other);
         }
 
         private class NativeArgNameStrategy : INamingStrategy

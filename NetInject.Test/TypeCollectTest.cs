@@ -1,9 +1,4 @@
-﻿using System;
-using NUnit.Framework;
-using NUnit.Framework;
-using System;
-using System.Runtime.InteropServices;
-using System.Text;
+﻿using NUnit.Framework;
 using NetInject.Cecil;
 using NUnit.Framework.Internal;
 
@@ -16,8 +11,7 @@ namespace NetInject.Test
         public void ShouldReadSomeAssembly()
         {
             ITypeCollector coll = new TypeCollector();
-            // coll.Collect<TestFixture>();
-            Assert.AreEqual(0, null);
+            coll.Collect<TestFixture>();
         }
     }
 }

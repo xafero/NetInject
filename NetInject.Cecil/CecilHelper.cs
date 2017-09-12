@@ -6,6 +6,7 @@ using System.Reflection;
 
 using MethodBody = Mono.Cecil.Cil.MethodBody;
 using Mono.Cecil.Cil;
+using System.IO;
 
 namespace NetInject.Cecil
 {
@@ -30,7 +31,13 @@ namespace NetInject.Cecil
 
         public static bool IsStandardLib(string key)
             => key == "mscorlib" || key == "System" ||
-               key == "System.Core" || key == "Microsoft.CSharp";
+               key == "System.Core" || key == "Microsoft.CSharp" ||
+               key == "System.Xml" || key == "System.Configuration" ||
+               key == "System.Data.SqlXml" || key == "System.Web";
+
+        public static bool IsStandardMod(string key)
+            => key == "CommonLanguageRuntimeLibrary" || 
+               IsStandardLib(Path.GetFileNameWithoutExtension(key));
 
         public static bool IsGenerated(AssemblyDefinition ass)
             => ass.GetAttribute<AssemblyMetadataAttribute>().Any(a => a.Value.Equals(nameof(NetInject), ignoreCase));
@@ -44,9 +51,13 @@ namespace NetInject.Cecil
 
         public static bool IsInStandardLib(this TypeReference type)
         {
-            var assRef = type.Scope as AssemblyNameReference;
             var modRef = type.Scope as ModuleDefinition;
-            return (assRef == null || IsStandardLib(assRef.Name)) && modRef == null;
+            if (modRef != null && IsStandardMod(modRef.Name))
+                return true;
+            var assRef = type.Scope as AssemblyNameReference;
+            if (assRef != null && IsStandardLib(assRef.Name))
+                return true;
+            return false;
         }
 
         public static bool ContainsType(AssemblyNameReference assRef, TypeReference typRef)

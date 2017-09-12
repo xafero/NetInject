@@ -21,6 +21,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NetInject.Cecil", "NetInjec
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NetInject.Purge", "NetInject.Purge\NetInject.Purge.csproj", "{C2B0191F-A962-4490-B766-47824A21DB48}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NetInject.Test", "NetInject.Test\NetInject.Test.csproj", "{2FB984C6-7FE2-4C6F-83F0-E62AEC3BF408}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -63,6 +65,10 @@ Global
 		{C2B0191F-A962-4490-B766-47824A21DB48}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C2B0191F-A962-4490-B766-47824A21DB48}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C2B0191F-A962-4490-B766-47824A21DB48}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2FB984C6-7FE2-4C6F-83F0-E62AEC3BF408}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2FB984C6-7FE2-4C6F-83F0-E62AEC3BF408}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2FB984C6-7FE2-4C6F-83F0-E62AEC3BF408}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2FB984C6-7FE2-4C6F-83F0-E62AEC3BF408}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

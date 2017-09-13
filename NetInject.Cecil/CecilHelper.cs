@@ -177,5 +177,10 @@ namespace NetInject.Cecil
                 previous = previous.Previous;
             return previous;
         }
+
+        public static bool HasNoUsefulOperand(this Instruction instr)
+            => instr.Operand == null || instr.Operand is string
+               || instr.Operand is Instruction || instr.Operand is Instruction[]
+               || instr.Operand.GetType().IsPrimitive;
     }
 }

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
+using Mono.Cecil.Rocks;
 
 namespace NetInject.Cecil
 {
@@ -64,13 +65,44 @@ namespace NetInject.Cecil
             }
             foreach (var param in meth.Parameters)
                 Patch(param, onReplace);
-            if (!meth.HasBody)
-                return;
-            foreach (var vari in meth.Body.Variables)
-                Patch(meth, vari, onReplace);
+            if (meth.HasBody)
+                Patch(meth.Body, onReplace);
         }
 
-        private void Patch(MethodDefinition meth, VariableDefinition vari, Action<TypeReference> onReplace)
+        private void Patch(MethodBody body, Action<TypeReference> onReplace)
+        {
+            foreach (var vari in body.Variables)
+                Patch(body.Method, vari, onReplace);
+            var ils = body.GetILProcessor();
+            foreach (var instr in body.Instructions)
+            {
+                if (instr.HasNoUsefulOperand())
+                    continue;
+                var meth = instr.Operand as MethodReference;
+                if (meth != null)
+                    continue;
+                var type = instr.Operand as TypeReference;
+                if (type != null)
+                    continue;
+                var fiel = instr.Operand as FieldReference;
+                if (fiel != null)
+                    continue;
+                var prop = instr.Operand as PropertyReference;
+                if (prop != null)
+                    continue;
+                var evet = instr.Operand as EventReference;
+                if (evet != null)
+                    continue;
+                var parm = instr.Operand as ParameterReference;
+                if (parm != null)
+                    continue;
+                var vari = instr.Operand as VariableReference;
+                if (vari != null)
+                    continue;
+            }
+        }
+
+        private void Patch(IMemberDefinition meth, VariableDefinition vari, Action<TypeReference> onReplace)
         {
             TypeDefinition newType;
             if (!_replaces.TryGetValue(vari.VariableType, out newType))

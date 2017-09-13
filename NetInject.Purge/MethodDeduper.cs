@@ -60,6 +60,8 @@ namespace NetInject.Purge
                 foreach (var meth in pair)
                 {
                     var retType = abbreviations[meth.ReturnType];
+                    if (retType == null)
+                        continue;
                     var newSuffix = abbreviations[retType];
                     var newName = $"{meth.Name}_{newSuffix}";
                     meth.Rename(newName);

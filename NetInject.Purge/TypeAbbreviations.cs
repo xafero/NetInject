@@ -8,7 +8,7 @@ namespace NetInject.Purge
 {
     internal class TypeAbbreviations
     {
-        private readonly IDictionary<string, Type> mappings = new Dictionary<string, Type>
+        private readonly IDictionary<string, Type> _mappings = new Dictionary<string, Type>
             {
                 { "Z", typeof(bool) },
                 { "B", typeof(byte) },
@@ -24,18 +24,18 @@ namespace NetInject.Purge
                 { "N", null }
             };
 
-        private readonly IDictionary<string, Type> shortNames = new Dictionary<string, Type>();
-        private readonly IDictionary<string, Type> longNames = new Dictionary<string, Type>();
+        private readonly IDictionary<string, Type> _shortNames = new Dictionary<string, Type>();
+        private readonly IDictionary<string, Type> _longNames = new Dictionary<string, Type>();
 
         public TypeAbbreviations()
         {
             using (var provider = new CSharpCodeProvider())
-                foreach (var map in mappings.Where(m => m.Value != null))
+                foreach (var map in _mappings.Where(m => m.Value != null))
                 {
                     var typeRef = new CodeTypeReference(map.Value);
                     var name = provider.GetTypeOutput(typeRef);
-                    shortNames[name.Replace("System.", "")] = map.Value;
-                    longNames[map.Value.FullName] = map.Value;
+                    _shortNames[name.Replace("System.", "")] = map.Value;
+                    _longNames[map.Value.FullName] = map.Value;
                 }
         }
 
@@ -44,13 +44,13 @@ namespace NetInject.Purge
             get
             {
                 Type type;
-                if (mappings.TryGetValue(alias, out type))
+                if (_mappings.TryGetValue(alias, out type))
                     return type;
-                if (shortNames.TryGetValue(alias, out type))
+                if (_shortNames.TryGetValue(alias, out type))
                     return type;
-                if (longNames.TryGetValue(alias, out type))
+                if (_longNames.TryGetValue(alias, out type))
                     return type;
-                throw new InvalidOperationException(alias);
+                return null;
             }
         }
 
@@ -59,7 +59,7 @@ namespace NetInject.Purge
             get
             {
                 string alias;
-                if ((alias = mappings.FirstOrDefault(m => m.Value == type).Key) != null)
+                if ((alias = _mappings.FirstOrDefault(m => m.Value == type).Key) != null)
                     return alias;
                 throw new InvalidOperationException(type?.FullName);
             }

@@ -54,9 +54,11 @@
     <Compile Include="AssemblyMethod.cs" />
     <Compile Include="AssemblyType.cs" />
     <Compile Include="AssemblyUnit.cs" />
+    <Compile Include="CodePatcher.cs" />
     <Compile Include="DefaultNamingStrategy.cs" />
     <Compile Include="DependencyReport.cs" />
     <Compile Include="EnumValue.cs" />
+    <Compile Include="ICodePatcher.cs" />
     <Compile Include="IConstraint.cs" />
     <Compile Include="IDependencyReport.cs" />
     <Compile Include="IField.cs" />
@@ -70,6 +72,7 @@
     <Compile Include="IValue.cs" />
     <Compile Include="ManagedInspector.cs" />
     <Compile Include="MethodParameter.cs" />
+    <Compile Include="NativeArgNameStrategy.cs" />
     <Compile Include="NativeInspector.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Units.cs" />

@@ -92,12 +92,14 @@ namespace NetInject.Inspect
                     pmethod.Parameters.Add(mparm);
                 }
                 const StringSplitOptions sso = StringSplitOptions.None;
-                var text = $"{meth}".Split(new[] { $"{meth.ReturnType}" }, 2, sso).Last().Trim();
+                var text = $"{meth}".Split(new[] {$"{meth.ReturnType}"}, 2, sso).Last().Trim();
                 pmethod.Aliases.Add(Deobfuscate(text));
             }
-            if (nameArgStrategy != null)
-                foreach (var type in collot.Types)
-                    CheckAndInclude(report, type, nameArgStrategy);
+            if (nameArgStrategy == null)
+                return;
+            foreach (var type in collot.Types)
+                CheckAndInclude(report, type, nameArgStrategy);
+            RewriteTypeNames(collot, nameArgStrategy, report);
         }
 
         private void CheckAndInclude(IDependencyReport report, TypeReference type, INamingStrategy strategy)
@@ -108,22 +110,17 @@ namespace NetInject.Inspect
             Managed.InspectType(report, type, typeDef, null, strategy);
         }
 
-        private class NativeArgNameStrategy : INamingStrategy
+        private void RewriteTypeNames(ITypeCollector collot, INamingStrategy nameStrategy, IDependencyReport report)
         {
-            private readonly IType _type;
-
-            public NativeArgNameStrategy(IType type)
+            var mappings = collot.Types.ToDictionary(k => k, nameStrategy.GetName);
+            var myTypes = report.Units.Values.SelectMany(v => v.Types.Values).ToArray();
+            ICodePatcher patcher = new CodePatcher(mappings);
+            foreach (var map in mappings)
             {
-                _type = type;
+                var typeName = map.Value;
+                var type = myTypes.Single(t => $"{t.Namespace}.{t.Name}" == typeName);
+                patcher.Patch(type);
             }
-
-            public string GetName(AssemblyDefinition ass) => _type.Namespace;
-
-            public string GetName(TypeDefinition type) =>
-                type.IsInStandardLib() ? null : $"{_type.Namespace}.{type.Name}";
-
-            public string GetName(TypeReference type) =>
-                type.IsInStandardLib() ? null : $"{_type.Namespace}.{type.Name}";
         }
     }
 }

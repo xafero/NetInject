@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using Mono.Cecil;
+using Mono.Cecil.Cil;
 
 namespace NetInject.Cecil
 {
@@ -63,6 +64,19 @@ namespace NetInject.Cecil
             }
             foreach (var param in meth.Parameters)
                 Patch(param, onReplace);
+            if (!meth.HasBody)
+                return;
+            foreach (var vari in meth.Body.Variables)
+                Patch(meth, vari, onReplace);
+        }
+
+        private void Patch(MethodDefinition meth, VariableDefinition vari, Action<TypeReference> onReplace)
+        {
+            TypeDefinition newType;
+            if (!_replaces.TryGetValue(vari.VariableType, out newType))
+                return;
+            onReplace(vari.VariableType);
+            vari.VariableType = Import(meth, newType);
         }
 
         public void Patch(ParameterDefinition param, Action<TypeReference> onReplace)

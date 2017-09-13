@@ -62,13 +62,7 @@ namespace NetInject.Inspect
             var term = type.TrimEnd(RefSuffix);
             if (_mappings.TryGetValue(term, out newType))
                 return true;
-
-
-            if (type.StartsWith("System."))
-                return false;
-
-
-            throw new InvalidOperationException();
+            return false;
         }
     }
 }

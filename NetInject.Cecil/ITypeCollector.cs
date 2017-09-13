@@ -1,5 +1,6 @@
 ﻿using Mono.Cecil;
 using System.Collections.Generic;
+using Mono.Cecil.Cil;
 
 namespace NetInject.Cecil
 {
@@ -13,11 +14,27 @@ namespace NetInject.Cecil
 
         void Collect(TypeDefinition type);
 
+        void Collect(MethodReference meth);
+
         void Collect(MethodDefinition meth);
+
+        void Collect(VariableReference vari);
+
+        void Collect(VariableDefinition vari);
+
+        void Collect(ParameterReference param);
+
+        void Collect(ParameterDefinition param);
+
+        void Collect(PropertyReference prop);
 
         void Collect(PropertyDefinition prop);
 
-        void Collect(EventDefinition evt);
+        void Collect(EventReference evet);
+
+        void Collect(EventDefinition evet);
+
+        void Collect(FieldReference fiel);
 
         void Collect(FieldDefinition fiel);
 

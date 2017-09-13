@@ -1,5 +1,6 @@
 ﻿using Mono.Cecil;
 using System.Collections.Generic;
+using Mono.Cecil.Cil;
 
 namespace NetInject.Cecil
 {
@@ -36,6 +37,48 @@ namespace NetInject.Cecil
                 Collect(def);
         }
 
+        public void Collect(MethodReference meth)
+        {
+            MethodDefinition def;
+            if ((def = meth as MethodDefinition ?? meth.Resolve()) != null)
+                Collect(def);
+        }
+
+        public void Collect(FieldReference fiel)
+        {
+            FieldDefinition def;
+            if ((def = fiel as FieldDefinition ?? fiel.Resolve()) != null)
+                Collect(def);
+        }
+
+        public void Collect(PropertyReference prop)
+        {
+            PropertyDefinition def;
+            if ((def = prop as PropertyDefinition ?? prop.Resolve()) != null)
+                Collect(def);
+        }
+
+        public void Collect(EventReference evet)
+        {
+            EventDefinition def;
+            if ((def = evet as EventDefinition ?? evet.Resolve()) != null)
+                Collect(def);
+        }
+
+        public void Collect(ParameterReference parm)
+        {
+            ParameterDefinition def;
+            if ((def = parm as ParameterDefinition ?? parm.Resolve()) != null)
+                Collect(def);
+        }
+
+        public void Collect(VariableReference vari)
+        {
+            VariableDefinition def;
+            if ((def = vari as VariableDefinition ?? vari.Resolve()) != null)
+                Collect(def);
+        }
+
         public void Collect(TypeDefinition type)
         {
             if (Types.Contains(type) || type.IsInStandardLib()) return;
@@ -63,6 +106,45 @@ namespace NetInject.Cecil
             Collect(meth.ReturnType);
             foreach (var param in meth.Parameters)
                 Collect(param);
+            if (meth.HasBody)
+                Collect(meth.Body);
+        }
+
+        private void Collect(MethodBody body)
+        {
+            foreach (var vari in body.Variables)
+                Collect(vari);
+            foreach (var instr in body.Instructions)
+            {
+                if (instr.HasNoUsefulOperand())
+                    continue;
+                var meth = instr.Operand as MethodReference;
+                if (meth != null)
+                    Collect(meth);
+                var type = instr.Operand as TypeReference;
+                if (type != null)
+                    Collect(type);
+                var fiel = instr.Operand as FieldReference;
+                if (fiel != null)
+                    Collect(fiel);
+                var prop = instr.Operand as PropertyReference;
+                if (prop != null)
+                    Collect(prop);
+                var evet = instr.Operand as EventReference;
+                if (evet != null)
+                    Collect(evet);
+                var parm = instr.Operand as ParameterReference;
+                if (parm != null)
+                    Collect(parm);
+                var vari = instr.Operand as VariableReference;
+                if (vari != null)
+                    Collect(vari);
+            }
+        }
+
+        public void Collect(VariableDefinition vari)
+        {
+            Collect(vari.VariableType);
         }
 
         public void Collect(ParameterDefinition param)

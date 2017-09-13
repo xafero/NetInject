@@ -62,7 +62,7 @@ namespace NetInject
             {
                 var key = file.Key;
                 var meta = CreateMetadata(key, names.First(n => Compare(n, key)));
-                var nsps = new object[] { meta }.Concat(file.Select(f => f.Value)).ToArray();
+                var nsps = new object[] {meta}.Concat(file.Select(f => f.Value)).ToArray();
                 var code = string.Join(newLine, nsps.Select(n => n.ToString()));
                 var filePath = Path.Combine(tempDir, key);
                 Log.Info($"'{ToRelativePath(tempDir, filePath)}' [{nsps.Length} namespace(s)]");
@@ -79,7 +79,7 @@ namespace NetInject
                 var bytes = (new FileInfo(package)).Length;
                 Log.Info($"'{ToRelativePath(tempDir, package)}' [{bytes} bytes]");
                 var name = Path.GetFileNameWithoutExtension(package);
-                var ass = CreateAssembly(tempDir, name, new[] { package });
+                var ass = CreateAssembly(tempDir, name, new[] {package});
                 if (ass == null)
                 {
                     Log.Error("Sorry, I could not compile everything ;-(");
@@ -124,7 +124,7 @@ namespace NetInject
             using (var resolv = new DefaultAssemblyResolver())
             {
                 resolv.AddSearchDirectory(workDir);
-                var rparam = new ReaderParameters { AssemblyResolver = resolv };
+                var rparam = new ReaderParameters {AssemblyResolver = resolv};
                 var wparam = new WriterParameters();
                 var injected = injectables.Select(i => AssemblyDefinition.ReadAssembly(i, rparam)).ToArray();
                 foreach (var file in report.Files)
@@ -132,6 +132,11 @@ namespace NetInject
                     using (var ass = AssemblyDefinition.ReadAssembly(stream, rparam))
                     {
                         Log.Info($"... '{ass.FullName}'");
+                        if (ass.Modules.Any(m => m.Attributes.HasFlag(ModuleAttributes.StrongNameSigned)))
+                        {
+                            Log.InfoFormat($" skipping code in '{ToRelativePath(workDir, file)}'!");
+                            continue;
+                        }
                         rewriter.Rewrite(ass, injected);
                         var outFile = Path.Combine(outDir, Path.GetFileName(file));
                         ass.Write(outFile, wparam);

@@ -73,32 +73,46 @@ namespace NetInject.Cecil
         {
             foreach (var vari in body.Variables)
                 Patch(body.Method, vari, onReplace);
-            var ils = body.GetILProcessor();
+            // var ils = body.GetILProcessor();
             foreach (var instr in body.Instructions)
             {
                 if (instr.HasNoUsefulOperand())
                     continue;
                 var meth = instr.Operand as MethodReference;
                 if (meth != null)
-                    continue;
+                {
+                    var methDef = meth as MethodDefinition ?? meth.TryResolve();
+                    instr.Operand = null;
+                    instr.OpCode = OpCodes.Nop;
+                }
                 var type = instr.Operand as TypeReference;
                 if (type != null)
-                    continue;
+                {
+                    var typeDef = type as TypeDefinition ?? type.TryResolve();
+                    instr.Operand = null;
+                    instr.OpCode = OpCodes.Nop;
+                }
                 var fiel = instr.Operand as FieldReference;
                 if (fiel != null)
-                    continue;
+                {
+                    var fielDef = fiel as FieldDefinition ?? fiel.TryResolve();
+                    instr.Operand = null;
+                    instr.OpCode = OpCodes.Nop;
+                }
                 var prop = instr.Operand as PropertyReference;
                 if (prop != null)
-                    continue;
+                {
+                    var propDef = prop as PropertyDefinition ?? prop.TryResolve();
+                    instr.Operand = null;
+                    instr.OpCode = OpCodes.Nop;
+                }
                 var evet = instr.Operand as EventReference;
                 if (evet != null)
-                    continue;
-                var parm = instr.Operand as ParameterReference;
-                if (parm != null)
-                    continue;
-                var vari = instr.Operand as VariableReference;
-                if (vari != null)
-                    continue;
+                {
+                    var evetDef = evet as EventDefinition ?? evet.TryResolve();
+                    instr.Operand = null;
+                    instr.OpCode = OpCodes.Nop;
+                }
             }
         }
 

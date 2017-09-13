@@ -3,7 +3,6 @@ using System.Linq;
 using Mono.Cecil;
 using System;
 using System.Reflection;
-
 using MethodBody = Mono.Cecil.Cil.MethodBody;
 using Mono.Cecil.Cil;
 using System.IO;
@@ -21,7 +20,7 @@ namespace NetInject.Cecil
             => mod.Types.SelectMany(t => t.GetAllTypes());
 
         public static IEnumerable<TypeDefinition> GetAllTypes(this TypeDefinition type)
-            => (new[] { type }).Concat(type.NestedTypes.SelectMany(t => t.GetAllTypes()));
+            => (new[] {type}).Concat(type.NestedTypes.SelectMany(t => t.GetAllTypes()));
 
         public static IEnumerable<TypeReference> GetAllTypeRefs(this AssemblyDefinition ass)
             => ass.Modules.SelectMany(m => m.GetTypeReferences());
@@ -36,7 +35,7 @@ namespace NetInject.Cecil
                key == "System.Data.SqlXml" || key == "System.Web";
 
         public static bool IsStandardMod(string key)
-            => key == "CommonLanguageRuntimeLibrary" || 
+            => key == "CommonLanguageRuntimeLibrary" ||
                IsStandardLib(Path.GetFileNameWithoutExtension(key));
 
         public static bool IsGenerated(AssemblyDefinition ass)
@@ -47,7 +46,7 @@ namespace NetInject.Cecil
                || type?.BaseType?.FullName == typeof(System.Delegate).FullName;
 
         public static string GetParamStr(IMetadataTokenProvider meth)
-            => meth.ToString().Split(new[] { '(' }, 2).Last().TrimEnd(')');
+            => meth.ToString().Split(new[] {'('}, 2).Last().TrimEnd(')');
 
         public static bool IsInStandardLib(this TypeReference type)
         {
@@ -102,13 +101,14 @@ namespace NetInject.Cecil
         }
 
         public static TypeReference[] GetDistinctTypes(this MethodDefinition meth)
-            => new[] { meth.ReturnType }.Concat(meth.Parameters.Select(p => p.ParameterType))
-            .Distinct().Where(t => !t.IsInStandardLib()).ToArray();
+            => new[] {meth.ReturnType}.Concat(meth.Parameters.Select(p => p.ParameterType))
+                .Distinct().Where(t => !t.IsInStandardLib()).ToArray();
 
         public static bool Match(this TypeReference first, TypeReference second)
         {
-            var firstKey = first.Name.ToLowerInvariant();
-            var secondKey = second.Name.ToLowerInvariant();
+            const char refChar = '&';
+            var firstKey = first.Name.TrimEnd(refChar).ToLowerInvariant();
+            var secondKey = second.Name.TrimEnd(refChar).ToLowerInvariant();
             return firstKey == secondKey;
         }
 
@@ -116,16 +116,16 @@ namespace NetInject.Cecil
             => body.Method.DeclaringType.Module.ImportReference(newMeth);
 
         public static IEnumerable<TypeReference> FindDistinctRefs(TypeDefinition typeDef)
-            => new[] { typeDef.BaseType }.Concat(typeDef.Interfaces.Select(i => i.InterfaceType))
-            .Concat(typeDef.Events.Select(e => e.EventType))
-            .Concat(typeDef.Properties.Select(p => p.PropertyType))
-            .Concat(typeDef.Fields.Select(f => f.FieldType))
-            .Concat(typeDef.Methods.Select(m => m.ReturnType))
-            .Concat(typeDef.Methods.SelectMany(m => m.Parameters)
-                .Concat(typeDef.Properties.SelectMany(p => p.Parameters))
-                .Select(p => p.ParameterType))
-            .Concat(typeDef.NestedTypes)
-            .Distinct().Where(t => !(t?.IsInStandardLib() ?? true));
+            => new[] {typeDef.BaseType}.Concat(typeDef.Interfaces.Select(i => i.InterfaceType))
+                .Concat(typeDef.Events.Select(e => e.EventType))
+                .Concat(typeDef.Properties.Select(p => p.PropertyType))
+                .Concat(typeDef.Fields.Select(f => f.FieldType))
+                .Concat(typeDef.Methods.Select(m => m.ReturnType))
+                .Concat(typeDef.Methods.SelectMany(m => m.Parameters)
+                    .Concat(typeDef.Properties.SelectMany(p => p.Parameters))
+                    .Select(p => p.ParameterType))
+                .Concat(typeDef.NestedTypes)
+                .Distinct().Where(t => !(t?.IsInStandardLib() ?? true));
 
         public static IEnumerable<IMetadataScope> GetAllExternalRefs(this AssemblyDefinition ass)
             => ass.Modules.SelectMany(m => m.GetAllExternalRefs());
@@ -148,13 +148,15 @@ namespace NetInject.Cecil
         }
 
         public static MethodDefinition FindMethodByStr(AssemblyDefinition ass, string methodStr)
-            => string.IsNullOrWhiteSpace(methodStr) ? null : ass.GetAllTypes().SelectMany(
-                t => t.Methods).SingleOrDefault(m => m.ToString().Contains(methodStr));
+            => string.IsNullOrWhiteSpace(methodStr)
+                ? null
+                : ass.GetAllTypes().SelectMany(
+                    t => t.Methods).SingleOrDefault(m => m.ToString().Contains(methodStr));
 
         public static MethodDefinition FindMethodByOld(AssemblyDefinition ass, MethodDefinition oldMeth,
             bool ignoreParamPassing = true)
         {
-            Func<MethodReference, string> simplify = m => m.ToString().Split(new[] { ':' }, 3).Last();
+            Func<MethodReference, string> simplify = m => m.ToString().Split(new[] {':'}, 3).Last();
             foreach (var newMeth in ass.GetAllTypes().SelectMany(t => t.Methods))
             {
                 var oldMethKey = simplify(oldMeth);
@@ -182,5 +184,93 @@ namespace NetInject.Cecil
             => instr.Operand == null || instr.Operand is string
                || instr.Operand is Instruction || instr.Operand is Instruction[]
                || instr.Operand.GetType().IsPrimitive;
+
+        #region Try resolve
+
+        public static MethodDefinition TryResolve(this MethodReference r)
+        {
+            try
+            {
+                return r.Resolve();
+            }
+            catch (Exception)
+            {
+                return null;
+            }
+        }
+
+        public static FieldDefinition TryResolve(this FieldReference r)
+        {
+            try
+            {
+                return r.Resolve();
+            }
+            catch (Exception)
+            {
+                return null;
+            }
+        }
+
+        public static EventDefinition TryResolve(this EventReference r)
+        {
+            try
+            {
+                return r.Resolve();
+            }
+            catch (Exception)
+            {
+                return null;
+            }
+        }
+
+        public static VariableDefinition TryResolve(this VariableReference r)
+        {
+            try
+            {
+                return r.Resolve();
+            }
+            catch (Exception)
+            {
+                return null;
+            }
+        }
+
+        public static ParameterDefinition TryResolve(this ParameterReference r)
+        {
+            try
+            {
+                return r.Resolve();
+            }
+            catch (Exception)
+            {
+                return null;
+            }
+        }
+
+        public static TypeDefinition TryResolve(this TypeReference r)
+        {
+            try
+            {
+                return r.Resolve();
+            }
+            catch (Exception)
+            {
+                return null;
+            }
+        }
+
+        public static PropertyDefinition TryResolve(this PropertyReference r)
+        {
+            try
+            {
+                return r.Resolve();
+            }
+            catch (Exception)
+            {
+                return null;
+            }
+        }
+
+        #endregion
     }
 }

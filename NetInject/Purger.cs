@@ -124,6 +124,7 @@ namespace NetInject
             using (var resolv = new DefaultAssemblyResolver())
             {
                 resolv.AddSearchDirectory(workDir);
+                resolv.AddSearchDirectory(outDir);
                 var rparam = new ReaderParameters {AssemblyResolver = resolv};
                 var wparam = new WriterParameters();
                 var injected = injectables.Select(i => AssemblyDefinition.ReadAssembly(i, rparam)).ToArray();

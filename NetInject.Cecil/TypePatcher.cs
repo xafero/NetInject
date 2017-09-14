@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
-using Mono.Cecil.Rocks;
 
 namespace NetInject.Cecil
 {
@@ -78,40 +77,41 @@ namespace NetInject.Cecil
             {
                 if (instr.HasNoUsefulOperand())
                     continue;
+                TypeDefinition newType;
+                TypeDefinition secType;
                 var meth = instr.Operand as MethodReference;
                 if (meth != null)
                 {
                     var methDef = meth as MethodDefinition ?? meth.TryResolve();
-                    instr.Operand = null;
-                    instr.OpCode = OpCodes.Nop;
+                    if (_replaces.TryGetValue(methDef.DeclaringType, out newType))
+                        onReplace(methDef.DeclaringType);
+                    if (_replaces.TryGetValue(methDef.ReturnType, out secType))
+                        onReplace(methDef.ReturnType);
+                    if (secType != null || newType != null)
+                        instr.Operand = new MethodReference(meth.Name,
+                            Import(body.Method, secType ?? meth.ReturnType), Import(body.Method, newType ?? meth.DeclaringType));
                 }
                 var type = instr.Operand as TypeReference;
                 if (type != null)
                 {
                     var typeDef = type as TypeDefinition ?? type.TryResolve();
-                    instr.Operand = null;
-                    instr.OpCode = OpCodes.Nop;
+                    if (_replaces.TryGetValue(typeDef, out newType))
+                    {
+                        onReplace(typeDef);
+                        instr.Operand = Import(body.Method, newType);
+                    }
                 }
                 var fiel = instr.Operand as FieldReference;
                 if (fiel != null)
                 {
                     var fielDef = fiel as FieldDefinition ?? fiel.TryResolve();
-                    instr.Operand = null;
-                    instr.OpCode = OpCodes.Nop;
-                }
-                var prop = instr.Operand as PropertyReference;
-                if (prop != null)
-                {
-                    var propDef = prop as PropertyDefinition ?? prop.TryResolve();
-                    instr.Operand = null;
-                    instr.OpCode = OpCodes.Nop;
-                }
-                var evet = instr.Operand as EventReference;
-                if (evet != null)
-                {
-                    var evetDef = evet as EventDefinition ?? evet.TryResolve();
-                    instr.Operand = null;
-                    instr.OpCode = OpCodes.Nop;
+                    if (_replaces.TryGetValue(fielDef.DeclaringType, out newType))
+                        onReplace(fielDef.DeclaringType);
+                    if (_replaces.TryGetValue(fielDef.FieldType, out secType))
+                        onReplace(fielDef.FieldType);
+                    if (secType != null || newType != null)
+                        instr.Operand = new FieldReference(fiel.Name,
+                            Import(body.Method, secType ?? fiel.FieldType), Import(body.Method, newType ?? fiel.DeclaringType));
                 }
             }
         }

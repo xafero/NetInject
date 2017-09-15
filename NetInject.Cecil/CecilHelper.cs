@@ -104,6 +104,13 @@ namespace NetInject.Cecil
             => new[] {meth.ReturnType}.Concat(meth.Parameters.Select(p => p.ParameterType))
                 .Distinct().Where(t => !t.IsInStandardLib()).ToArray();
 
+        public static TypeReference[] CollectDistinctTypes(this MethodDefinition meth)
+        {
+            ITypeCollector collector = new TypeCollector();
+            collector.Collect(meth);
+            return collector.Types.ToArray();
+        }
+
         public static bool Match(this TypeReference first, TypeReference second)
         {
             const char refChar = '&';

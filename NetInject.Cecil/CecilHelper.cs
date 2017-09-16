@@ -20,7 +20,7 @@ namespace NetInject.Cecil
             => mod.Types.SelectMany(t => t.GetAllTypes());
 
         public static IEnumerable<TypeDefinition> GetAllTypes(this TypeDefinition type)
-            => (new[] {type}).Concat(type.NestedTypes.SelectMany(t => t.GetAllTypes()));
+            => (new[] { type }).Concat(type.NestedTypes.SelectMany(t => t.GetAllTypes()));
 
         public static IEnumerable<TypeReference> GetAllTypeRefs(this AssemblyDefinition ass)
             => ass.Modules.SelectMany(m => m.GetTypeReferences());
@@ -46,9 +46,20 @@ namespace NetInject.Cecil
                || type?.BaseType?.FullName == typeof(System.Delegate).FullName;
 
         public static string GetParamStr(IMetadataTokenProvider meth)
-            => meth.ToString().Split(new[] {'('}, 2).Last().TrimEnd(')');
+            => meth.ToString().Split(new[] { '(' }, 2).Last().TrimEnd(')');
 
-        public static bool IsInStandardLib(this TypeReference type)
+        public static IEnumerable<TypeReference> UnpackGenerics(this TypeReference type)
+        {
+            GenericInstanceType genType;
+            return type.IsGenericInstance && (genType = (GenericInstanceType)type).HasGenericArguments ?
+                new[] { genType.ElementType }.Concat(genType.GenericArguments.SelectMany(a => a.UnpackGenerics()))
+                : new[] { type };
+        }
+
+        public static bool IsInStandardLib(this TypeReference typeRef)
+            => typeRef.UnpackGenerics().All(IsInStandardLibPrivate);
+
+        private static bool IsInStandardLibPrivate(TypeReference type)
         {
             var modRef = type.Scope as ModuleDefinition;
             if (modRef != null && IsStandardMod(modRef.Name))
@@ -60,7 +71,7 @@ namespace NetInject.Cecil
         }
 
         public static bool ContainsType(AssemblyNameReference assRef, TypeReference typRef)
-            => assRef.FullName == (typRef.Scope as AssemblyNameReference)?.FullName;
+                => assRef.FullName == (typRef.Scope as AssemblyNameReference)?.FullName;
 
         public static bool ContainsMember(AssemblyNameReference assRef, MemberReference mbmRef)
             => ContainsType(assRef, mbmRef.DeclaringType);
@@ -101,7 +112,7 @@ namespace NetInject.Cecil
         }
 
         public static TypeReference[] GetDistinctTypes(this MethodDefinition meth)
-            => new[] {meth.ReturnType}.Concat(meth.Parameters.Select(p => p.ParameterType))
+            => new[] { meth.ReturnType }.Concat(meth.Parameters.Select(p => p.ParameterType))
                 .Distinct().Where(t => !t.IsInStandardLib()).ToArray();
 
         public static TypeReference[] CollectDistinctTypes(this MethodDefinition meth)
@@ -123,7 +134,7 @@ namespace NetInject.Cecil
             => body.Method.DeclaringType.Module.ImportReference(newMeth);
 
         public static IEnumerable<TypeReference> FindDistinctRefs(TypeDefinition typeDef)
-            => new[] {typeDef.BaseType}.Concat(typeDef.Interfaces.Select(i => i.InterfaceType))
+            => new[] { typeDef.BaseType }.Concat(typeDef.Interfaces.Select(i => i.InterfaceType))
                 .Concat(typeDef.Events.Select(e => e.EventType))
                 .Concat(typeDef.Properties.Select(p => p.PropertyType))
                 .Concat(typeDef.Fields.Select(f => f.FieldType))
@@ -163,7 +174,7 @@ namespace NetInject.Cecil
         public static MethodDefinition FindMethodByOld(AssemblyDefinition ass, MethodDefinition oldMeth,
             bool ignoreParamPassing = true)
         {
-            Func<MethodReference, string> simplify = m => m.ToString().Split(new[] {':'}, 3).Last();
+            Func<MethodReference, string> simplify = m => m.ToString().Split(new[] { ':' }, 3).Last();
             foreach (var newMeth in ass.GetAllTypes().SelectMany(t => t.Methods))
             {
                 var oldMethKey = simplify(oldMeth);

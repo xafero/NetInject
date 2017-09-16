@@ -34,7 +34,7 @@ namespace NetInject.Cecil
         {
             TypeDefinition def;
             if ((def = type as TypeDefinition ?? type.Resolve()) != null)
-                Collect(def);
+                Collect(def, type);
         }
 
         public void Collect(MethodReference meth)
@@ -79,9 +79,11 @@ namespace NetInject.Cecil
                 Collect(def);
         }
 
-        public void Collect(TypeDefinition type)
+        public void Collect(TypeDefinition type) => Collect(type, null);
+
+        private void Collect(TypeDefinition type, TypeReference tref)
         {
-            if (Types.Contains(type) || type.IsInStandardLib()) return;
+            if (Types.Contains(type) || (tref ?? type).IsInStandardLib()) return;
             Types.Add(type);
             if (type.BaseType != null)
                 Collect(type.BaseType);

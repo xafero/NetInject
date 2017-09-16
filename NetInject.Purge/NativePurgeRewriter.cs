@@ -19,7 +19,7 @@ namespace NetInject.Purge
             var oldTypes = new HashSet<TypeReference>();
             var shittyTypes = pinvokes.SelectMany(p => p.CollectDistinctTypes()).Distinct();
             var typRefs = shittyTypes.ToDictionary(k => k,
-                v => insAss.GetAllTypes().FirstOrDefault(t => t.Match(v)));
+                v => (TypeReference)insAss.GetAllTypes().FirstOrDefault(t => t.Match(v)));
             var patcher = new TypePatcher(typRefs);
             patcher.Patch(ass, t => oldTypes.Add(t));
             foreach (var pinvoke in pinvokes)

@@ -7,9 +7,9 @@ namespace NetInject.Cecil
 {
     public class TypePatcher : ITypePatcher
     {
-        private readonly IDictionary<TypeReference, TypeDefinition> _replaces;
+        private readonly IDictionary<TypeReference, TypeReference> _replaces;
 
-        public TypePatcher(IDictionary<TypeReference, TypeDefinition> replaces)
+        public TypePatcher(IDictionary<TypeReference, TypeReference> replaces)
         {
             _replaces = replaces;
         }
@@ -28,7 +28,7 @@ namespace NetInject.Cecil
 
         public void Patch(TypeDefinition type, Action<TypeReference> onReplace)
         {
-            TypeDefinition newType;
+            TypeReference newType;
             if (type.BaseType != null && _replaces.TryGetValue(type.BaseType, out newType))
             {
                 onReplace(type.BaseType);
@@ -56,7 +56,7 @@ namespace NetInject.Cecil
         {
             if (meth == null)
                 return;
-            TypeDefinition newType;
+            TypeReference newType;
             if (_replaces.TryGetValue(meth.ReturnType, out newType))
             {
                 onReplace(meth.ReturnType);
@@ -76,8 +76,8 @@ namespace NetInject.Cecil
             {
                 if (instr.HasNoUsefulOperand())
                     continue;
-                TypeDefinition newType;
-                TypeDefinition secType;
+                TypeReference newType;
+                TypeReference secType;
                 var meth = instr.Operand as MethodReference;
                 if (meth != null)
                 {
@@ -95,7 +95,7 @@ namespace NetInject.Cecil
                             ExplicitThis = meth.ExplicitThis,
                             HasThis = meth.HasThis
                         };
-                        TypeDefinition ptype;
+                        TypeReference ptype;
                         foreach (var parm in meth.Parameters)
                         {
                             if (_replaces.TryGetValue(parm.ParameterType, out ptype))
@@ -133,7 +133,7 @@ namespace NetInject.Cecil
 
         private void Patch(IMemberDefinition meth, VariableDefinition vari, Action<TypeReference> onReplace)
         {
-            TypeDefinition newType;
+            TypeReference newType;
             if (!_replaces.TryGetValue(vari.VariableType, out newType))
                 return;
             onReplace(vari.VariableType);
@@ -142,7 +142,7 @@ namespace NetInject.Cecil
 
         public void Patch(ParameterDefinition param, Action<TypeReference> onReplace)
         {
-            TypeDefinition newType;
+            TypeReference newType;
             if (!_replaces.TryGetValue(param.ParameterType, out newType))
                 return;
             onReplace(param.ParameterType);
@@ -151,7 +151,7 @@ namespace NetInject.Cecil
 
         public void Patch(PropertyDefinition prop, Action<TypeReference> onReplace)
         {
-            TypeDefinition newType;
+            TypeReference newType;
             if (_replaces.TryGetValue(prop.PropertyType, out newType))
             {
                 onReplace(prop.PropertyType);
@@ -163,7 +163,7 @@ namespace NetInject.Cecil
 
         public void Patch(FieldDefinition fiel, Action<TypeReference> onReplace)
         {
-            TypeDefinition newType;
+            TypeReference newType;
             if (!_replaces.TryGetValue(fiel.FieldType, out newType))
                 return;
             onReplace(fiel.FieldType);
@@ -172,7 +172,7 @@ namespace NetInject.Cecil
 
         public void Patch(EventDefinition evt, Action<TypeReference> onReplace)
         {
-            TypeDefinition newType;
+            TypeReference newType;
             if (_replaces.TryGetValue(evt.EventType, out newType))
             {
                 onReplace(evt.EventType);

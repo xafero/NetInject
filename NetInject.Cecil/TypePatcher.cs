@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
-using System.Linq;
 
 namespace NetInject.Cecil
 {
@@ -73,7 +72,6 @@ namespace NetInject.Cecil
         {
             foreach (var vari in body.Variables)
                 Patch(body.Method, vari, onReplace);
-            // var ils = body.GetILProcessor();
             foreach (var instr in body.Instructions)
             {
                 if (instr.HasNoUsefulOperand())
@@ -89,8 +87,19 @@ namespace NetInject.Cecil
                     if (_replaces.TryGetValue(methDef.ReturnType, out secType))
                         onReplace(methDef.ReturnType);
                     if (secType != null || newType != null)
-                        instr.Operand = new MethodReference(meth.Name,
-                            Import(body.Method, secType ?? meth.ReturnType), Import(body.Method, newType ?? meth.DeclaringType));
+                    {
+                        var newMeth = new MethodReference(meth.Name, Import(body.Method, secType ?? meth.ReturnType),
+                            Import(body.Method, newType ?? meth.DeclaringType));
+                        TypeDefinition ptype;
+                        foreach (var parm in meth.Parameters)
+                        {
+                            if (_replaces.TryGetValue(parm.ParameterType, out ptype))
+                                onReplace(parm.ParameterType);
+                            var mparm = new ParameterDefinition(parm.Name, parm.Attributes, ptype ?? parm.ParameterType);
+                            newMeth.Parameters.Add(mparm);
+                        }
+                        instr.Operand = newMeth;
+                    }
                 }
                 var type = instr.Operand as TypeReference;
                 if (type != null)

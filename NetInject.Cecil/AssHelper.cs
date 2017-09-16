@@ -10,6 +10,8 @@ namespace NetInject.Cecil
 {
     public static class AssHelper
     {
+        public static bool IsDelegate(this Type type) => type.BaseType == typeof(MulticastDelegate);
+
         public static IEnumerable<T> GetAttribute<T>(this ICustomAttributeProvider prov) where T : Attribute
             => GetAttribute<T>(prov.CustomAttributes);
 

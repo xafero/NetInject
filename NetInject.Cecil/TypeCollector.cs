@@ -13,6 +13,8 @@ namespace NetInject.Cecil
         public ICollection<PropertyDefinition> Properties { get; } = new HashSet<PropertyDefinition>();
         public ICollection<EventDefinition> Events { get; } = new HashSet<EventDefinition>();
         public ICollection<FieldDefinition> Fields { get; } = new HashSet<FieldDefinition>();
+        public ICollection<GenericInstanceMethod> GenericMethods { get; } = new HashSet<GenericInstanceMethod>(Eq.Meth);
+        public ICollection<GenericInstanceType> GenericTypes { get; } = new HashSet<GenericInstanceType>(Eq.Type);
 
         public void Collect(AssemblyDefinition ass)
         {
@@ -41,7 +43,7 @@ namespace NetInject.Cecil
         {
             MethodDefinition def;
             if ((def = meth as MethodDefinition ?? meth.Resolve()) != null)
-                Collect(def);
+                Collect(def, meth);
         }
 
         public void Collect(FieldReference fiel)
@@ -83,7 +85,14 @@ namespace NetInject.Cecil
 
         private void Collect(TypeDefinition type, TypeReference tref)
         {
-            if (Types.Contains(type) || (tref ?? type).IsInStandardLib()) return;
+            GenericInstanceType genType = null;
+            if (Types.Contains(type) || ((genType = tref as GenericInstanceType) != null
+                && GenericTypes.Contains(genType)) || (tref ?? type).IsInStandardLib()) return;
+            if (genType != null)
+            {
+                GenericTypes.Add(genType);
+                return;
+            }
             Types.Add(type);
             if (type.BaseType != null)
                 Collect(type.BaseType);
@@ -101,12 +110,19 @@ namespace NetInject.Cecil
                 Collect(nested);
         }
 
-        public void Collect(MethodDefinition meth)
+        public void Collect(MethodDefinition meth) => Collect(meth, null);
+
+        private void Collect(MethodDefinition meth, MethodReference mref)
         {
-            if (Methods.Contains(meth)) return;
-            Methods.Add(meth);
-            Collect(meth.ReturnType);
-            foreach (var param in meth.Parameters)
+            GenericInstanceMethod genMeth = null;
+            if (Methods.Contains(meth) || ((genMeth = mref as GenericInstanceMethod) != null
+                && GenericMethods.Contains(genMeth))) return;
+            if (genMeth != null)
+                GenericMethods.Add(genMeth);
+            else
+                Methods.Add(meth);
+            Collect(genMeth?.ReturnType ?? meth.ReturnType);
+            foreach (var param in genMeth?.Parameters ?? meth.Parameters)
                 Collect(param);
             if (meth.HasBody)
                 Collect(meth.Body);

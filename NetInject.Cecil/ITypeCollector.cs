@@ -41,7 +41,9 @@ namespace NetInject.Cecil
         ICollection<AssemblyDefinition> Asses { get; }
         ICollection<ModuleDefinition> Modules { get; }
         ICollection<TypeDefinition> Types { get; }
+        ICollection<GenericInstanceType> GenericTypes { get; }
         ICollection<MethodDefinition> Methods { get; }
+        ICollection<GenericInstanceMethod> GenericMethods { get; }
         ICollection<PropertyDefinition> Properties { get; }
         ICollection<EventDefinition> Events { get; }
         ICollection<FieldDefinition> Fields { get; }

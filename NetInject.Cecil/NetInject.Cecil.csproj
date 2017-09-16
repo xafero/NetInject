@@ -51,6 +51,7 @@
     <Compile Include="AssHelper.cs" />
     <Compile Include="CecilHelper.cs" />
     <Compile Include="Defaults.cs" />
+    <Compile Include="Eq.cs" />
     <Compile Include="ITypeCollector.cs" />
     <Compile Include="MethodDefComparer.cs" />
     <Compile Include="ITypePatcher.cs" />

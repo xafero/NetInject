@@ -89,7 +89,12 @@ namespace NetInject.Cecil
                     if (secType != null || newType != null)
                     {
                         var newMeth = new MethodReference(meth.Name, Import(body.Method, secType ?? meth.ReturnType),
-                            Import(body.Method, newType ?? meth.DeclaringType));
+                            Import(body.Method, newType ?? meth.DeclaringType))
+                        {
+                            CallingConvention = meth.CallingConvention,
+                            ExplicitThis = meth.ExplicitThis,
+                            HasThis = meth.HasThis
+                        };
                         TypeDefinition ptype;
                         foreach (var parm in meth.Parameters)
                         {

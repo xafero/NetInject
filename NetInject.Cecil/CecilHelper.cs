@@ -57,7 +57,10 @@ namespace NetInject.Cecil
         }
 
         public static bool IsInStandardLib(this TypeReference typeRef)
-            => typeRef.UnpackGenerics().All(IsInStandardLibPrivate);
+            => IsInStandardLib(typeRef.UnpackGenerics());
+
+        private static bool IsInStandardLib(this IEnumerable<TypeReference> typeRefs)
+            => typeRefs.All(IsInStandardLibPrivate);
 
         private static bool IsInStandardLibPrivate(TypeReference type)
         {

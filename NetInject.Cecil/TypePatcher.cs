@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
+using System.Linq;
 
 namespace NetInject.Cecil
 {
@@ -12,6 +13,48 @@ namespace NetInject.Cecil
         public TypePatcher(IDictionary<TypeReference, TypeReference> replaces)
         {
             _replaces = replaces;
+        }
+
+        private bool TryGetValue(IMemberDefinition member, TypeReference tOld, out TypeReference tNew)
+        {
+            if (_replaces.TryGetValue(tOld, out tNew))
+                return true;
+            if (tOld.IsGenericInstance && !tOld.IsInStandardLib())
+            {
+                _replaces[tOld] = tNew = PatchGeneric(member, tOld);
+                return true;
+            }
+            if (tOld.IsArray && !tOld.GetElementType().IsInStandardLib())
+            {
+                _replaces[tOld] = tNew = PatchArray(member, tOld);
+                return true;
+            }
+            return false;
+        }
+
+        private TypeReference PatchArray(IMemberDefinition member, TypeReference type)
+        {
+            var arrType = type as ArrayType;
+            TypeReference result;
+            _replaces.TryGetValue(arrType?.ElementType ?? arrType ?? type, out result);
+            if (arrType == null)
+                return type;
+            result = new ArrayType(Import(member, result ?? arrType.ElementType), arrType.Rank);
+            return result;
+        }
+
+        private TypeReference PatchGeneric(IMemberDefinition member, TypeReference type)
+        {
+            var genType = type as GenericInstanceType;
+            TypeReference result;
+            _replaces.TryGetValue(genType?.ElementType ?? genType ?? type, out result);
+            if (result != null)
+                return result;
+            result = genType == null ? type : new GenericInstanceType(Import(member, genType.ElementType));
+            if (genType != null)
+                foreach (var parm in genType.GenericArguments)
+                    (result as IGenericInstance).GenericArguments.Add(Import(member, PatchGeneric(member, parm)));
+            return result;
         }
 
         public void Patch(AssemblyDefinition ass, Action<TypeReference> onReplace)
@@ -29,13 +72,13 @@ namespace NetInject.Cecil
         public void Patch(TypeDefinition type, Action<TypeReference> onReplace)
         {
             TypeReference newType;
-            if (type.BaseType != null && _replaces.TryGetValue(type.BaseType, out newType))
+            if (type.BaseType != null && TryGetValue(type, type.BaseType, out newType))
             {
                 onReplace(type.BaseType);
                 type.BaseType = Import(type, newType);
             }
             foreach (var intf in type.Interfaces)
-                if (_replaces.TryGetValue(intf.InterfaceType, out newType))
+                if (TryGetValue(type, intf.InterfaceType, out newType))
                 {
                     onReplace(intf.InterfaceType);
                     intf.InterfaceType = Import(type, newType);
@@ -57,7 +100,7 @@ namespace NetInject.Cecil
             if (meth == null)
                 return;
             TypeReference newType;
-            if (_replaces.TryGetValue(meth.ReturnType, out newType))
+            if (TryGetValue(meth, meth.ReturnType, out newType))
             {
                 onReplace(meth.ReturnType);
                 meth.ReturnType = Import(meth, newType);
@@ -82,9 +125,9 @@ namespace NetInject.Cecil
                 if (meth != null)
                 {
                     var methDef = meth as MethodDefinition ?? meth.TryResolve();
-                    if (_replaces.TryGetValue(methDef.DeclaringType, out newType))
+                    if (TryGetValue(body.Method, methDef.DeclaringType, out newType))
                         onReplace(methDef.DeclaringType);
-                    if (_replaces.TryGetValue(methDef.ReturnType, out secType))
+                    if (TryGetValue(body.Method, methDef.ReturnType, out secType))
                         onReplace(methDef.ReturnType);
                     if (secType != null || newType != null)
                     {
@@ -98,7 +141,7 @@ namespace NetInject.Cecil
                         TypeReference ptype;
                         foreach (var parm in meth.Parameters)
                         {
-                            if (_replaces.TryGetValue(parm.ParameterType, out ptype))
+                            if (TryGetValue(body.Method, parm.ParameterType, out ptype))
                                 onReplace(parm.ParameterType);
                             var mparm = new ParameterDefinition(parm.Name, parm.Attributes, ptype ?? parm.ParameterType);
                             newMeth.Parameters.Add(mparm);
@@ -110,7 +153,7 @@ namespace NetInject.Cecil
                 if (type != null)
                 {
                     var typeDef = type as TypeDefinition ?? type.TryResolve();
-                    if (_replaces.TryGetValue(typeDef, out newType))
+                    if (TryGetValue(body.Method, typeDef, out newType))
                     {
                         onReplace(typeDef);
                         instr.Operand = Import(body.Method, newType);
@@ -120,9 +163,9 @@ namespace NetInject.Cecil
                 if (fiel != null)
                 {
                     var fielDef = fiel as FieldDefinition ?? fiel.TryResolve();
-                    if (_replaces.TryGetValue(fielDef.DeclaringType, out newType))
+                    if (TryGetValue(body.Method, fielDef.DeclaringType, out newType))
                         onReplace(fielDef.DeclaringType);
-                    if (_replaces.TryGetValue(fielDef.FieldType, out secType))
+                    if (TryGetValue(body.Method, fielDef.FieldType, out secType))
                         onReplace(fielDef.FieldType);
                     if (secType != null || newType != null)
                         instr.Operand = new FieldReference(fiel.Name,
@@ -134,7 +177,7 @@ namespace NetInject.Cecil
         private void Patch(IMemberDefinition meth, VariableDefinition vari, Action<TypeReference> onReplace)
         {
             TypeReference newType;
-            if (!_replaces.TryGetValue(vari.VariableType, out newType))
+            if (!TryGetValue(meth, vari.VariableType, out newType))
                 return;
             onReplace(vari.VariableType);
             vari.VariableType = Import(meth, newType);
@@ -143,7 +186,7 @@ namespace NetInject.Cecil
         public void Patch(ParameterDefinition param, Action<TypeReference> onReplace)
         {
             TypeReference newType;
-            if (!_replaces.TryGetValue(param.ParameterType, out newType))
+            if (!TryGetValue((IMemberDefinition)param.Method, param.ParameterType, out newType))
                 return;
             onReplace(param.ParameterType);
             param.ParameterType = Import(param, newType);
@@ -152,7 +195,7 @@ namespace NetInject.Cecil
         public void Patch(PropertyDefinition prop, Action<TypeReference> onReplace)
         {
             TypeReference newType;
-            if (_replaces.TryGetValue(prop.PropertyType, out newType))
+            if (TryGetValue(prop, prop.PropertyType, out newType))
             {
                 onReplace(prop.PropertyType);
                 prop.PropertyType = Import(prop, newType);
@@ -164,7 +207,7 @@ namespace NetInject.Cecil
         public void Patch(FieldDefinition fiel, Action<TypeReference> onReplace)
         {
             TypeReference newType;
-            if (!_replaces.TryGetValue(fiel.FieldType, out newType))
+            if (!TryGetValue(fiel, fiel.FieldType, out newType))
                 return;
             onReplace(fiel.FieldType);
             fiel.FieldType = Import(fiel, newType);
@@ -173,7 +216,7 @@ namespace NetInject.Cecil
         public void Patch(EventDefinition evt, Action<TypeReference> onReplace)
         {
             TypeReference newType;
-            if (_replaces.TryGetValue(evt.EventType, out newType))
+            if (TryGetValue(evt, evt.EventType, out newType))
             {
                 onReplace(evt.EventType);
                 evt.EventType = Import(evt, newType);

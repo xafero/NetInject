@@ -91,16 +91,16 @@ namespace NetInject
             var oneFileOrMore = report.Files.Count >= 1 && files.Length >= 1;
             if (oneFileOrMore)
             {
-                Log.Info($"Processing {report.Files.Count} file(s)...");
-                ProcessMarkedFiles(workDir, report, toInject, outDir);
-            }
-            Log.Info($"Ensuring dependencies in '{outDir}'...");
-            if (oneFileOrMore)
-            {
+                Log.Info($"Ensuring dependencies in '{outDir}'...");
                 Log.InfoFormat(" added '{0}'!", CopyTypeRef<IVessel>(outDir));
                 Log.InfoFormat(" added '{0}'!", CopyTypeRef<DefaultVessel>(outDir));
                 Log.InfoFormat(" added '{0}'!", CopyTypeRef<MoqContainer>(outDir));
                 Log.InfoFormat(" added '{0}'!", CopyTypeRef<AutofacContainer>(outDir));
+            }
+            if (oneFileOrMore)
+            {
+                Log.Info($"Processing {report.Files.Count} file(s)...");
+                ProcessMarkedFiles(workDir, report, toInject, outDir);
             }
             Log.Info("Done.");
             return 0;

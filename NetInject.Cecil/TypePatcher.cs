@@ -119,59 +119,76 @@ namespace NetInject.Cecil
             {
                 if (instr.HasNoUsefulOperand())
                     continue;
-                TypeReference newType;
-                TypeReference secType;
                 var meth = instr.Operand as MethodReference;
                 if (meth != null)
-                {
-                    var methDef = meth as MethodDefinition ?? meth.TryResolve();
-                    if (TryGetValue(body.Method, methDef.DeclaringType, out newType))
-                        onReplace(methDef.DeclaringType);
-                    if (TryGetValue(body.Method, methDef.ReturnType, out secType))
-                        onReplace(methDef.ReturnType);
-                    if (secType != null || newType != null)
-                    {
-                        var newMeth = new MethodReference(meth.Name, Import(body.Method, secType ?? meth.ReturnType),
-                            Import(body.Method, newType ?? meth.DeclaringType))
-                        {
-                            CallingConvention = meth.CallingConvention,
-                            ExplicitThis = meth.ExplicitThis,
-                            HasThis = meth.HasThis
-                        };
-                        TypeReference ptype;
-                        foreach (var parm in meth.Parameters)
-                        {
-                            if (TryGetValue(body.Method, parm.ParameterType, out ptype))
-                                onReplace(parm.ParameterType);
-                            var mparm = new ParameterDefinition(parm.Name, parm.Attributes, ptype ?? parm.ParameterType);
-                            newMeth.Parameters.Add(mparm);
-                        }
-                        instr.Operand = newMeth;
-                    }
-                }
+                    PatchMethodRef(body, onReplace, meth, instr);
                 var type = instr.Operand as TypeReference;
                 if (type != null)
-                {
-                    var typeDef = type as TypeDefinition ?? type.TryResolve();
-                    if (TryGetValue(body.Method, typeDef, out newType))
-                    {
-                        onReplace(typeDef);
-                        instr.Operand = Import(body.Method, newType);
-                    }
-                }
+                    PatchTypeRef(body, onReplace, type, instr);
                 var fiel = instr.Operand as FieldReference;
                 if (fiel != null)
-                {
-                    var fielDef = fiel as FieldDefinition ?? fiel.TryResolve();
-                    if (TryGetValue(body.Method, fielDef.DeclaringType, out newType))
-                        onReplace(fielDef.DeclaringType);
-                    if (TryGetValue(body.Method, fielDef.FieldType, out secType))
-                        onReplace(fielDef.FieldType);
-                    if (secType != null || newType != null)
-                        instr.Operand = new FieldReference(fiel.Name,
-                            Import(body.Method, secType ?? fiel.FieldType), Import(body.Method, newType ?? fiel.DeclaringType));
-                }
+                    PatchFieldRef(body, onReplace, fiel, instr);
             }
+        }
+
+        private void PatchFieldRef(MethodBody body, Action<TypeReference> onReplace,
+            FieldReference fiel, Instruction instr)
+        {
+            TypeReference declaringType;
+            TypeReference fieldType;
+            var fielDef = fiel as FieldDefinition ?? fiel.TryResolve();
+            if (TryGetValue(body.Method, fielDef.DeclaringType, out declaringType))
+                onReplace(fielDef.DeclaringType);
+            if (TryGetValue(body.Method, fielDef.FieldType, out fieldType))
+                onReplace(fielDef.FieldType);
+            if (fieldType == null && declaringType == null)
+                return;
+            instr.Operand = new FieldReference(fiel.Name,
+                Import(body.Method, fieldType ?? fiel.FieldType),
+                Import(body.Method, declaringType ?? fiel.DeclaringType));
+        }
+
+        private void PatchTypeRef(MethodBody body, Action<TypeReference> onReplace,
+            TypeReference type, Instruction instr)
+        {
+            TypeReference newType;
+            var typeDef = type as TypeDefinition ?? type.TryResolve();
+            if (!TryGetValue(body.Method, typeDef, out newType))
+                return;
+            onReplace(typeDef);
+            instr.Operand = Import(body.Method, newType);
+        }
+
+        private void PatchMethodRef(MethodBody body, Action<TypeReference> onReplace,
+            MethodReference meth, Instruction instr)
+        {
+            TypeReference declaringType;
+            TypeReference returnType;
+            var methDef = meth as MethodDefinition ?? meth.TryResolve();
+            if (TryGetValue(body.Method, methDef.DeclaringType, out declaringType))
+                onReplace(methDef.DeclaringType);
+            if (TryGetValue(body.Method, methDef.ReturnType, out returnType))
+                onReplace(methDef.ReturnType);
+            if (returnType == null && declaringType == null)
+                return;
+            var newMeth = new MethodReference(meth.Name,
+                Import(body.Method, returnType ?? meth.ReturnType),
+                Import(body.Method, declaringType ?? meth.DeclaringType))
+            {
+                CallingConvention = meth.CallingConvention,
+                ExplicitThis = meth.ExplicitThis,
+                HasThis = meth.HasThis
+            };
+            foreach (var parm in meth.Parameters)
+            {
+                TypeReference ptype;
+                if (TryGetValue(body.Method, parm.ParameterType, out ptype))
+                    onReplace(parm.ParameterType);
+                var mparm = new ParameterDefinition(parm.Name, parm.Attributes,
+                    ptype ?? parm.ParameterType);
+                newMeth.Parameters.Add(mparm);
+            }
+            instr.Operand = newMeth;
         }
 
         private void Patch(IMemberDefinition meth, VariableDefinition vari, Action<TypeReference> onReplace)
@@ -186,7 +203,7 @@ namespace NetInject.Cecil
         public void Patch(ParameterDefinition param, Action<TypeReference> onReplace)
         {
             TypeReference newType;
-            if (!TryGetValue((IMemberDefinition)param.Method, param.ParameterType, out newType))
+            if (!TryGetValue((IMemberDefinition) param.Method, param.ParameterType, out newType))
                 return;
             onReplace(param.ParameterType);
             param.ParameterType = Import(param, newType);

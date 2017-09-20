@@ -46,6 +46,7 @@
     <Compile Include="SuperClass.cs" />
     <Compile Include="TypeCollectTest.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="TypePatchTest.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />

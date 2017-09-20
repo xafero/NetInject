@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
-using System.Linq;
 
 namespace NetInject.Cecil
 {

@@ -100,10 +100,10 @@ namespace NetInject.Test
             coll.Collect<SuperClass>();
             Assert.AreEqual(0, coll.Asses.Count);
             Assert.AreEqual(0, coll.Events.Count);
-            Assert.AreEqual(12, coll.Fields.Count);
-            Assert.AreEqual(18, coll.Methods.Count);
+            Assert.AreEqual(20, coll.Fields.Count);
+            Assert.AreEqual(24, coll.Methods.Count);
             Assert.AreEqual(0, coll.Modules.Count);
-            Assert.AreEqual(6, coll.Properties.Count);
+            Assert.AreEqual(9, coll.Properties.Count);
             Assert.AreEqual(3, coll.Types.Count);
             Assert.AreEqual(0, coll.GenericMethods.Count);
             Assert.AreEqual(10, coll.GenericTypes.Count);

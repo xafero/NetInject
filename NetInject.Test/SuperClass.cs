@@ -18,10 +18,11 @@ namespace NetInject.Test
         public SuperDelegate[,,] MyThreeArray { get; set; }
     }
 
-    public delegate void SuperDelegate(string name, SuperStruct super, SuperClass my);
+    public delegate void SuperDelegate(string name, SuperStruct super, SuperClass my,
+        out SuperClass x, ref SuperClass y, out SuperWeird z, ref SuperWeird u);
 
     public unsafe delegate void SuperWeird(ref uint a, out uint b, SuperStruct? c, 
-        ref IList<bool> d, out ISet<char> e, int* i, float** f, short*** g);
+        ref IList<SuperClass> d, out ISet<SuperClass[]>[] e, int* i, float** f, short*** g);
 
     public struct SuperStruct
     {

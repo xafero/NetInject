@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 using System.Linq;
+using Mono.Cecil.Rocks;
 
 namespace NetInject.Cecil
 {
@@ -22,7 +23,11 @@ namespace NetInject.Cecil
             var altKey = _replaces.Keys.FirstOrDefault(r => r.FullName == tOld.FullName);
             if (altKey != null && _replaces.TryGetValue(altKey, out tNew))
                 return true;
-
+            if (tOld.IsByReference && !tOld.IsInStandardLib())
+            {
+                _replaces[tOld] = tNew = PatchByRef(member, tOld);
+                return true;
+            }
             if (tOld.IsGenericInstance && !tOld.IsInStandardLib())
             {
                 _replaces[tOld] = tNew = PatchGeneric(member, tOld);
@@ -34,6 +39,17 @@ namespace NetInject.Cecil
                 return true;
             }
             return false;
+        }
+
+        private TypeReference PatchByRef(IMemberDefinition member, TypeReference type)
+        {
+            var refType = type as ByReferenceType;
+            TypeReference result;
+            TryGetValue(member, refType?.ElementType ?? type, out result);
+            if (refType == null)
+                return type;
+            result = TypeReferenceRocks.MakeByReferenceType(Import(member, result ?? refType.ElementType));
+            return result;
         }
 
         private TypeReference PatchArray(IMemberDefinition member, TypeReference type)
@@ -207,7 +223,7 @@ namespace NetInject.Cecil
         public void Patch(ParameterDefinition param, Action<TypeReference> onReplace)
         {
             TypeReference newType;
-            if (!TryGetValue((IMemberDefinition) param.Method, param.ParameterType, out newType))
+            if (!TryGetValue((IMemberDefinition)param.Method, param.ParameterType, out newType))
                 return;
             onReplace(param.ParameterType);
             param.ParameterType = Import(param, newType);

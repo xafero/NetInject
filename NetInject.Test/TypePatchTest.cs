@@ -59,13 +59,7 @@ namespace NetInject.Test
             dict[ToRef(typeof(SuperDelegate), my)] = ToRef(typeof(double), clr);
             dict[ToRef(typeof(SuperStruct), my)] = ToRef(typeof(ulong), clr);
             dict[ToRef(typeof(SuperWeird), my)] = ToRef(typeof(sbyte), clr);
-            var patcher = new TypePatcher(dict);
-
-            // TypeReferenceRocks.MakeArrayType
-            // TypeReferenceRocks.MakePointerType
-            // 
-            // TypeReferenceRocks.MakeGenericInstanceType
-            
+            var patcher = new TypePatcher(dict);            
             Assert.AreEqual("System.String", PatchTestField(types[0], patcher).Item1.FullName);
             Assert.AreEqual("System.Int32*", PatchTestField(types[1], patcher).Item1.FullName);
             Assert.AreEqual("System.UInt32&", PatchTestField(types[2], patcher).Item1.FullName);
@@ -79,16 +73,16 @@ namespace NetInject.Test
             Assert.AreEqual("System.SByte&", PatchTestField(types[10], patcher).Item1.FullName);
             Assert.AreEqual("System.SByte&", PatchTestField(types[11], patcher).Item1.FullName);
             Assert.AreEqual("System.Double", PatchTestField(types[12], patcher).Item1.FullName);
-            Assert.AreEqual(0, PatchTestField(types[13], patcher).Item1.FullName);
-            Assert.AreEqual(0, PatchTestField(types[14], patcher).Item1.FullName);
-            Assert.AreEqual(0, PatchTestField(types[15], patcher).Item1.FullName);
-            Assert.AreEqual(0, PatchTestField(types[16], patcher).Item1.FullName);
-            Assert.AreEqual(0, PatchTestField(types[17], patcher).Item1.FullName);
-            Assert.AreEqual(0, PatchTestField(types[18], patcher).Item1.FullName);
-            Assert.AreEqual(0, PatchTestField(types[19], patcher).Item1.FullName);
-            Assert.AreEqual(0, PatchTestField(types[20], patcher).Item1.FullName);
-            Assert.AreEqual(0, PatchTestField(types[21], patcher).Item1.FullName);
-            Assert.AreEqual(0, PatchTestField(types[22], patcher).Item1.FullName);
+            Assert.AreEqual("System.Double[]", PatchTestField(types[13], patcher).Item1.FullName);
+            Assert.AreEqual("System.Double[]", PatchTestField(types[14], patcher).Item1.FullName);
+            Assert.AreEqual("System.Double[][]", PatchTestField(types[15], patcher).Item1.FullName);
+            Assert.AreEqual("System.Double[][][]", PatchTestField(types[16], patcher).Item1.FullName);
+            Assert.AreEqual("System.Double[,]", PatchTestField(types[17], patcher).Item1.FullName);
+            Assert.AreEqual("System.Double[,,]", PatchTestField(types[18], patcher).Item1.FullName);
+            Assert.AreEqual("System.Nullable`1<System.UInt64>", PatchTestField(types[19], patcher).Item1.FullName);
+            Assert.AreEqual("System.Collections.Generic.ISet`1<System.UInt64>", PatchTestField(types[20], patcher).Item1.FullName);
+            Assert.AreEqual("System.Collections.Generic.IList`1<System.UInt64>", PatchTestField(types[21], patcher).Item1.FullName);
+            Assert.AreEqual("System.Collections.Generic.IList`1<System.Decimal>&", PatchTestField(types[22], patcher).Item1.FullName);
             Assert.AreEqual(0, PatchTestField(types[23], patcher).Item1.FullName);
             Assert.AreEqual(0, PatchTestField(types[24], patcher).Item1.FullName);
             Assert.AreEqual(0, PatchTestField(types[25], patcher).Item1.FullName);

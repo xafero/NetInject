@@ -23,9 +23,14 @@ namespace NetInject.Cecil
             var altKey = _replaces.Keys.FirstOrDefault(r => r.FullName == tOld.FullName);
             if (altKey != null && _replaces.TryGetValue(altKey, out tNew))
                 return true;
-            if (tOld.IsByReference && !tOld.IsInStandardLib())
+            if (tOld.IsByReference /*&& !tOld.IsInStandardLib()*/)
             {
                 _replaces[tOld] = tNew = PatchByRef(member, tOld);
+                return true;
+            }
+            if (tOld.IsPointer && !tOld.IsInStandardLib())
+            {
+                _replaces[tOld] = tNew = PatchPointer(member, tOld);
                 return true;
             }
             if (tOld.IsGenericInstance && !tOld.IsInStandardLib())
@@ -33,7 +38,7 @@ namespace NetInject.Cecil
                 _replaces[tOld] = tNew = PatchGeneric(member, tOld);
                 return true;
             }
-            if (tOld.IsArray && !tOld.GetElementType().IsInStandardLib())
+            if (tOld.IsArray && !tOld.IsInStandardLib())
             {
                 _replaces[tOld] = tNew = PatchArray(member, tOld);
                 return true;
@@ -52,14 +57,25 @@ namespace NetInject.Cecil
             return result;
         }
 
+        private TypeReference PatchPointer(IMemberDefinition member, TypeReference type)
+        {
+            var ptrType = type as PointerType;
+            TypeReference result;
+            TryGetValue(member, ptrType?.ElementType ?? type, out result);
+            if (ptrType == null)
+                return type;
+            result = TypeReferenceRocks.MakePointerType(Import(member, result ?? ptrType.ElementType));
+            return result;
+        }
+
         private TypeReference PatchArray(IMemberDefinition member, TypeReference type)
         {
             var arrType = type as ArrayType;
             TypeReference result;
-            _replaces.TryGetValue(arrType?.ElementType ?? arrType ?? type, out result);
+            TryGetValue(member, arrType?.ElementType ?? arrType ?? type, out result);
             if (arrType == null)
                 return type;
-            result = new ArrayType(Import(member, result ?? arrType.ElementType), arrType.Rank);
+            result = TypeReferenceRocks.MakeArrayType(Import(member, result ?? arrType.ElementType), arrType.Rank);
             return result;
         }
 
@@ -70,10 +86,19 @@ namespace NetInject.Cecil
             _replaces.TryGetValue(genType?.ElementType ?? genType ?? type, out result);
             if (result != null)
                 return result;
-            result = genType == null ? type : new GenericInstanceType(Import(member, genType.ElementType));
-            if (genType != null)
-                foreach (var parm in genType.GenericArguments)
-                    (result as IGenericInstance).GenericArguments.Add(Import(member, PatchGeneric(member, parm)));
+            var args = new List<TypeReference>();
+            foreach(var rawArg in genType.GenericArguments)
+            {
+                TypeReference newArgType;
+                if (!TryGetValue(member, rawArg, out newArgType))
+                {
+                    args.Add(rawArg);
+                    continue;
+                }
+                args.Add(Import(member, newArgType));
+            }
+            result = genType == null ? type :
+                TypeReferenceRocks.MakeGenericInstanceType(Import(member, genType.ElementType), args.ToArray());
             return result;
         }
 

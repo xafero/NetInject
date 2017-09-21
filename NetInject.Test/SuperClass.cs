@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 
 namespace NetInject.Test
 {
@@ -17,6 +19,9 @@ namespace NetInject.Test
     }
 
     public delegate void SuperDelegate(string name, SuperStruct super, SuperClass my);
+
+    public unsafe delegate void SuperWeird(ref uint a, out uint b, SuperStruct? c, 
+        ref IList<bool> d, out ISet<char> e, int* i, float** f, short*** g);
 
     public struct SuperStruct
     {

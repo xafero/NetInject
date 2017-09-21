@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
+using System.Linq;
 
 namespace NetInject.Cecil
 {
@@ -18,6 +19,10 @@ namespace NetInject.Cecil
         {
             if (_replaces.TryGetValue(tOld, out tNew))
                 return true;
+            var altKey = _replaces.Keys.FirstOrDefault(r => r.FullName == tOld.FullName);
+            if (altKey != null && _replaces.TryGetValue(altKey, out tNew))
+                return true;
+
             if (tOld.IsGenericInstance && !tOld.IsInStandardLib())
             {
                 _replaces[tOld] = tNew = PatchGeneric(member, tOld);

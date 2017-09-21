@@ -31,12 +31,17 @@ namespace NetInject.Test
 
         #endregion
 
-        private static Tuple<TypeReference, List<TypeReference>> PatchTestField(
+        private Tuple<TypeReference, List<TypeReference>> PatchTestField(
             TypeReference key, ITypePatcher patcher)
         {
-            var field = new FieldDefinition("test", FieldAttributes.Private, key);
+            var field = new FieldDefinition("test", FieldAttributes.Private, key)
+            {
+                DeclaringType = ass.GetAllTypes().First()
+            };
             var result = new List<TypeReference>();
+            Console.Write($"Input := {field.FieldType}");
             patcher.Patch(field, o => result.Add(o));
+            Console.WriteLine($"   Output := {field.FieldType}");
             return Tuple.Create(field.FieldType, result);
         }
 
@@ -66,8 +71,8 @@ namespace NetInject.Test
             Assert.AreEqual("System.UInt32&", PatchTestField(types[3], patcher).Item1.FullName);
             Assert.AreEqual("System.Single**", PatchTestField(types[4], patcher).Item1.FullName);
             Assert.AreEqual("System.Int16***", PatchTestField(types[5], patcher).Item1.FullName);
-            Assert.AreEqual(0, PatchTestField(types[6], patcher).Item1.FullName);
-            Assert.AreEqual(0, PatchTestField(types[7], patcher).Item1.FullName);
+            Assert.AreEqual("System.Decimal", PatchTestField(types[6], patcher).Item1.FullName);
+            Assert.AreEqual("System.UInt64", PatchTestField(types[7], patcher).Item1.FullName);
             Assert.AreEqual(0, PatchTestField(types[8], patcher).Item1.FullName);
             Assert.AreEqual(0, PatchTestField(types[9], patcher).Item1.FullName);
             Assert.AreEqual(0, PatchTestField(types[10], patcher).Item1.FullName);

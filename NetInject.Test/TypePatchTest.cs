@@ -4,7 +4,6 @@ using System;
 using System.Linq;
 using Mono.Cecil;
 using System.Collections.Generic;
-
 using static NUnit.Framework.Assert;
 
 namespace NetInject.Test
@@ -32,14 +31,42 @@ namespace NetInject.Test
 
         #endregion
 
-        private static TypeReference TestSomeType(TypeReference key,
+        private TypeReference TestSomeType(TypeReference key,
             ITypeSuggestor patcher, ITypeImporter importer)
         {
-            Console.Write($"Input := {key}");
+            Console.WriteLine($" got '{WithoutNamespace(key)}'");
             var newKey = patcher[key, importer];
-            Console.WriteLine($"   Output := {newKey}");
+            Console.WriteLine($" --> '{WithoutNamespace(newKey)}'");
             return newKey;
         }
+
+        private TypeReference TestSomeType(TypeReference key,
+            ITypePatcher patcher, ITypeImporter importer)
+        {
+            var field = new FieldDefinition("test", FieldAttributes.Private, key)
+            {
+                DeclaringType = _ass.GetAllTypes().First()
+            };
+            var result = new List<TypeReference>();
+            Console.Write($"Input := {field.FieldType}");
+            patcher.Patch(field, o => result.Add(o));
+            Console.WriteLine($"   Output := {field.FieldType}");
+            return field.FieldType ?? result.FirstOrDefault();
+        }
+
+        private TypeReference TestSomeType(TypeReference key,
+            Tuple<TypeSuggestor, TypePatcher> patcher, ITypeImporter importer)
+        {
+            var newKey = TestSomeType(key, patcher.Item1, importer);
+            var newVal = TestSomeType(key, patcher.Item2, importer);
+            if (!(newKey + "").Equals(newVal + ""))
+                throw new InvalidOperationException($"{newKey} != {newVal}");
+            return newKey ?? newVal;
+        }
+
+        private static string WithoutNamespace(TypeReference key)
+            => key.ToString().Replace("System.Collections.Generic.", "").Replace("System.", "")
+                .Replace("`2", "").Replace("`1", "");
 
         [Test]
         public void ShouldPatchGenericsAndArrays()
@@ -56,7 +83,7 @@ namespace NetInject.Test
             dict[ToRef(typeof(SuperStruct), my)] = ToRef(typeof(ulong), clr);
             dict[ToRef(typeof(SuperWeird), my)] = ToRef(typeof(sbyte), clr);
             var imp = new TypeImporter(clr);
-            var patcher = new TypeSuggestor(dict);
+            var patcher = Tuple.Create(new TypeSuggestor(dict), new TypePatcher(dict));
             AreEqual("System.String", TestSomeType(types[0], patcher, imp).FullName);
             AreEqual("System.Int32*", TestSomeType(types[1], patcher, imp).FullName);
             AreEqual("System.UInt32&", TestSomeType(types[2], patcher, imp).FullName);
@@ -77,20 +104,40 @@ namespace NetInject.Test
             AreEqual("System.Double[,]", TestSomeType(types[17], patcher, imp).FullName);
             AreEqual("System.Double[,,]", TestSomeType(types[18], patcher, imp).FullName);
             AreEqual("System.Nullable`1<System.UInt64>", TestSomeType(types[19], patcher, imp).FullName);
-            AreEqual("System.Collections.Generic.ISet`1<System.UInt64>", TestSomeType(types[20], patcher, imp).FullName);
-            AreEqual("System.Collections.Generic.IList`1<System.UInt64>", TestSomeType(types[21], patcher, imp).FullName);
-            AreEqual("System.Collections.Generic.IList`1<System.Decimal>&", TestSomeType(types[22], patcher, imp).FullName);
-            AreEqual("System.Collections.Generic.ISet`1<System.Decimal[]>[]&", TestSomeType(types[23], patcher, imp).FullName);
-            AreEqual("System.Collections.Generic.ICollection`1<System.UInt64>", TestSomeType(types[24], patcher, imp).FullName);
-            AreEqual("System.Collections.Generic.IEnumerable`1<System.UInt64>", TestSomeType(types[25], patcher, imp).FullName);
-            AreEqual("System.Collections.Generic.IEnumerable`1<System.Double[]>", TestSomeType(types[26], patcher, imp).FullName);
-            AreEqual("System.Collections.Generic.IDictionary`2<System.Double,System.UInt64>", TestSomeType(types[27], patcher, imp).FullName);
-            AreEqual("System.Collections.Generic.ICollection`1<System.Collections.Generic.IEnumerable`1<System.Double[]>>", TestSomeType(types[28], patcher, imp).FullName);
-            AreEqual("System.Collections.Generic.IList`1<System.Collections.Generic.ICollection`1<System.Collections.Generic.IEnumerable`1<System.Double[]>>>", TestSomeType(types[29], patcher, imp).FullName);
-            AreEqual("System.Collections.Generic.ISet`1<System.Collections.Generic.IList`1<System.Collections.Generic.ICollection`1<System.Collections.Generic.IEnumerable`1<System.Double[]>>>>", TestSomeType(types[30], patcher, imp).FullName);
-            AreEqual("System.Collections.Generic.ISet`1<System.Collections.Generic.IList`1<System.Collections.Generic.ICollection`1<System.Collections.Generic.IEnumerable`1<System.Double[]>[]>>[]>[]", TestSomeType(types[31], patcher, imp).FullName);
-            AreEqual("System.Collections.Generic.IDictionary`2<System.Collections.Generic.IEnumerable`1<System.Double[]>,System.Collections.Generic.ISet`1<System.Collections.Generic.IList`1<System.Collections.Generic.ICollection`1<System.Tuple`2<System.Double,System.UInt64>>>>>", TestSomeType(types[32], patcher, imp).FullName);
-            AreEqual("System.Collections.Generic.IDictionary`2<System.Collections.Generic.IEnumerable`1<System.Double>[],System.Collections.Generic.ISet`1<System.Collections.Generic.IList`1<System.Collections.Generic.ICollection`1<System.Tuple`2<System.Double,System.UInt64>>>>[]>", TestSomeType(types[33], patcher, imp).FullName);
+            AreEqual("System.Collections.Generic.ISet`1<System.UInt64>",
+                TestSomeType(types[20], patcher, imp).FullName);
+            AreEqual("System.Collections.Generic.IList`1<System.UInt64>",
+                TestSomeType(types[21], patcher, imp).FullName);
+            AreEqual("System.Collections.Generic.IList`1<System.Decimal>&",
+                TestSomeType(types[22], patcher, imp).FullName);
+            AreEqual("System.Collections.Generic.ISet`1<System.Decimal[]>[]&",
+                TestSomeType(types[23], patcher, imp).FullName);
+            AreEqual("System.Collections.Generic.ICollection`1<System.UInt64>",
+                TestSomeType(types[24], patcher, imp).FullName);
+            AreEqual("System.Collections.Generic.IEnumerable`1<System.UInt64>",
+                TestSomeType(types[25], patcher, imp).FullName);
+            AreEqual("System.Collections.Generic.IEnumerable`1<System.Double[]>",
+                TestSomeType(types[26], patcher, imp).FullName);
+            AreEqual("System.Collections.Generic.IDictionary`2<System.Double,System.UInt64>",
+                TestSomeType(types[27], patcher, imp).FullName);
+            AreEqual(
+                "System.Collections.Generic.ICollection`1<System.Collections.Generic.IEnumerable`1<System.Double[]>>",
+                TestSomeType(types[28], patcher, imp).FullName);
+            AreEqual(
+                "System.Collections.Generic.IList`1<System.Collections.Generic.ICollection`1<System.Collections.Generic.IEnumerable`1<System.Double[]>>>",
+                TestSomeType(types[29], patcher, imp).FullName);
+            AreEqual(
+                "System.Collections.Generic.ISet`1<System.Collections.Generic.IList`1<System.Collections.Generic.ICollection`1<System.Collections.Generic.IEnumerable`1<System.Double[]>>>>",
+                TestSomeType(types[30], patcher, imp).FullName);
+            AreEqual(
+                "System.Collections.Generic.ISet`1<System.Collections.Generic.IList`1<System.Collections.Generic.ICollection`1<System.Collections.Generic.IEnumerable`1<System.Double[]>[]>>[]>[]",
+                TestSomeType(types[31], patcher, imp).FullName);
+            AreEqual(
+                "System.Collections.Generic.IDictionary`2<System.Collections.Generic.IEnumerable`1<System.Double[]>,System.Collections.Generic.ISet`1<System.Collections.Generic.IList`1<System.Collections.Generic.ICollection`1<System.Tuple`2<System.Double,System.UInt64>>>>>",
+                TestSomeType(types[32], patcher, imp).FullName);
+            AreEqual(
+                "System.Collections.Generic.IDictionary`2<System.Collections.Generic.IEnumerable`1<System.Double>[],System.Collections.Generic.ISet`1<System.Collections.Generic.IList`1<System.Collections.Generic.ICollection`1<System.Tuple`2<System.Double,System.UInt64>>>>[]>",
+                TestSomeType(types[33], patcher, imp).FullName);
             AreEqual(34, types.Length);
         }
 

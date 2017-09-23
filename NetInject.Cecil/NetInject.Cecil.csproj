@@ -54,14 +54,17 @@
     <Compile Include="Eq.cs" />
     <Compile Include="IterHelper.cs" />
     <Compile Include="ITypeCollector.cs" />
+    <Compile Include="ITypeImporter.cs" />
     <Compile Include="ITypeSuggestor.cs" />
     <Compile Include="MethodDefComparer.cs" />
     <Compile Include="ITypePatcher.cs" />
     <Compile Include="MonoHelper.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="TypeCollector.cs" />
+    <Compile Include="TypeImporter.cs" />
     <Compile Include="TypeKind.cs" />
     <Compile Include="TypePatcher.cs" />
+    <Compile Include="TypeSuggestor.cs" />
     <Compile Include="WordHelper.cs" />
   </ItemGroup>
   <ItemGroup>

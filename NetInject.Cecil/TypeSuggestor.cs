@@ -30,7 +30,7 @@ namespace NetInject.Cecil
                     return this[byRef.ElementType, import].MakeByReferenceType();
                 ArrayType arType;
                 if ((arType = type as ArrayType) != null)
-                    return this[arType.ElementType, import].MakeArrayType(arType.Rank);
+                    return this[arType.ElementType, import].MakeArrayType(arType.Rank).ApplyDims(arType);
                 GenericInstanceType gnType;
                 if ((gnType = type as GenericInstanceType) != null)
                 {

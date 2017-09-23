@@ -30,12 +30,12 @@ namespace NetInject
     {
         private static readonly ILog Log = LogManager.GetLogger(typeof(Purger));
 
-        private static readonly string ctorName = ".ctor";
+        // private static readonly string ctorName = ".ctor";
 
         public static readonly string apiSuffix = ".API";
         public static readonly string apiPrefix = "Purge.";
 
-        private static readonly StringComparison cmpa = StringComparison.InvariantCulture;
+        // private static readonly StringComparison cmpa = StringComparison.InvariantCulture;
         private static readonly StringComparer comp = StringComparer.InvariantCultureIgnoreCase;
 
         private static readonly IParser nativeParser = new Captivator();

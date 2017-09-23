@@ -2,104 +2,33 @@
 using System.Collections.Generic;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
-using System.Linq;
-using Mono.Cecil.Rocks;
 
 namespace NetInject.Cecil
 {
     public class TypePatcher : ITypePatcher
     {
         private readonly IDictionary<TypeReference, TypeReference> _replaces;
+        private readonly TypeSuggestor _suggestor;
 
         public TypePatcher(IDictionary<TypeReference, TypeReference> replaces)
         {
             _replaces = replaces;
+            _suggestor = new TypeSuggestor(_replaces);
         }
 
         private bool TryGetValue(IMemberDefinition member, TypeReference tOld, out TypeReference tNew)
         {
-            if (_replaces.TryGetValue(tOld, out tNew))
-                return true;
-            var altKey = _replaces.Keys.FirstOrDefault(r => r.FullName == tOld.FullName);
-            if (altKey != null && _replaces.TryGetValue(altKey, out tNew))
-                return true;
-            if (tOld.IsByReference /*&& !tOld.IsInStandardLib()*/)
+            if (member == null || tOld == null)
             {
-                _replaces[tOld] = tNew = PatchByRef(member, tOld);
-                return true;
+                tNew = null;
+                return false;
             }
-            if (tOld.IsPointer && !tOld.IsInStandardLib())
-            {
-                _replaces[tOld] = tNew = PatchPointer(member, tOld);
-                return true;
-            }
-            if (tOld.IsGenericInstance && !tOld.IsInStandardLib())
-            {
-                _replaces[tOld] = tNew = PatchGeneric(member, tOld);
-                return true;
-            }
-            if (tOld.IsArray && !tOld.IsInStandardLib())
-            {
-                _replaces[tOld] = tNew = PatchArray(member, tOld);
-                return true;
-            }
-            return false;
-        }
-
-        private TypeReference PatchByRef(IMemberDefinition member, TypeReference type)
-        {
-            var refType = type as ByReferenceType;
-            TypeReference result;
-            TryGetValue(member, refType?.ElementType ?? type, out result);
-            if (refType == null)
-                return type;
-            result = TypeReferenceRocks.MakeByReferenceType(Import(member, result ?? refType.ElementType));
-            return result;
-        }
-
-        private TypeReference PatchPointer(IMemberDefinition member, TypeReference type)
-        {
-            var ptrType = type as PointerType;
-            TypeReference result;
-            TryGetValue(member, ptrType?.ElementType ?? type, out result);
-            if (ptrType == null)
-                return type;
-            result = TypeReferenceRocks.MakePointerType(Import(member, result ?? ptrType.ElementType));
-            return result;
-        }
-
-        private TypeReference PatchArray(IMemberDefinition member, TypeReference type)
-        {
-            var arrType = type as ArrayType;
-            TypeReference result;
-            TryGetValue(member, arrType?.ElementType ?? arrType ?? type, out result);
-            if (arrType == null)
-                return type;
-            result = TypeReferenceRocks.MakeArrayType(Import(member, result ?? arrType.ElementType), arrType.Rank);
-            return result;
-        }
-
-        private TypeReference PatchGeneric(IMemberDefinition member, TypeReference type)
-        {
-            var genType = type as GenericInstanceType;
-            TypeReference result;
-            _replaces.TryGetValue(genType?.ElementType ?? genType ?? type, out result);
-            if (result != null)
-                return result;
-            var args = new List<TypeReference>();
-            foreach(var rawArg in genType.GenericArguments)
-            {
-                TypeReference newArgType;
-                if (!TryGetValue(member, rawArg, out newArgType))
-                {
-                    args.Add(rawArg);
-                    continue;
-                }
-                args.Add(Import(member, newArgType));
-            }
-            result = genType == null ? type :
-                TypeReferenceRocks.MakeGenericInstanceType(Import(member, genType.ElementType), args.ToArray());
-            return result;
+            var import = new TypeImporter(member);
+            tNew = _suggestor[tOld, import];
+            if (tNew == null || tNew == tOld || tOld.FullName.Equals(tNew.FullName))
+                return false;
+            _replaces[tOld] = tNew;
+            return true;
         }
 
         public void Patch(AssemblyDefinition ass, Action<TypeReference> onReplace)
@@ -120,13 +49,13 @@ namespace NetInject.Cecil
             if (type.BaseType != null && TryGetValue(type, type.BaseType, out newType))
             {
                 onReplace(type.BaseType);
-                type.BaseType = Import(type, newType);
+                type.BaseType = newType;
             }
             foreach (var intf in type.Interfaces)
                 if (TryGetValue(type, intf.InterfaceType, out newType))
                 {
                     onReplace(intf.InterfaceType);
-                    intf.InterfaceType = Import(type, newType);
+                    intf.InterfaceType = newType;
                 }
             foreach (var fiel in type.Fields)
                 Patch(fiel, onReplace);
@@ -148,7 +77,7 @@ namespace NetInject.Cecil
             if (TryGetValue(meth, meth.ReturnType, out newType))
             {
                 onReplace(meth.ReturnType);
-                meth.ReturnType = Import(meth, newType);
+                meth.ReturnType = newType;
             }
             foreach (var param in meth.Parameters)
                 Patch(param, onReplace);
@@ -189,8 +118,8 @@ namespace NetInject.Cecil
             if (fieldType == null && declaringType == null)
                 return;
             instr.Operand = new FieldReference(fiel.Name,
-                Import(body.Method, fieldType ?? fiel.FieldType),
-                Import(body.Method, declaringType ?? fiel.DeclaringType));
+                fieldType ?? fiel.FieldType,
+                declaringType ?? fiel.DeclaringType);
         }
 
         private void PatchTypeRef(MethodBody body, Action<TypeReference> onReplace,
@@ -201,7 +130,7 @@ namespace NetInject.Cecil
             if (!TryGetValue(body.Method, typeDef, out newType))
                 return;
             onReplace(typeDef);
-            instr.Operand = Import(body.Method, newType);
+            instr.Operand = newType;
         }
 
         private void PatchMethodRef(MethodBody body, Action<TypeReference> onReplace,
@@ -217,8 +146,8 @@ namespace NetInject.Cecil
             if (returnType == null && declaringType == null)
                 return;
             var newMeth = new MethodReference(meth.Name,
-                Import(body.Method, returnType ?? meth.ReturnType),
-                Import(body.Method, declaringType ?? meth.DeclaringType))
+                returnType ?? meth.ReturnType,
+                declaringType ?? meth.DeclaringType)
             {
                 CallingConvention = meth.CallingConvention,
                 ExplicitThis = meth.ExplicitThis,
@@ -242,16 +171,16 @@ namespace NetInject.Cecil
             if (!TryGetValue(meth, vari.VariableType, out newType))
                 return;
             onReplace(vari.VariableType);
-            vari.VariableType = Import(meth, newType);
+            vari.VariableType = newType;
         }
 
         public void Patch(ParameterDefinition param, Action<TypeReference> onReplace)
         {
             TypeReference newType;
-            if (!TryGetValue((IMemberDefinition)param.Method, param.ParameterType, out newType))
+            if (!TryGetValue((IMemberDefinition) param.Method, param.ParameterType, out newType))
                 return;
             onReplace(param.ParameterType);
-            param.ParameterType = Import(param, newType);
+            param.ParameterType = newType;
         }
 
         public void Patch(PropertyDefinition prop, Action<TypeReference> onReplace)
@@ -260,7 +189,7 @@ namespace NetInject.Cecil
             if (TryGetValue(prop, prop.PropertyType, out newType))
             {
                 onReplace(prop.PropertyType);
-                prop.PropertyType = Import(prop, newType);
+                prop.PropertyType = newType;
             }
             Patch(prop.GetMethod, onReplace);
             Patch(prop.SetMethod, onReplace);
@@ -272,7 +201,7 @@ namespace NetInject.Cecil
             if (!TryGetValue(fiel, fiel.FieldType, out newType))
                 return;
             onReplace(fiel.FieldType);
-            fiel.FieldType = Import(fiel, newType);
+            fiel.FieldType = newType;
         }
 
         public void Patch(EventDefinition evt, Action<TypeReference> onReplace)
@@ -281,20 +210,11 @@ namespace NetInject.Cecil
             if (TryGetValue(evt, evt.EventType, out newType))
             {
                 onReplace(evt.EventType);
-                evt.EventType = Import(evt, newType);
+                evt.EventType = newType;
             }
             Patch(evt.AddMethod, onReplace);
             Patch(evt.InvokeMethod, onReplace);
             Patch(evt.RemoveMethod, onReplace);
         }
-
-        private static TypeReference Import(ParameterDefinition param, TypeReference newType)
-            => Import(param.Method as MethodDefinition, newType);
-
-        private static TypeReference Import(IMemberDefinition member, TypeReference newType)
-            => Import(member.DeclaringType, newType);
-
-        private static TypeReference Import(TypeDefinition type, TypeReference newType)
-            => type.Module.ImportReference(newType);
     }
 }

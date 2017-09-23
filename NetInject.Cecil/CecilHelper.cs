@@ -293,5 +293,15 @@ namespace NetInject.Cecil
         }
 
         #endregion
+
+        public static ArrayType ApplyDims(this ArrayType target, ArrayType source)
+        {
+            for (var i = 0; i < source.Dimensions.Count; i++)
+            {
+                var srcDim = source.Dimensions[i];
+                target.Dimensions[i] = new ArrayDimension(srcDim.LowerBound, srcDim.UpperBound);
+            }
+            return target;
+        }
     }
 }

@@ -34,7 +34,7 @@ namespace NetInject.Test
         private TypeReference TestSomeType(TypeReference key,
             ITypeSuggestor patcher, ITypeImporter importer)
         {
-            Console.WriteLine($" got '{WithoutNamespace(key)}'");
+            Console.Write($" got '{WithoutNamespace(key)}'");
             var newKey = patcher[key, importer];
             Console.WriteLine($" --> '{WithoutNamespace(newKey)}'");
             return newKey;
@@ -48,9 +48,9 @@ namespace NetInject.Test
                 DeclaringType = _ass.GetAllTypes().First()
             };
             var result = new List<TypeReference>();
-            Console.Write($"Input := {field.FieldType}");
+            Console.Write($" got '{WithoutNamespace(field.FieldType)}'");
             patcher.Patch(field, o => result.Add(o));
-            Console.WriteLine($"   Output := {field.FieldType}");
+            Console.WriteLine($" --> '{WithoutNamespace(field.FieldType)}'");
             return field.FieldType ?? result.FirstOrDefault();
         }
 
@@ -60,7 +60,7 @@ namespace NetInject.Test
             var newKey = TestSomeType(key, patcher.Item1, importer);
             var newVal = TestSomeType(key, patcher.Item2, importer);
             if (!(newKey + "").Equals(newVal + ""))
-                throw new InvalidOperationException($"{newKey} != {newVal}");
+                throw new InvalidOperationException($"{WithoutNamespace(newKey)} != {WithoutNamespace(newVal)}");
             return newKey ?? newVal;
         }
 
@@ -101,8 +101,8 @@ namespace NetInject.Test
             AreEqual("System.Double[]", TestSomeType(types[14], patcher, imp).FullName);
             AreEqual("System.Double[][]", TestSomeType(types[15], patcher, imp).FullName);
             AreEqual("System.Double[][][]", TestSomeType(types[16], patcher, imp).FullName);
-            AreEqual("System.Double[,]", TestSomeType(types[17], patcher, imp).FullName);
-            AreEqual("System.Double[,,]", TestSomeType(types[18], patcher, imp).FullName);
+            AreEqual("System.Double[0...,0...]", TestSomeType(types[17], patcher, imp).FullName);
+            AreEqual("System.Double[0...,0...,0...]", TestSomeType(types[18], patcher, imp).FullName);
             AreEqual("System.Nullable`1<System.UInt64>", TestSomeType(types[19], patcher, imp).FullName);
             AreEqual("System.Collections.Generic.ISet`1<System.UInt64>",
                 TestSomeType(types[20], patcher, imp).FullName);

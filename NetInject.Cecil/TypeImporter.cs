@@ -6,14 +6,21 @@ namespace NetInject.Cecil
     {
         private readonly ModuleDefinition _module;
 
-        public TypeImporter(IMemberDefinition member)
+        public TypeImporter(ModuleDefinition module)
         {
-            _module = member.DeclaringType.Module;
+            _module = module;
         }
 
-        public TypeImporter(IGenericParameterProvider type)
+        public TypeImporter(IMemberDefinition member) : this(member.DeclaringType.Module)
         {
-            _module = type.Module;
+        }
+
+        public TypeImporter(IGenericParameterProvider type) : this(type.Module)
+        {
+        }
+
+        public TypeImporter(ParameterDefinition param) : this((IMemberDefinition) (param.Method as MethodDefinition))
+        {
         }
 
         public TypeReference Import(TypeReference type)

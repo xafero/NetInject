@@ -39,7 +39,7 @@ namespace NetInject.Cecil
                 }
                 if (type.IsInStandardLib())
                     return import.Import(type);
-                throw new InvalidOperationException(type.FullName);
+                return type;
             }
         }
     }

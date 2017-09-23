@@ -26,7 +26,10 @@ namespace NetInject.Cecil
             var import = new TypeImporter(member);
             tNew = _suggestor[tOld, import];
             if (tNew == null || tNew == tOld || tOld.FullName.Equals(tNew.FullName))
+            {
+                tNew = null;
                 return false;
+            }
             _replaces[tOld] = tNew;
             return true;
         }

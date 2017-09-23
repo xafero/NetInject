@@ -11,7 +11,8 @@ namespace NetInject.Cecil
             _module = module;
         }
 
-        public TypeImporter(IMemberDefinition member) : this(member.DeclaringType.Module)
+        public TypeImporter(IMemberDefinition member) : this(
+            (member as TypeReference)?.Module ?? member.DeclaringType.Module)
         {
         }
 
@@ -24,6 +25,6 @@ namespace NetInject.Cecil
         }
 
         public TypeReference Import(TypeReference type)
-            => _module.ImportReference(type);
+            => string.IsNullOrWhiteSpace(type.Namespace) ? type : _module.ImportReference(type);
     }
 }

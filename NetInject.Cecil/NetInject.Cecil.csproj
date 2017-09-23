@@ -54,6 +54,7 @@
     <Compile Include="Eq.cs" />
     <Compile Include="IterHelper.cs" />
     <Compile Include="ITypeCollector.cs" />
+    <Compile Include="ITypeSuggestor.cs" />
     <Compile Include="MethodDefComparer.cs" />
     <Compile Include="ITypePatcher.cs" />
     <Compile Include="MonoHelper.cs" />

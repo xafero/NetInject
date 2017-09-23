@@ -10,22 +10,16 @@ namespace NetInject.Cecil
 
         private class GenericTypeComparer : IEqualityComparer<GenericInstanceType>
         {
-            public bool Equals(GenericInstanceType x, GenericInstanceType y)
-            {
-                if (x.FullName.Equals(y.FullName)) return true;
-                return false;
-            }
+            public bool Equals(GenericInstanceType x, GenericInstanceType y) 
+                => x?.FullName.Equals(y?.FullName) ?? false;
 
             public int GetHashCode(GenericInstanceType obj) => obj.FullName.GetHashCode();
         }
 
         private class GenericMethodComparer : IEqualityComparer<GenericInstanceMethod>
         {
-            public bool Equals(GenericInstanceMethod x, GenericInstanceMethod y)
-            {
-                if (x.FullName.Equals(y.FullName)) return true;
-                return false;
-            }
+            public bool Equals(GenericInstanceMethod x, GenericInstanceMethod y) 
+                => x?.FullName.Equals(y?.FullName) ?? false;
 
             public int GetHashCode(GenericInstanceMethod obj) => obj.FullName.GetHashCode();
         }

@@ -20,10 +20,6 @@ namespace NetInject.Cecil
         {
         }
 
-        public TypeImporter(ParameterDefinition param) : this((IMemberDefinition) (param.Method as MethodDefinition))
-        {
-        }
-
         public TypeReference Import(TypeReference type)
             => string.IsNullOrWhiteSpace(type.Namespace) ? type : _module.ImportReference(type);
     }

@@ -41,5 +41,9 @@ namespace NetInject.Test
         SuperDelegate[] MyArray;
         SuperDelegate[][] MyTwoArray;
         SuperDelegate[][][] MyThreeArray;
+
+        Tuple<SuperStruct, string, SuperDelegate> MyTuple { get; }
+
+        event Action<string, SuperWeird, uint> MyEvent;
     }
 }

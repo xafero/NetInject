@@ -144,10 +144,16 @@ namespace NetInject.Cecil
             TypeReference returnType;
             var methDef = meth as MethodDefinition ?? meth.TryResolve();
             var genRef = meth as GenericInstanceMethod;
-            if (TryGetValue(body.Method, methDef.DeclaringType, out declaringType))
-                onReplace(methDef.DeclaringType);
-            if (TryGetValue(body.Method, methDef.ReturnType, out returnType))
-                onReplace(methDef.ReturnType);
+            var methDeclType = meth.DeclaringType.IsGenericInstance
+                ? meth.DeclaringType
+                : methDef?.DeclaringType ?? meth.DeclaringType;
+            var methRetType = meth.ReturnType.IsGenericInstance
+                ? meth.ReturnType
+                : methDef?.ReturnType ?? meth.ReturnType;
+            if (TryGetValue(body.Method, methDeclType, out declaringType))
+                onReplace(methDeclType);
+            if (TryGetValue(body.Method, methRetType, out returnType))
+                onReplace(methRetType);
             TypeReference tempType;
             var genArgs = new TypeReference[0];
             if (genRef != null && (genArgs = genRef.GenericArguments.Select(

@@ -178,7 +178,10 @@ namespace NetInject.Cecil
                 instr.Operand = newMeth;
                 return;
             }
-            var genMeth = new GenericInstanceMethod(newMeth);
+            var genMeth = new GenericInstanceMethod(methDef)
+            {
+                ReturnType = returnType ?? genRef.ReturnType
+            };
             for (var i = 0; i < genRef.GenericArguments.Count; i++)
             {
                 var genArg = genArgs[i] ?? genRef.GenericArguments[i];

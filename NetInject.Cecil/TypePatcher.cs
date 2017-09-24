@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 
@@ -142,11 +143,18 @@ namespace NetInject.Cecil
             TypeReference declaringType;
             TypeReference returnType;
             var methDef = meth as MethodDefinition ?? meth.TryResolve();
+            var genRef = meth as GenericInstanceMethod;
             if (TryGetValue(body.Method, methDef.DeclaringType, out declaringType))
                 onReplace(methDef.DeclaringType);
             if (TryGetValue(body.Method, methDef.ReturnType, out returnType))
                 onReplace(methDef.ReturnType);
-            if (returnType == null && declaringType == null)
+            TypeReference tempType;
+            var genArgs = new TypeReference[0];
+            if (genRef != null && (genArgs = genRef.GenericArguments.Select(
+                a => TryGetValue(body.Method, a, out tempType) ? tempType : null).ToArray()).Any())
+                foreach (var arg in genArgs.Where(a => a != null))
+                    onReplace(arg);
+            if (returnType == null && declaringType == null && genArgs.All(a => a == null))
                 return;
             var newMeth = new MethodReference(meth.Name,
                 returnType ?? meth.ReturnType,
@@ -165,7 +173,18 @@ namespace NetInject.Cecil
                     ptype ?? parm.ParameterType);
                 newMeth.Parameters.Add(mparm);
             }
-            instr.Operand = newMeth;
+            if (genRef == null)
+            {
+                instr.Operand = newMeth;
+                return;
+            }
+            var genMeth = new GenericInstanceMethod(newMeth);
+            for (var i = 0; i < genRef.GenericArguments.Count; i++)
+            {
+                var genArg = genArgs[i] ?? genRef.GenericArguments[i];
+                genMeth.GenericArguments.Add(genArg);
+            }
+            instr.Operand = genMeth;
         }
 
         private void Patch(IMemberDefinition meth, VariableDefinition vari, Action<TypeReference> onReplace)
@@ -180,7 +199,7 @@ namespace NetInject.Cecil
         public void Patch(ParameterDefinition param, Action<TypeReference> onReplace)
         {
             TypeReference newType;
-            if (!TryGetValue((IMemberDefinition) param.Method, param.ParameterType, out newType))
+            if (!TryGetValue((IMemberDefinition)param.Method, param.ParameterType, out newType))
                 return;
             onReplace(param.ParameterType);
             param.ParameterType = newType;

@@ -50,15 +50,8 @@ namespace NetInject.Cecil
         public void Patch(TypeDefinition type, Action<TypeReference> onReplace)
         {
             TypeReference newType;
-            foreach (var gen in type.GenericParameters)
-                for (var i = 0; i < gen.Constraints.Count; i++)
-                {
-                    var constr = gen.Constraints[i];
-                    if (!TryGetValue(type, constr, out newType))
-                        continue;
-                    onReplace(constr);
-                    gen.Constraints[i] = newType;
-                }
+            foreach (var parm in type.GenericParameters)
+                Patch(parm, onReplace);
             if (type.BaseType != null && TryGetValue(type, type.BaseType, out newType))
             {
                 onReplace(type.BaseType);
@@ -87,6 +80,8 @@ namespace NetInject.Cecil
             if (meth == null)
                 return;
             TypeReference newType;
+            foreach (var parm in meth.GenericParameters)
+                Patch(parm, onReplace);
             if (TryGetValue(meth, meth.ReturnType, out newType))
             {
                 onReplace(meth.ReturnType);
@@ -221,6 +216,19 @@ namespace NetInject.Cecil
                 return;
             onReplace(param.ParameterType);
             param.ParameterType = newType;
+        }
+
+        private void Patch(GenericParameter gen, Action<TypeReference> onReplace)
+        {
+            TypeReference newType;
+            for (var i = 0; i < gen.Constraints.Count; i++)
+            {
+                var constr = gen.Constraints[i];
+                if (!TryGetValue((IMemberDefinition)gen.Owner, constr, out newType))
+                    continue;
+                onReplace(constr);
+                gen.Constraints[i] = newType;
+            }
         }
 
         public void Patch(PropertyDefinition prop, Action<TypeReference> onReplace)

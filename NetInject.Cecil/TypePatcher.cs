@@ -50,6 +50,15 @@ namespace NetInject.Cecil
         public void Patch(TypeDefinition type, Action<TypeReference> onReplace)
         {
             TypeReference newType;
+            foreach (var gen in type.GenericParameters)
+                for (var i = 0; i < gen.Constraints.Count; i++)
+                {
+                    var constr = gen.Constraints[i];
+                    if (!TryGetValue(type, constr, out newType))
+                        continue;
+                    onReplace(constr);
+                    gen.Constraints[i] = newType;
+                }
             if (type.BaseType != null && TryGetValue(type, type.BaseType, out newType))
             {
                 onReplace(type.BaseType);

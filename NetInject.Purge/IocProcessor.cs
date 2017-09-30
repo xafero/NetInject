@@ -9,6 +9,7 @@ using TAttr = Mono.Cecil.TypeAttributes;
 using FAttr = Mono.Cecil.FieldAttributes;
 using System;
 using System.Reflection;
+using NetInject.Cecil;
 
 namespace NetInject.Purge
 {
@@ -17,7 +18,6 @@ namespace NetInject.Purge
         private const string IocName = "IoC";
         private const string IocField = "scope";
         private const string IocMethod = "GetScope";
-        private const string CctorName = ".cctor";
 
         public MethodDefinition ScopeMethod { get; private set; }
         public TypeDefinition IocType { get; private set; }
@@ -51,7 +51,7 @@ namespace NetInject.Purge
             var voidRef = mod.ImportReference(typeof(void));
             const MAttr constrAttrs = MAttr.Static | MAttr.SpecialName | MAttr.Private
                                                  | MAttr.RTSpecialName | MAttr.HideBySig;
-            var constr = new MethodDefinition(CctorName, constrAttrs, voidRef);
+            var constr = new MethodDefinition(Defaults.StaticConstrName, constrAttrs, voidRef);
             type.Methods.Add(constr);
             var cil = constr.Body.GetILProcessor();
             var multiMeth = typeof(DefaultVessel).GetConstructors().First();

@@ -62,16 +62,7 @@ namespace NetInject
                                               if (cmeth.Parameters.Count == 0)
                                                   continue;
                                           }
-                                          if (cmeth.Name == ctorName)
-                                          {
-                                              var factMethod = Noast.Create<IMethod>($"Create{type.Value.Name}");
-                                              factMethod.ReturnType = typ.Name;
-                                              foreach (var parm in cmeth.Parameters)
-                                                  factMethod.Parameters.Add(parm);
-                                              var factType = Noast.Create<IInterface>($"I{type.Value.Name}Factory", nsp);
-                                              factType.Methods.Add(factMethod);
-                                              continue;
-                                          }
+                                        
                                           if (meth.Value.ReturnType != null)
                                               cmeth.ReturnType = meth.Value.ReturnType;
                                           typ.Methods.Add(cmeth);

@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using NetInject.Cecil;
 using WildcardMatch;
 
 using static NetInject.IOHelper;
@@ -135,7 +136,7 @@ namespace NetInject
                 var attributes = MethodAttributes.Private | MethodAttributes.HideBySig
                     | MethodAttributes.SpecialName | MethodAttributes.RTSpecialName
                     | MethodAttributes.Static;
-                var method = new MethodDefinition(".cctor", attributes, mod.TypeSystem.Void);
+                var method = new MethodDefinition(Defaults.StaticConstrName, attributes, mod.TypeSystem.Void);
                 var sil = method.Body.Instructions;
                 sil.Insert(0, Instruction.Create(OpCodes.Nop));
                 var foundCstr = mod.ImportReference(founds.Single().GetConstructors().First());

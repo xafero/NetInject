@@ -23,14 +23,13 @@ using IField = Noaster.Api.IField;
 using AType = Noaster.Api.IType;
 using Noast = Noaster.Dist.Noaster;
 using NetInject.Purge;
+using IParameter = Noaster.Api.IParameter;
 
 namespace NetInject
 {
     internal static class Purger
     {
         private static readonly ILog Log = LogManager.GetLogger(typeof(Purger));
-
-        // private static readonly string ctorName = ".ctor";
 
         public static readonly string apiSuffix = ".API";
         public static readonly string apiPrefix = "Purge.";
@@ -62,7 +61,7 @@ namespace NetInject
             {
                 var key = file.Key;
                 var meta = CreateMetadata(key, names.First(n => Compare(n, key)));
-                var nsps = new object[] {meta}.Concat(file.Select(f => f.Value)).ToArray();
+                var nsps = new object[] { meta }.Concat(file.Select(f => f.Value)).ToArray();
                 var code = string.Join(newLine, nsps.Select(n => n.ToString()));
                 var filePath = Path.Combine(tempDir, key);
                 Log.Info($"'{ToRelativePath(tempDir, filePath)}' [{nsps.Length} namespace(s)]");
@@ -79,7 +78,7 @@ namespace NetInject
                 var bytes = (new FileInfo(package)).Length;
                 Log.Info($"'{ToRelativePath(tempDir, package)}' [{bytes} bytes]");
                 var name = Path.GetFileNameWithoutExtension(package);
-                var ass = CreateAssembly(tempDir, name, new[] {package});
+                var ass = CreateAssembly(tempDir, name, new[] { package });
                 if (ass == null)
                 {
                     Log.Error("Sorry, I could not compile everything ;-(");
@@ -125,7 +124,7 @@ namespace NetInject
             {
                 resolv.AddSearchDirectory(workDir);
                 resolv.AddSearchDirectory(outDir);
-                var rparam = new ReaderParameters {AssemblyResolver = resolv};
+                var rparam = new ReaderParameters { AssemblyResolver = resolv };
                 var wparam = new WriterParameters();
                 var injected = injectables.Select(i => AssemblyDefinition.ReadAssembly(i, rparam)).ToArray();
                 foreach (var file in report.Files)
@@ -166,10 +165,27 @@ namespace NetInject
                         var type = twik.Value;
                         var kind = type.Kind;
                         var name = DerivedClassDeobfuscate(type.Name);
-                        if (type.Methods.Any(m => m.Value.Aliases.Any()))
+                        if (HasNativeMethod(type))
                         {
                             kind = TypeKind.Interface;
                             name = $"I{name}";
+                        }
+                        var cstrs = type.Methods.Where(m => m.Value.Name.Equals(Defaults.InstConstrName)).ToArray();
+                        if (cstrs.Any())
+                        {
+                            var factType = Noast.Create<IInterface>($"I{type.Name}Factory", nsp).With(Visibility.Public);
+                            foreach (var cstr in cstrs)
+                            {
+                                var factMethod = Noast.Create<IMethod>($"Create{type.Name}");
+                                factMethod.ReturnType = type.Name;
+                                foreach (var parm in cstr.Value.Parameters)
+                                {
+                                    var fparm = Noast.Create<IParameter>(parm.Name);
+                                    fparm.Type = parm.Type;
+                                    factMethod.Parameters.Add(fparm);
+                                }
+                                factType.Methods.Add(factMethod);
+                            }
                         }
                         switch (kind)
                         {
@@ -205,6 +221,8 @@ namespace NetInject
                 }
             }
         }
+
+        private static bool HasNativeMethod(IType type) => type.Methods.Any(m => m.Value.Aliases.Any());
 
         private static void GenerateMembers(AType holder, IType type)
         {

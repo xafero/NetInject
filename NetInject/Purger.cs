@@ -165,7 +165,7 @@ namespace NetInject
                         var type = twik.Value;
                         var kind = type.Kind;
                         var name = DerivedClassDeobfuscate(type.Name);
-                        if (HasNativeMethod(type))
+                        if (HasNativeMethod(type) || kind == TypeKind.Struct)
                         {
                             kind = TypeKind.Interface;
                             name = $"I{name}";
@@ -177,7 +177,7 @@ namespace NetInject
                             foreach (var cstr in cstrs)
                             {
                                 var factMethod = Noast.Create<IMethod>($"Create{type.Name}");
-                                factMethod.ReturnType = type.Name;
+                                factMethod.ReturnType = name;
                                 foreach (var parm in cstr.Value.Parameters)
                                 {
                                     var fparm = Noast.Create<IParameter>(parm.Name);
@@ -185,6 +185,7 @@ namespace NetInject
                                     factMethod.Parameters.Add(fparm);
                                 }
                                 factType.Methods.Add(factMethod);
+                                type.Methods.Remove(cstr.Key);
                             }
                         }
                         switch (kind)

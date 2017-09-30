@@ -117,7 +117,7 @@ namespace NetInject
         }
 
         private static void ProcessMarkedFiles(string workDir, IDependencyReport report,
-            ICollection<string> injectables, string outDir)
+            IEnumerable<string> injectables, string outDir)
         {
             IRewiring rewriter = new PurgeRewriter();
             using (var resolv = new DefaultAssemblyResolver())
@@ -164,19 +164,21 @@ namespace NetInject
                     {
                         var type = twik.Value;
                         var kind = type.Kind;
-                        var name = DerivedClassDeobfuscate(type.Name);
-                        if (HasNativeMethod(type) || kind == TypeKind.Struct)
+                        var rawName = DerivedClassDeobfuscate(type.Name).Replace("`1", "");
+                        var name = rawName;
+                        if (!IsAttribute(type) && (HasNativeMethod(type) || kind == TypeKind.Struct || kind == TypeKind.Class))
                         {
                             kind = TypeKind.Interface;
-                            name = $"I{name}";
+                            if (HasNativeMethod(type))
+                                name = $"I{name}";
                         }
                         var cstrs = type.Methods.Where(m => m.Value.Name.Equals(Defaults.InstConstrName)).ToArray();
-                        if (cstrs.Any())
+                        if (cstrs.Any() && !IsAttribute(type))
                         {
-                            var factType = Noast.Create<IInterface>($"I{type.Name}Factory", nsp).With(Visibility.Public);
+                            var factType = Noast.Create<IInterface>($"I{rawName}Factory", nsp).With(Visibility.Public);
                             foreach (var cstr in cstrs)
                             {
-                                var factMethod = Noast.Create<IMethod>($"Create{type.Name}");
+                                var factMethod = Noast.Create<IMethod>($"Create{rawName}");
                                 factMethod.ReturnType = name;
                                 foreach (var parm in cstr.Value.Parameters)
                                 {
@@ -222,6 +224,8 @@ namespace NetInject
                 }
             }
         }
+
+        private static bool IsAttribute(IType type) => type.Name.EndsWith("Attribute");
 
         private static bool HasNativeMethod(IType type) => type.Methods.Any(m => m.Value.Aliases.Any());
 

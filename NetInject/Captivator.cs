@@ -16,9 +16,9 @@ namespace NetInject
             if (!myMappings.TryGetValue(methStr, out nativeFqName))
                 return null;
             var nativeTypeFn = nativeFqName.Substring(0, nativeFqName.LastIndexOf('.'));
-            var nativeAss = nativeTypeFn.Replace(Purger.apiPrefix, "").Substring(0, nativeTypeFn.IndexOf('.') + 1);
+            var nativeAss = nativeTypeFn.Replace(Purger.ApiPrefix, "").Substring(0, nativeTypeFn.IndexOf('.') + 1);
             var nativeMethName = nativeFqName.Replace(nativeTypeFn, string.Empty).TrimStart('.');
-            var genAss = gens.FirstOrDefault(g => g.Key == $"{nativeAss}{Purger.apiSuffix}").Value;
+            var genAss = gens.FirstOrDefault(g => g.Key == $"{nativeAss}{Purger.ApiSuffix}").Value;
             if (genAss == null)
                 return null;
             var nativeType = genAss.GetAllTypes().FirstOrDefault(g => g.FullName == nativeTypeFn);

@@ -31,14 +31,8 @@ namespace NetInject
     {
         private static readonly ILog Log = LogManager.GetLogger(typeof(Purger));
 
-        public static readonly string apiSuffix = ".API";
-        public static readonly string apiPrefix = "Purge.";
-
-        // private static readonly StringComparison cmpa = StringComparison.InvariantCulture;
-        private static readonly StringComparer comp = StringComparer.InvariantCultureIgnoreCase;
-
-        private static readonly IParser nativeParser = new Captivator();
-        private static readonly MethodDefComparer methCmp = new MethodDefComparer();
+        public static readonly string ApiSuffix = ".API";
+        public static readonly string ApiPrefix = "Purge.";
 
         internal static int Invert(InvertOptions opts)
         {
@@ -48,6 +42,9 @@ namespace NetInject
             var tempDir = Path.GetFullPath(opts.TempDir);
             Directory.CreateDirectory(tempDir);
             Log.Info($"Temporary directory is '{tempDir}'.");
+            var reportFile = Path.Combine(tempDir, "report.json");
+            Usager.WriteToJson(report, reportFile);
+            Log.Info($"Report is in '{reportFile}'.");
             var outDir = Path.GetFullPath(opts.OutputDir);
             Directory.CreateDirectory(outDir);
             Log.Info($"Output directory is '{outDir}'.");

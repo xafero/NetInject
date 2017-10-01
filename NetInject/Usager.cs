@@ -22,17 +22,22 @@ namespace NetInject
             var report = new DependencyReport();
             Poll(opts, report);
             var outFile = Path.GetFullPath("report.json");
+            WriteToJson(report, outFile);
+            Log.Info($"Report is in '{outFile}'.");
+            return 0;
+        }
+
+        internal static void WriteToJson(IDependencyReport report, string outFile)
+        {
             var jopts = new JsonSerializerSettings
             {
                 Formatting = Formatting.Indented,
-                Converters = {new StringEnumConverter()},
+                Converters = { new StringEnumConverter() },
                 NullValueHandling = NullValueHandling.Ignore,
                 DefaultValueHandling = DefaultValueHandling.Ignore
             };
             var json = JsonConvert.SerializeObject(report, jopts);
             File.WriteAllText(outFile, json, Encoding.UTF8);
-            Log.Info($"Report is in '{outFile}'.");
-            return 0;
         }
 
         internal static void Poll(IUsageOpts opts, DependencyReport report)
@@ -43,7 +48,7 @@ namespace NetInject
             using (var resolv = new DefaultAssemblyResolver())
             {
                 resolv.AddSearchDirectory(workDir);
-                var rparam = new ReaderParameters {AssemblyResolver = resolv};
+                var rparam = new ReaderParameters { AssemblyResolver = resolv };
                 var nativeInsp = new NativeInspector(opts.Assemblies);
                 var managedInsp = new ManagedInspector(opts.Assemblies);
                 foreach (var file in files)

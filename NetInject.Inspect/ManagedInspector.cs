@@ -17,11 +17,13 @@ namespace NetInject.Inspect
         private static readonly MethodDefComparer MethCmp = new MethodDefComparer();
 
         public IList<string> Filters { get; }
+        public bool IgnoreCompilerGenerated { get; }
         private INamingStrategy NamingStrategy { get; }
 
         public ManagedInspector(IEnumerable<string> filters)
         {
             Filters = filters.ToList();
+            IgnoreCompilerGenerated = true;
             NamingStrategy = new DefaultNamingStrategy();
         }
 
@@ -145,10 +147,12 @@ namespace NetInject.Inspect
                     type.Bases.Add(myIntf);
         }
 
-        private static void InspectMembers(IType type, IEnumerable<MemberReference> members)
+        private void InspectMembers(IType type, IEnumerable<MemberReference> members)
         {
             foreach (var member in members)
             {
+                if (IgnoreCompilerGenerated && (member as ICustomAttributeProvider).IsCompilerGenerated())
+                    continue;
                 var methRef = member as MethodReference;
                 var meth = methRef?.Resolve() ?? member as MethodDefinition;
                 if (meth != null)

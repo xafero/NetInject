@@ -6,6 +6,7 @@ using System.Reflection;
 using MethodBody = Mono.Cecil.Cil.MethodBody;
 using Mono.Cecil.Cil;
 using System.IO;
+using System.Runtime.CompilerServices;
 
 namespace NetInject.Cecil
 {
@@ -40,10 +41,13 @@ namespace NetInject.Cecil
 
         public static bool IsGenerated(AssemblyDefinition ass)
             => ass.GetAttribute<AssemblyMetadataAttribute>().Any(a => a.Value.Equals(nameof(NetInject), ignoreCase));
-
+        
+        public static bool IsCompilerGenerated(this Mono.Cecil.ICustomAttributeProvider thing)
+            => thing?.CustomAttributes.Any(a => a.AttributeType.Name == nameof(CompilerGeneratedAttribute)) ?? false;
+        
         public static bool IsDelegate(this TypeDefinition type)
-            => type?.BaseType?.FullName == typeof(System.MulticastDelegate).FullName
-               || type?.BaseType?.FullName == typeof(System.Delegate).FullName;
+            => type?.BaseType?.FullName == typeof(MulticastDelegate).FullName
+               || type?.BaseType?.FullName == typeof(Delegate).FullName;
 
         public static string GetParamStr(IMetadataTokenProvider meth)
             => meth.ToString().Split(new[] { '(' }, 2).Last().TrimEnd(')');
